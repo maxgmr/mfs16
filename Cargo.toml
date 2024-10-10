@@ -1,0 +1,3 @@
+[workspace]
+members = ["mfs16core", "mfs16cli"]
+resolver = "2"
