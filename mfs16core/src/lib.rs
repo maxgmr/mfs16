@@ -2,4 +2,5 @@
 #![warn(missing_docs)]
 
 mod cpu;
+mod helpers;
 mod instructions;
