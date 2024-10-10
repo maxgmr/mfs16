@@ -6,3 +6,4 @@ authors = ["Max Gilmour"]
 repository = "https://github.com/maxgmr/mfs16"
 
 [dependencies]
+mfs16core = { path = "../mfs16core" }
