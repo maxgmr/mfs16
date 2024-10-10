@@ -6,3 +6,6 @@ authors = ["Max Gilmour"]
 repository = "https://github.com/maxgmr/mfs16"
 
 [dependencies]
+
+[dev-dependencies]
+pretty_assertions = "1.4"
