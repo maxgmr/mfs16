@@ -1,3 +1,5 @@
+//! All functionality related to the CPU registers.
+
 use std::{default::Default, fmt::Display};
 
 use crate::helpers::{combine_u8_be, split_word};
