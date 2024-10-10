@@ -73,12 +73,6 @@ pub enum Reg8 {
     /// Low bit of register L.
     LL,
 }
-impl Reg8 {
-    /// Return true iff the given [Reg8] points to the high byte of its register.
-    fn is_high(&self) -> bool {
-        matches!(self, AH | BH | CH | DH | HH | LH)
-    }
-}
 impl Display for Reg8 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -250,5 +244,113 @@ impl Display for Registers {
             combine_u8_be(self.hh, self.hl),
             combine_u8_be(self.lh, self.ll),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use pretty_assertions::assert_eq;
+
+    use super::*;
+
+    #[test]
+    fn test_registers() {
+        #[allow(clippy::too_many_arguments)]
+        fn check_regs(regs: &Registers, a: u16, b: u16, c: u16, d: u16, e: u16, h: u16, l: u16) {
+            let (ah, al) = split_word(a);
+            let (bh, bl) = split_word(b);
+            let (ch, cl) = split_word(c);
+            let (dh, dl) = split_word(d);
+            let (eh, el) = split_word(e);
+            let (hh, hl) = split_word(h);
+            let (lh, ll) = split_word(l);
+
+            assert_eq!(regs.reg(A), a);
+            assert_eq!(regs.reg(B), b);
+            assert_eq!(regs.reg(C), c);
+            assert_eq!(regs.reg(D), d);
+            assert_eq!(regs.reg(E), e);
+            assert_eq!(regs.reg(H), h);
+            assert_eq!(regs.reg(L), l);
+
+            assert_eq!(regs.vreg(AH), ah);
+            assert_eq!(regs.vreg(AL), al);
+            assert_eq!(regs.vreg(BH), bh);
+            assert_eq!(regs.vreg(BL), bl);
+            assert_eq!(regs.vreg(CH), ch);
+            assert_eq!(regs.vreg(CL), cl);
+            assert_eq!(regs.vreg(DH), dh);
+            assert_eq!(regs.vreg(DL), dl);
+            assert_eq!(regs.vreg(EH), eh);
+            assert_eq!(regs.vreg(EL), el);
+            assert_eq!(regs.vreg(HH), hh);
+            assert_eq!(regs.vreg(HL), hl);
+            assert_eq!(regs.vreg(LH), lh);
+            assert_eq!(regs.vreg(LL), ll);
+        }
+
+        let start_a = 0xFFFF;
+        let start_b = 0xEEEE;
+        let start_c = 0xDDDD;
+        let start_d = 0xCCCC;
+        let start_e = 0xBBBB;
+        let start_h = 0xAAAA;
+        let start_l = 0x9999;
+        let mut regs_1 = Registers::new(
+            start_a, start_b, start_c, start_d, start_e, start_h, start_l,
+        );
+        check_regs(
+            &regs_1, start_a, start_b, start_c, start_d, start_e, start_h, start_l,
+        );
+
+        let a = 0xFEDC;
+        let b = 0xBA98;
+        let c = 0x7654;
+        let d = 0x3210;
+        let e = 0x0123;
+        let h = 0x4567;
+        let l = 0x89AB;
+
+        regs_1.set_reg(A, a);
+        regs_1.set_reg(B, b);
+        regs_1.set_reg(C, c);
+        regs_1.set_reg(D, d);
+        regs_1.set_reg(E, e);
+        regs_1.set_reg(H, h);
+        regs_1.set_reg(L, l);
+
+        check_regs(&regs_1, a, b, c, d, e, h, l);
+
+        let mut regs_2 = Registers::default();
+        check_regs(&regs_2, 0, 0, 0, 0, 0, 0, 0);
+
+        let (ah, al) = split_word(a);
+        let (bh, bl) = split_word(b);
+        let (ch, cl) = split_word(c);
+        let (dh, dl) = split_word(d);
+        let (eh, el) = split_word(e);
+        let (hh, hl) = split_word(h);
+        let (lh, ll) = split_word(l);
+
+        regs_2.set_vreg(AH, ah);
+        assert_eq!(regs_2.reg(A), combine_u8_be(ah, 0x00));
+        regs_2.set_vreg(AL, al);
+        regs_2.set_vreg(BL, bl);
+        assert_eq!(regs_2.reg(B), combine_u8_be(0x00, bl));
+        regs_2.set_vreg(BH, bh);
+        regs_2.set_vreg(CH, ch);
+        regs_2.set_vreg(CL, cl);
+        regs_2.set_vreg(DH, dh);
+        regs_2.set_vreg(DL, dl);
+        regs_2.set_vreg(EH, eh);
+        regs_2.set_vreg(EL, el);
+        regs_2.set_vreg(HH, hh);
+        regs_2.set_vreg(HL, hl);
+        regs_2.set_vreg(LH, lh);
+        regs_2.set_vreg(LL, ll);
+
+        check_regs(&regs_2, a, b, c, d, e, h, l);
+
+        assert_eq!(regs_1, regs_2);
     }
 }
