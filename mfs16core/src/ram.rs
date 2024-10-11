@@ -6,6 +6,7 @@ use crate::{
 };
 
 /// Random-access memory for direct interfacing with the CPU.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Ram {
     /// The memory contents of the RAM.
     memory: Vec<u8>,
