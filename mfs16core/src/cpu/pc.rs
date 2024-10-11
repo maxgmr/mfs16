@@ -1,8 +1,4 @@
-use std::{
-    convert::Into,
-    fmt::Display,
-    ops::{Add, AddAssign},
-};
+use std::{convert::Into, fmt::Display};
 
 use crate::RAM_SIZE;
 
