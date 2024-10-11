@@ -2,13 +2,11 @@
 use std::default::Default;
 
 mod flag;
+mod instruction;
 mod register;
 
 use flag::Flags;
 use register::Registers;
-
-/// CPU clock frequency: 33_554_432 Hz (33.55 MHz)
-pub const CLOCK_FREQ: u32 = 2_u32.pow(25);
 
 #[derive(Debug)]
 pub struct Cpu {
@@ -20,8 +18,6 @@ pub struct Cpu {
     pub pc: u32,
     /// The stack pointer.
     pub sp: u32,
-    /// The cycle counter.
-    pub cycles: u128,
 }
 impl Cpu {
     /// Create a new [Cpu] with the given [Registers] and [Flags] values.
@@ -31,7 +27,6 @@ impl Cpu {
             flags,
             pc: 0x0000_0000,
             sp: 0xFFFF_FFFF,
-            cycles: 0,
         }
     }
 }
@@ -43,7 +38,6 @@ impl Default for Cpu {
             flags: Flags::default(),
             pc: 0x0000_0000,
             sp: 0xFFFF_FFFF,
-            cycles: 0,
         }
     }
 }
