@@ -4,6 +4,7 @@ use crate::{cpu::Cpu, ram::Ram};
 pub const CLOCK_FREQ: u32 = 2_u32.pow(25);
 
 /// RAM Size: 256 MiB (268.435 MB)
+/// Address range: [0x000_0000, 0xFFF_FFFF]
 pub const RAM_SIZE: usize = 0x1000_0000;
 
 /// The MFS-16 virtual computer.
