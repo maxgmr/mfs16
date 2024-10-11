@@ -10,6 +10,11 @@ pub enum Flag {
     /// TODO better docs
     Carry,
 }
+impl Display for Flag {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
 
 /// The CPU flags.
 #[derive(Debug, Clone, PartialEq, Eq)]

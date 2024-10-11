@@ -27,19 +27,7 @@ pub enum Reg16 {
 }
 impl Display for Reg16 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                A => "A",
-                B => "B",
-                C => "C",
-                D => "D",
-                E => "E",
-                H => "H",
-                L => "L",
-            }
-        )
+        write!(f, "{:?}", self,)
     }
 }
 
@@ -77,26 +65,7 @@ pub enum Reg8 {
 }
 impl Display for Reg8 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                AH => "AH",
-                AL => "AL",
-                BH => "BH",
-                BL => "BL",
-                CH => "CH",
-                CL => "CL",
-                DH => "DH",
-                DL => "DL",
-                EH => "EH",
-                EL => "EL",
-                HH => "HH",
-                HL => "HL",
-                LH => "LH",
-                LL => "LL",
-            }
-        )
+        write!(f, "{:?}", self,)
     }
 }
 
