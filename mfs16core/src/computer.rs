@@ -1,6 +1,6 @@
 use crate::{cpu::Cpu, ram::Ram};
 
-/// CPU clock frequency: 33_554_432 Hz (33.55 MHz)
+/// System clock frequency: 33_554_432 Hz (33.55 MHz)
 pub const CLOCK_FREQ: u32 = 2_u32.pow(25);
 
 /// RAM Size: 16 MiB (~16.78 MB)

@@ -5,6 +5,10 @@ mod flag;
 mod instruction;
 mod register;
 
+// Re-exports
+pub use flag::Flag;
+pub use register::{Reg16, Reg8};
+
 use flag::Flags;
 use register::Registers;
 

@@ -8,3 +8,4 @@ mod ram;
 
 // Re-exports
 pub use computer::{Computer, CLOCK_FREQ, RAM_SIZE};
+pub use cpu::{Flag, Reg16, Reg8};
