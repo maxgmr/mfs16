@@ -1,36 +1,46 @@
 use pretty_assertions::assert_eq;
 
-use super::{Flag::*, Reg16::*, Reg8::*, *};
+use super::{super::pc::Pc, Flag::*, Reg16::*, Reg8::*, *};
 
-/// Simulate a [Cpu] at the given step num
-fn new_test_cpu(step_num: u32) -> Cpu {
+/// Simulate a [Cpu] after reading first instruction
+fn new_test_cpu() -> Cpu {
     Cpu {
-        step_num,
+        step_num: 1,
+        pc: Pc::new(0x00_0002),
         ..Cpu::default()
     }
 }
 
 #[test]
 fn test_ld_ra_rb() {
-    let mut cpu = new_test_cpu(1);
-    cpu.regs.set_reg(A, 0x1234);
-    cpu.regs.set_reg(B, 0x5678);
+    let mut cpu = new_test_cpu();
+    cpu.set_reg(A, 0x1234);
+    cpu.set_reg(B, 0x5678);
 
     ld_ra_rb(&mut cpu, A, B);
 
-    assert_eq!(cpu.regs.reg(A), cpu.regs.reg(B));
-    assert_eq!(cpu.regs.reg(A), 0x5678);
-    assert_eq!(cpu.regs.reg(B), 0x5678);
+    assert_eq!(cpu.reg(A), cpu.regs.reg(B));
+    assert_eq!(cpu.reg(A), 0x5678);
+    assert_eq!(cpu.reg(B), 0x5678);
 }
 
 #[test]
 fn test_ld_vra_vrb() {
-    let mut cpu = new_test_cpu(1);
-    cpu.regs.set_vreg(AL, 0x12);
-    cpu.regs.set_vreg(LH, 0x34);
+    let mut cpu = new_test_cpu();
+    cpu.set_vreg(AL, 0x12);
+    cpu.set_vreg(LH, 0x34);
 
     ld_vra_vrb(&mut cpu, LH, AL);
 
-    assert_eq!(cpu.regs.vreg(LH), 0x12);
-    assert_eq!(cpu.regs.vreg(AL), 0x12);
+    assert_eq!(cpu.vreg(LH), 0x12);
+    assert_eq!(cpu.vreg(AL), 0x12);
+}
+
+#[test]
+fn test_ld_ra_imm16() {
+    let mut cpu = new_test_cpu();
+    let mut ram = Ram::default();
+    ram.write_word(cpu.pc.into(), 0xFEDC);
+
+    ld_ra_imm16(&mut cpu, &ram, B);
 }

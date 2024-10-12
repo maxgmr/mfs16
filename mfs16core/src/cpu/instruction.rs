@@ -14,13 +14,16 @@ pub enum Instruction {
     /// Do nothing for 4 cycles.
     Nop,
     /// 0x01ab - LD ra,rb
-    /// 16-bit load.
+    /// 16-bit register-register load.
     /// ra = rb
     LdRaRb(Reg16, Reg16),
     /// 0x02ab - LD vra,vrb
-    /// 8-bit load.
+    /// 8-bit register-register load.
     /// vra = vrb
     LdVraVrb(Reg8, Reg8),
+    /// 0x03a_ - LD ra,imm16
+    /// Load 16-bit immediate value into register ra.
+    LdRaImm16(Reg16),
 }
 impl Instruction {
     /// Get the [Instruction] from the given opcode.
@@ -32,6 +35,7 @@ impl Instruction {
             (0x00, _, _) => Nop,
             (0x01, ra, rb) => LdRaRb(Reg16::from_nibble(ra), Reg16::from_nibble(rb)),
             (0x02, vra, vrb) => LdVraVrb(Reg8::from_nibble(vra), Reg8::from_nibble(vrb)),
+            (0x03, ra, _) => LdRaImm16(Reg16::from_nibble(ra)),
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
@@ -41,6 +45,7 @@ impl Instruction {
             Nop => 2,
             LdRaRb(..) => 2,
             LdVraVrb(..) => 2,
+            LdRaImm16(..) => 3,
         }
     }
 }
@@ -53,6 +58,7 @@ impl Display for Instruction {
                 Nop => String::from("NOP"),
                 LdRaRb(ra, rb) => format!("LD {ra},{rb}"),
                 LdVraVrb(vra, vrb) => format!("LD {vra},{vrb}"),
+                LdRaImm16(ra) => format!("LD {ra},IMM16"),
             }
         )
     }
@@ -64,6 +70,7 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         Nop => {}
         LdRaRb(ra, rb) => ld_ra_rb(cpu, ra, rb),
         LdVraVrb(vra, vrb) => ld_vra_vrb(cpu, vra, vrb),
+        LdRaImm16(ra) => ld_ra_imm16(cpu, ram, ra),
         _ => unimplemented!("Instruction {} is unimplemented.", cpu.instr),
     }
 }
@@ -81,8 +88,8 @@ fn invalid_step_panic(instr: Instruction, step_num: u32) {
 fn ld_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
     match cpu.step_num {
         1 => {
-            let val = cpu.regs.reg(rb);
-            cpu.regs.set_reg(ra, val);
+            let val = cpu.reg(rb);
+            cpu.set_reg(ra, val);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -91,8 +98,19 @@ fn ld_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
 fn ld_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
     match cpu.step_num {
         1 => {
-            let val = cpu.regs.vreg(vrb);
-            cpu.regs.set_vreg(vra, val);
+            let val = cpu.vreg(vrb);
+            cpu.set_vreg(vra, val);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn ld_ra_imm16(cpu: &mut Cpu, ram: &Ram, ra: Reg16) {
+    match cpu.step_num {
+        1 => {}
+        2 => {
+            let val = cpu.read_next_word(ram);
+            cpu.set_reg(ra, val);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }

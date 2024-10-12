@@ -65,6 +65,48 @@ impl Cpu {
         self.step_num += 1;
     }
 
+    /// Wrapper function for self.regs.reg(Reg16). Fetch the value of the given CPU register.
+    pub fn reg(&self, reg: Reg16) -> u16 {
+        self.regs.reg(reg)
+    }
+
+    /// Wrapper function for self.regs.set_reg(Reg16). Set the value of the given CPU register.
+    pub fn set_reg(&mut self, reg: Reg16, val: u16) {
+        self.regs.set_reg(reg, val)
+    }
+
+    /// Wrapper function for self.regs.vreg(Reg8). Fetch the value of the given 8-bit virtual CPU
+    /// register.
+    pub fn vreg(&self, vreg: Reg8) -> u8 {
+        self.regs.vreg(vreg)
+    }
+
+    /// Wrapper function for self.regs.set_vreg(Reg8). Set the value of the given 8-bit virtual CPU
+    /// register.
+    pub fn set_vreg(&mut self, vreg: Reg8, val: u8) {
+        self.regs.set_vreg(vreg, val)
+    }
+
+    /// Wrapper function for self.flags.flag. Fetch the value of the given flag.
+    pub fn flag(&self, flag: Flag) -> bool {
+        self.flags.flag(flag)
+    }
+
+    /// Wrapper function for self.flags.set_flag. Set the value of the given flag.
+    pub fn set_flag(&mut self, flag: Flag) {
+        self.flags.set_flag(flag)
+    }
+
+    /// Wrapper function for self.flags.reset_flag. Reset the value of the given flag.
+    pub fn reset_flag(&mut self, flag: Flag) {
+        self.flags.reset_flag(flag)
+    }
+
+    /// Wrapper function for self.flags.change_flag. Change the flag to the given value.
+    pub fn change_flag(&mut self, flag: Flag, val: bool) {
+        self.flags.change_flag(flag, val)
+    }
+
     /// Set the current instruction.
     fn read_opcode(&mut self, ram: &mut Ram) {
         self.instr = Instruction::from_opcode(self.read_next_word(ram));

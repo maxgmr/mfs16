@@ -49,18 +49,29 @@ impl Flags {
         }
     }
 
+    /// Get the value of the given [Flag].
+    pub fn flag(&self, flag: Flag) -> bool {
+        match flag {
+            Zero => self.zero,
+            Carry => self.carry,
+            Overflow => self.overflow,
+            Parity => self.parity,
+            Negative => self.negative,
+        }
+    }
+
     /// Set the given [Flag].
-    pub fn set(&mut self, flag: Flag) {
-        self.change(flag, true);
+    pub fn set_flag(&mut self, flag: Flag) {
+        self.change_flag(flag, true);
     }
 
     /// Reset the given [Flag].
-    pub fn reset(&mut self, flag: Flag) {
-        self.change(flag, false);
+    pub fn reset_flag(&mut self, flag: Flag) {
+        self.change_flag(flag, false);
     }
 
     /// Change the given [Flag] to the given boolean value.
-    pub fn change(&mut self, flag: Flag, val: bool) {
+    pub fn change_flag(&mut self, flag: Flag, val: bool) {
         match flag {
             Zero => self.zero = val,
             Carry => self.carry = val,
