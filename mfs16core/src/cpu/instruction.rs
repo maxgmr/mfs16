@@ -48,18 +48,21 @@ pub enum Instruction {
 impl Instruction {
     /// Get the [Instruction] from the given opcode.
     pub fn from_opcode(opcode: u16) -> Self {
+        let reg_nibble_offset = 7;
+
         let nib_1 = (opcode >> 12) as u8;
         let nib_2 = ((opcode & 0x0F00) >> 8) as u8;
         let nib_3 = ((opcode & 0x00F0) >> 4) as u8;
         let nib_4 = (opcode & 0x000F) as u8;
         match (nib_1, nib_2, nib_3, nib_4) {
             (0x0, 0x0, _, _) => Nop,
-            (0x0, 0x1, ra, rb) if ra < 7 && rb < 7 => {
+            (0x0, 0x1, ra, rb) if ra < reg_nibble_offset && rb < reg_nibble_offset => {
                 LdRaRb(Reg16::from_nibble(ra), Reg16::from_nibble(rb))
             }
-            (0x0, 0x1, bra, brb) => {
-                LdBraBrb(Reg32::from_nibble(bra - 7), Reg32::from_nibble(brb - 7))
-            }
+            (0x0, 0x1, bra, brb) => LdBraBrb(
+                Reg32::from_nibble(bra - reg_nibble_offset),
+                Reg32::from_nibble(brb - reg_nibble_offset),
+            ),
             (0x0, 0x2, vra, vrb) => LdVraVrb(Reg8::from_nibble(vra), Reg8::from_nibble(vrb)),
             (0x0, 0x3, 0x0, ra) => LdRaImm16(Reg16::from_nibble(ra)),
             (0x0, 0x3, 0x1, bra) => LdBraImm32(Reg32::from_nibble(bra)),
