@@ -73,16 +73,37 @@ fn test_ld_ra_imm() {
     assert_eq!(cpu.reg(B), 0xFEDC);
     cpu.step_num = 1;
 
+    assert_eq!(cpu.pc, Pc::new(0x00_0004));
+    cpu.set_breg(DE, 0x0000_0000);
+    ram.write_word(cpu.pc.into(), 0xBEEF);
+    let pc_val: u32 = cpu.pc.into();
+    ram.write_word(pc_val + 2, 0xDEAD);
+
+    ld_bra_imm32(&mut cpu, &ram, DE);
+    assert_eq!(cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(cpu.breg(DE), 0x0000_0000);
+    cpu.step_num += 1;
+
+    ld_bra_imm32(&mut cpu, &ram, DE);
+    assert_eq!(cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(cpu.breg(DE), 0x0000_0000);
+    cpu.step_num += 1;
+
+    ld_bra_imm32(&mut cpu, &ram, DE);
+    assert_eq!(cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(cpu.breg(DE), 0xDEAD_BEEF);
+    cpu.step_num = 1;
+
     ram.write_byte(cpu.pc.into(), 0x8D);
 
     ld_vra_imm8(&mut cpu, &ram, C1);
-    assert_eq!(cpu.pc, Pc::new(0x00_0005));
+    assert_eq!(cpu.pc, Pc::new(0x00_0009));
     assert_eq!(cpu.last_byte, 0x8D);
     assert_eq!(cpu.vreg(C1), 0x00);
     cpu.step_num += 1;
 
     ld_vra_imm8(&mut cpu, &ram, C1);
-    assert_eq!(cpu.pc, Pc::new(0x00_0005));
+    assert_eq!(cpu.pc, Pc::new(0x00_0009));
     assert_eq!(cpu.vreg(C1), 0x8D);
 }
 

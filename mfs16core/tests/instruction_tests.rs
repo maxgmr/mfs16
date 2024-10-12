@@ -60,7 +60,7 @@ fn test_ld() {
     assert_eq!(c.cpu.reg(E), 0x3865);
 
     // LD E1,0x9E
-    c.ram.write_word(0x00_0008, 0x0318);
+    c.ram.write_word(0x00_0008, 0x0328);
     c.ram.write_byte(0x00_000A, 0x9E);
 
     // Read instruction

@@ -36,6 +36,8 @@ pub struct Cpu {
     last_byte: u8,
     /// The word last read by the CPU.
     last_word: u16,
+    /// The second-last word read by the CPU.
+    second_last_word: u16,
 }
 impl Cpu {
     /// Create a new [Cpu] with the given [Registers] and [Flags] values.
@@ -117,6 +119,12 @@ impl Cpu {
         self.flags.change_flag(flag, val)
     }
 
+    /// Update the last word read by the CPU.
+    pub fn update_last_word(&mut self, word: u16) {
+        self.second_last_word = self.last_word;
+        self.last_word = word;
+    }
+
     /// Set the current instruction.
     fn read_opcode(&mut self, ram: &mut Ram) {
         self.instr = Instruction::from_opcode(self.read_next_word(ram));
@@ -135,7 +143,7 @@ impl Cpu {
     /// accordingly.
     fn read_next_word(&mut self, ram: &Ram) -> u16 {
         let val = ram.read_word(self.pc.into());
-        self.last_word = val;
+        self.update_last_word(val);
         self.pc.wrapping_inc();
         self.pc.wrapping_inc();
         val
@@ -144,7 +152,7 @@ impl Cpu {
     /// Read a single word from RAM pointed to by the provided address.
     fn read_word_at_addr(&mut self, ram: &Ram, addr: u32) -> u16 {
         let val = ram.read_word(addr);
-        self.last_word = val;
+        self.update_last_word(val);
         val
     }
 
@@ -177,6 +185,7 @@ impl Default for Cpu {
             step_num: Instruction::default().num_steps(),
             last_byte: 0x00,
             last_word: 0x0000,
+            second_last_word: 0x0000,
         }
     }
 }
