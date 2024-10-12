@@ -17,4 +17,10 @@ pub struct Computer {
     /// The cycle counter.
     pub cycles: u128,
 }
-impl Computer {}
+impl Computer {
+    /// Perform one clock cycle.
+    pub fn cycle(&mut self) {
+        self.cpu.cycle(&mut self.ram);
+        self.cycles += 1;
+    }
+}

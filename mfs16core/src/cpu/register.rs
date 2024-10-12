@@ -25,6 +25,22 @@ pub enum Reg16 {
     /// Register L.
     L,
 }
+impl Reg16 {
+    /// Get the [Reg16] corresponding to the given nibble, panicking if the nibble does not
+    /// correspond to any variant.
+    pub fn from_nibble(nibble: u8) -> Reg16 {
+        match nibble {
+            0x0 => A,
+            0x1 => B,
+            0x2 => C,
+            0x3 => D,
+            0x4 => E,
+            0x5 => H,
+            0x6 => L,
+            _ => panic!("Nibble {:#04X} does not match any 16-bit register.", nibble),
+        }
+    }
+}
 impl Display for Reg16 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self,)
@@ -62,6 +78,29 @@ pub enum Reg8 {
     LH,
     /// Low bit of register L.
     LL,
+}
+impl Reg8 {
+    /// Get the [Reg8] corresponding to the given nibble, panicking if the nibble does not
+    /// correspond to any variant.
+    pub fn from_nibble(nibble: u8) -> Reg8 {
+        match nibble {
+            0x0 => AH,
+            0x1 => AL,
+            0x2 => BH,
+            0x3 => BL,
+            0x4 => CH,
+            0x5 => CL,
+            0x6 => DH,
+            0x7 => DL,
+            0x8 => EH,
+            0x9 => EL,
+            0xA => HH,
+            0xB => HL,
+            0xC => LH,
+            0xD => LL,
+            _ => panic!("Nibble {:#04X} does not match any 8-bit register.", nibble),
+        }
+    }
 }
 impl Display for Reg8 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
