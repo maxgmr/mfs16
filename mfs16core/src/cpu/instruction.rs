@@ -1,5 +1,5 @@
 //! The CPU instruction set.
-//! rn = register n, 8rn = 8-bit half-register n, m = memory address, imm{n} = n-bit immediate value
+//! rn = register n, vrn = 8-bit virtual half-register n, m = memory address, imm{n} = n-bit immediate value
 use std::fmt::Display;
 
 use super::{flag::Flags, register::Registers, Cpu, Ram};
@@ -13,9 +13,14 @@ pub enum Instruction {
     /// 0x0000 - NOP
     /// Do nothing for 4 cycles.
     Nop,
-    /// 0x01ab - LD ra, rb
+    /// 0x01ab - LD ra,rb
+    /// 16-bit load.
     /// ra = rb
     LdRaRb(Reg16, Reg16),
+    /// 0x02ab - LD vra,vrb
+    /// 8-bit load.
+    /// vra = vrb
+    LdVraVrb(Reg8, Reg8),
 }
 impl Instruction {
     /// Get the [Instruction] from the given opcode.
@@ -26,6 +31,7 @@ impl Instruction {
         match (opcode_main, arg_1, arg_2) {
             (0x00, _, _) => Nop,
             (0x01, ra, rb) => LdRaRb(Reg16::from_nibble(ra), Reg16::from_nibble(rb)),
+            (0x02, vra, vrb) => LdVraVrb(Reg8::from_nibble(vra), Reg8::from_nibble(vrb)),
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
@@ -34,6 +40,7 @@ impl Instruction {
         match self {
             Nop => 2,
             LdRaRb(..) => 2,
+            LdVraVrb(..) => 2,
         }
     }
 }
@@ -44,7 +51,8 @@ impl Display for Instruction {
             "{:<10}",
             match self {
                 Nop => String::from("NOP"),
-                LdRaRb(ra, rb) => format!("LD {}, {}", ra, rb),
+                LdRaRb(ra, rb) => format!("LD {ra},{rb}"),
+                LdVraVrb(vra, vrb) => format!("LD {vra},{vrb}"),
             }
         )
     }
@@ -55,6 +63,7 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
     match cpu.instr {
         Nop => {}
         LdRaRb(ra, rb) => ld_ra_rb(cpu, ra, rb),
+        LdVraVrb(vra, vrb) => ld_vra_vrb(cpu, vra, vrb),
         _ => unimplemented!("Instruction {} is unimplemented.", cpu.instr),
     }
 }
@@ -74,6 +83,16 @@ fn ld_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
         1 => {
             let val = cpu.regs.reg(rb);
             cpu.regs.set_reg(ra, val);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn ld_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
+    match cpu.step_num {
+        1 => {
+            let val = cpu.regs.vreg(vrb);
+            cpu.regs.set_vreg(vra, val);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }

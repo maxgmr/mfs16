@@ -6,9 +6,21 @@ use Flag::*;
 /// Enum to access the individual CPU flags.
 #[derive(Debug, Copy, Clone)]
 pub enum Flag {
+    /// The Zero flag.
+    /// This flag is set iff the operation result is zero.
+    Zero,
     /// The Carry flag.
-    /// TODO better docs
+    /// This flag is set iff an arithmetic carry occurred during the operation.
     Carry,
+    /// The Overflow flag.
+    /// This flag is set iff an arithmetic overflow/underflow occurred during the operation.
+    Overflow,
+    /// The Parity flag.
+    /// This flag is set iff the number of set bits in the operation result is even.
+    Parity,
+    /// The Negative flag.
+    /// This flag is set iff the operation result is negative.
+    Negative,
 }
 impl Display for Flag {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -17,17 +29,24 @@ impl Display for Flag {
 }
 
 /// The CPU flags.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Flags {
-    /// The Carry flag.
-    /// This flag is set when an arithmetic carry or borrow occurred during the arithmetic
-    /// operation.
+    zero: bool,
     carry: bool,
+    overflow: bool,
+    parity: bool,
+    negative: bool,
 }
 impl Flags {
     /// Create new [Flags] set to the given values.
-    pub fn new(carry: bool) -> Self {
-        Self { carry }
+    pub fn new(zero: bool, carry: bool, overflow: bool, parity: bool, negative: bool) -> Self {
+        Self {
+            zero,
+            carry,
+            overflow,
+            parity,
+            negative,
+        }
     }
 
     /// Set the given [Flag].
@@ -43,19 +62,25 @@ impl Flags {
     /// Change the given [Flag] to the given boolean value.
     pub fn change(&mut self, flag: Flag, val: bool) {
         match flag {
+            Zero => self.zero = val,
             Carry => self.carry = val,
+            Overflow => self.overflow = val,
+            Parity => self.parity = val,
+            Negative => self.negative = val,
         }
-    }
-}
-impl Default for Flags {
-    /// Default: All flags initialised to false.
-    fn default() -> Self {
-        Self::new(false)
     }
 }
 impl Display for Flags {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", pf('c', self.carry))
+        write!(
+            f,
+            "{}{}{}{}{}",
+            pf('z', self.zero),
+            pf('c', self.carry),
+            pf('o', self.overflow),
+            pf('p', self.parity),
+            pf('n', self.negative)
+        )
     }
 }
 

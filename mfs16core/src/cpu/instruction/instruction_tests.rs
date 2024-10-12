@@ -22,3 +22,15 @@ fn test_ld_ra_rb() {
     assert_eq!(cpu.regs.reg(A), 0x5678);
     assert_eq!(cpu.regs.reg(B), 0x5678);
 }
+
+#[test]
+fn test_ld_vra_vrb() {
+    let mut cpu = new_test_cpu(1);
+    cpu.regs.set_vreg(AL, 0x12);
+    cpu.regs.set_vreg(LH, 0x34);
+
+    ld_vra_vrb(&mut cpu, LH, AL);
+
+    assert_eq!(cpu.regs.vreg(LH), 0x12);
+    assert_eq!(cpu.regs.vreg(AL), 0x12);
+}
