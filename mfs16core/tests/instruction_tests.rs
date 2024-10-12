@@ -181,4 +181,98 @@ fn test_ld() {
     c.cycle();
     assert_eq!(c.cpu.pc, Pc::new(0x00_001B));
     assert_eq!(c.cpu.reg(D), 0xC001);
+
+    // LDI [BC],A
+    c.cpu.set_breg(BC, 0xFF_FFFE);
+    c.cpu.set_reg(A, 0xD00D);
+    c.ram.write_word(0xFF_FFFE, 0x0000);
+    c.ram.write_word(0x00_001B, 0x0600);
+
+    // Read instruction
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_001D));
+    assert_eq!(c.cpu.breg(BC), 0xFF_FFFE);
+    assert_eq!(c.ram.read_word(0xFF_FFFE), 0x0000);
+
+    // Get A
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_001D));
+    assert_eq!(c.cpu.breg(BC), 0xFF_FFFE);
+    assert_eq!(c.ram.read_word(0xFF_FFFE), 0x0000);
+
+    // Set [BC] and increment BC
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_001D));
+    assert_eq!(c.cpu.breg(BC), 0x00_0000);
+    assert_eq!(c.ram.read_word(0xFF_FFFE), 0xD00D);
+
+    // LDD [BC],D
+    c.cpu.set_reg(D, 0xF1F1);
+    c.ram.write_word(0x00_0000, 0x0000);
+    c.ram.write_word(0x00_001D, 0x0703);
+
+    // Read instruction
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_001F));
+    assert_eq!(c.cpu.breg(BC), 0x00_0000);
+    assert_eq!(c.ram.read_word(0x00_0000), 0x0000);
+
+    // Get D
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_001F));
+    assert_eq!(c.cpu.breg(BC), 0x00_0000);
+    assert_eq!(c.ram.read_word(0x00_0000), 0x0000);
+
+    // Set [BC] and decrement BC
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_001F));
+    assert_eq!(c.cpu.breg(BC), 0xFF_FFFE);
+    assert_eq!(c.ram.read_word(0x00_0000), 0xF1F1);
+
+    // LDI H,[DE]
+    c.cpu.set_reg(H, 0xDEAD);
+    c.cpu.set_breg(DE, 0xF1_F1F1);
+    c.ram.write_word(0xF1_F1F1, 0x1234);
+    c.ram.write_word(0x00_001F, 0x0851);
+
+    // Read instruction
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0021));
+    assert_eq!(c.cpu.breg(DE), 0xF1_F1F1);
+    assert_eq!(c.cpu.reg(H), 0xDEAD);
+
+    // Get [DE]
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0021));
+    assert_eq!(c.cpu.breg(DE), 0xF1_F1F1);
+    assert_eq!(c.cpu.reg(H), 0xDEAD);
+
+    // Set H and increment DE
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0021));
+    assert_eq!(c.cpu.breg(DE), 0xF1_F1F3);
+    assert_eq!(c.cpu.reg(H), 0x1234);
+
+    // LDD L,[DE]
+    c.cpu.set_reg(L, 0xDEAD);
+    c.ram.write_word(0xF1_F1F3, 0xDEDE);
+    c.ram.write_word(0x00_0021, 0x0961);
+
+    // Read instruction
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0023));
+    assert_eq!(c.cpu.breg(DE), 0xF1_F1F3);
+    assert_eq!(c.cpu.reg(L), 0xDEAD);
+
+    // Get [DE]
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0023));
+    assert_eq!(c.cpu.breg(DE), 0xF1_F1F3);
+    assert_eq!(c.cpu.reg(L), 0xDEAD);
+
+    // Set H and increment DE
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0023));
+    assert_eq!(c.cpu.breg(DE), 0xF1_F1F1);
+    assert_eq!(c.cpu.reg(L), 0xDEDE);
 }
