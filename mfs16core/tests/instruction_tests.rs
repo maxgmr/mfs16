@@ -139,4 +139,25 @@ fn test_ld() {
     c.cycle();
     assert_eq!(c.cpu.pc, Pc::new(0x00_0015));
     assert_eq!(c.cpu.breg(BC), 0x0DEF_ACED);
+
+    // LD [DE],0xBABE
+    c.cpu.set_breg(DE, 0x67_89AB);
+    c.ram.write_word(0x67_89AB, 0x0000);
+    c.ram.write_word(0x00_0015, 0x0331);
+    c.ram.write_word(0x00_0017, 0xBABE);
+
+    // Read instruction
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0017));
+    assert_eq!(c.ram.read_word(0x67_89AB), 0x0000);
+
+    // Read immediate word
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0019));
+    assert_eq!(c.ram.read_word(0x67_89AB), 0x0000);
+
+    // Write immediate word to pointed-to value
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0019));
+    assert_eq!(c.ram.read_word(0x67_89AB), 0xBABE);
 }

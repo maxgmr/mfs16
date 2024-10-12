@@ -40,6 +40,9 @@ pub enum Instruction {
     /// Load 8-bit immediate value in 8-bit virtual register vra.
     /// vra = imm8
     LdVraImm8(Reg8),
+    /// 0x033a - LD [bra],imm16
+    /// Load 16-bit immediate value in the byte pointed to by 32-bit big register bra.
+    LdBraImm16(Reg32),
     /// 0x04ab - LD [bra],rb
     /// Load rb in the word starting at the address pointed to by bra.
     /// [bra] = rb
@@ -48,6 +51,8 @@ pub enum Instruction {
 impl Instruction {
     /// Get the [Instruction] from the given opcode.
     pub fn from_opcode(opcode: u16) -> Self {
+        // The last nibble of some instructions reserve numbers 0-6 for the 16-bit registers, with
+        // codes for the 32-bit big registers starting at 7.
         let reg_nibble_offset = 7;
 
         let nib_1 = (opcode >> 12) as u8;
@@ -67,6 +72,7 @@ impl Instruction {
             (0x0, 0x3, 0x0, ra) => LdRaImm16(Reg16::from_nibble(ra)),
             (0x0, 0x3, 0x1, bra) => LdBraImm32(Reg32::from_nibble(bra)),
             (0x0, 0x3, 0x2, vra) => LdVraImm8(Reg8::from_nibble(vra)),
+            (0x0, 0x3, 0x3, bra) => LdBraImm16(Reg32::from_nibble(bra)),
             (0x0, 0x4, bra, rb) => LdBraRb(Reg32::from_nibble(bra), Reg16::from_nibble(rb)),
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
@@ -81,6 +87,7 @@ impl Instruction {
             LdRaImm16(..) => 3,
             LdBraImm32(..) => 4,
             LdVraImm8(..) => 3,
+            LdBraImm16(..) => 3,
             LdBraRb(..) => 3,
         }
     }
@@ -98,6 +105,7 @@ impl Display for Instruction {
                 LdRaImm16(ra) => format!("LD {ra},imm16"),
                 LdBraImm32(bra) => format!("LD {bra},imm32"),
                 LdVraImm8(vra) => format!("LD {vra},imm8"),
+                LdBraImm16(bra) => format!("LD [{bra}],imm16"),
                 LdBraRb(bra, rb) => format!("LD [{bra}],{rb}"),
             }
         )
@@ -114,8 +122,8 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         LdRaImm16(ra) => ld_ra_imm16(cpu, ram, ra),
         LdBraImm32(bra) => ld_bra_imm32(cpu, ram, bra),
         LdVraImm8(vra) => ld_vra_imm8(cpu, ram, vra),
+        LdBraImm16(bra) => ld_bra_imm16(cpu, ram, bra),
         LdBraRb(bra, rb) => ld_bra_rb(cpu, ram, bra, rb),
-        _ => unimplemented!("Instruction {} is unimplemented.", cpu.instr),
     }
 }
 
@@ -171,6 +179,19 @@ fn ld_ra_imm16(cpu: &mut Cpu, ram: &Ram, ra: Reg16) {
     }
 }
 
+fn ld_bra_imm16(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32) {
+    match cpu.step_num {
+        1 => {
+            cpu.read_next_word(ram);
+        }
+        2 => {
+            let addr = cpu.breg(bra);
+            ram.write_word(addr, cpu.last_word);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
 fn ld_bra_imm32(cpu: &mut Cpu, ram: &Ram, bra: Reg32) {
     match cpu.step_num {
         1 => {
@@ -205,14 +226,10 @@ fn ld_bra_rb(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, rb: Reg16) {
     match cpu.step_num {
         1 => {
             cpu.update_last_word(cpu.reg(rb));
-            dbg!(&cpu.pc);
         }
         2 => {
-            dbg!(&cpu.pc);
             let addr = cpu.breg(bra);
-            dbg!(&cpu.pc);
             ram.write_word(addr, cpu.last_word);
-            dbg!(&cpu.pc);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
