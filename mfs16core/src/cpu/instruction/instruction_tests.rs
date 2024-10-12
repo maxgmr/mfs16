@@ -37,10 +37,31 @@ fn test_ld_vra_vrb() {
 }
 
 #[test]
-fn test_ld_ra_imm16() {
+fn test_ld_ra_imm() {
     let mut cpu = new_test_cpu();
     let mut ram = Ram::default();
     ram.write_word(cpu.pc.into(), 0xFEDC);
 
     ld_ra_imm16(&mut cpu, &ram, B);
+    assert_eq!(cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(cpu.last_word, 0xFEDC);
+    assert_eq!(cpu.reg(B), 0x0000);
+    cpu.step_num += 1;
+
+    ld_ra_imm16(&mut cpu, &ram, B);
+    assert_eq!(cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(cpu.reg(B), 0xFEDC);
+    cpu.step_num = 1;
+
+    ram.write_byte(cpu.pc.into(), 0x8D);
+
+    ld_vra_imm8(&mut cpu, &ram, CH);
+    assert_eq!(cpu.pc, Pc::new(0x00_0005));
+    assert_eq!(cpu.last_byte, 0x8D);
+    assert_eq!(cpu.vreg(CH), 0x00);
+    cpu.step_num += 1;
+
+    ld_vra_imm8(&mut cpu, &ram, CH);
+    assert_eq!(cpu.pc, Pc::new(0x00_0005));
+    assert_eq!(cpu.vreg(CH), 0x8D);
 }

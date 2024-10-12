@@ -23,6 +23,11 @@ impl Pc {
     pub fn wrapping_inc(&mut self) {
         self.0 = (self.0 + 1) % (RAM_SIZE as u32);
     }
+
+    /// Decrement this [Pc], wrapping on underflow.
+    pub fn wrapping_dec(&mut self) {
+        self.0 = (self.0.wrapping_sub(1)) % (RAM_SIZE as u32);
+    }
 }
 #[allow(clippy::from_over_into)]
 impl Into<u32> for Pc {
@@ -66,5 +71,15 @@ mod tests {
         assert_eq!(pc.0, (RAM_SIZE as u32) - 1);
         pc.wrapping_inc();
         assert_eq!(pc.0, 0);
+    }
+
+    #[test]
+    fn test_pc_wrapping_dec() {
+        let mut pc = Pc::default();
+        assert_eq!(pc.0, 0);
+        pc.wrapping_dec();
+        assert_eq!(pc.0, (RAM_SIZE as u32) - 1);
+        pc.wrapping_dec();
+        assert_eq!(pc.0, (RAM_SIZE as u32) - 2);
     }
 }

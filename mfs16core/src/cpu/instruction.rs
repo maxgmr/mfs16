@@ -2,7 +2,7 @@
 //! rn = register n, vrn = 8-bit virtual half-register n, m = memory address, imm{n} = n-bit immediate value
 use std::fmt::Display;
 
-use super::{flag::Flags, register::Registers, Cpu, Ram};
+use super::{Cpu, Ram};
 use crate::{Flag, Reg16, Reg8};
 use Instruction::*;
 
@@ -21,9 +21,12 @@ pub enum Instruction {
     /// 8-bit register-register load.
     /// vra = vrb
     LdVraVrb(Reg8, Reg8),
-    /// 0x03a_ - LD ra,imm16
+    /// 0x030a - LD ra,imm16
     /// Load 16-bit immediate value into register ra.
     LdRaImm16(Reg16),
+    /// 0x031a - LD vra,imm8
+    /// Load 8-bit immediate value in 8-bit virtual register vra.
+    LdVraImm8(Reg8),
 }
 impl Instruction {
     /// Get the [Instruction] from the given opcode.
@@ -35,7 +38,8 @@ impl Instruction {
             (0x00, _, _) => Nop,
             (0x01, ra, rb) => LdRaRb(Reg16::from_nibble(ra), Reg16::from_nibble(rb)),
             (0x02, vra, vrb) => LdVraVrb(Reg8::from_nibble(vra), Reg8::from_nibble(vrb)),
-            (0x03, ra, _) => LdRaImm16(Reg16::from_nibble(ra)),
+            (0x03, 0x0, ra) => LdRaImm16(Reg16::from_nibble(ra)),
+            (0x03, 0x1, vra) => LdVraImm8(Reg8::from_nibble(vra)),
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
@@ -46,6 +50,7 @@ impl Instruction {
             LdRaRb(..) => 2,
             LdVraVrb(..) => 2,
             LdRaImm16(..) => 3,
+            LdVraImm8(..) => 3,
         }
     }
 }
@@ -59,6 +64,7 @@ impl Display for Instruction {
                 LdRaRb(ra, rb) => format!("LD {ra},{rb}"),
                 LdVraVrb(vra, vrb) => format!("LD {vra},{vrb}"),
                 LdRaImm16(ra) => format!("LD {ra},IMM16"),
+                LdVraImm8(vra) => format!("LD {vra},IMM8"),
             }
         )
     }
@@ -71,6 +77,7 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         LdRaRb(ra, rb) => ld_ra_rb(cpu, ra, rb),
         LdVraVrb(vra, vrb) => ld_vra_vrb(cpu, vra, vrb),
         LdRaImm16(ra) => ld_ra_imm16(cpu, ram, ra),
+        LdVraImm8(vra) => ld_vra_imm8(cpu, ram, vra),
         _ => unimplemented!("Instruction {} is unimplemented.", cpu.instr),
     }
 }
@@ -107,10 +114,23 @@ fn ld_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
 
 fn ld_ra_imm16(cpu: &mut Cpu, ram: &Ram, ra: Reg16) {
     match cpu.step_num {
-        1 => {}
+        1 => {
+            cpu.read_next_word(ram);
+        }
         2 => {
-            let val = cpu.read_next_word(ram);
-            cpu.set_reg(ra, val);
+            cpu.set_reg(ra, cpu.last_word);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn ld_vra_imm8(cpu: &mut Cpu, ram: &Ram, vra: Reg8) {
+    match cpu.step_num {
+        1 => {
+            cpu.read_next_byte(ram);
+        }
+        2 => {
+            cpu.set_vreg(vra, cpu.last_byte);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }

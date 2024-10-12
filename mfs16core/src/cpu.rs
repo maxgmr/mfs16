@@ -8,15 +8,12 @@ mod register;
 
 // Re-exports
 pub use flag::Flag;
+pub use pc::Pc;
 pub use register::{Reg16, Reg8};
 
 use crate::ram::Ram;
 use flag::Flags;
-use instruction::{
-    step,
-    Instruction::{self, *},
-};
-use pc::Pc;
+use instruction::{step, Instruction};
 use register::Registers;
 
 const DEBUG: bool = true;
@@ -35,6 +32,10 @@ pub struct Cpu {
     pub instr: Instruction,
     /// Step number within the current instruction.
     pub step_num: u32,
+    /// The byte last read from memory.
+    pub last_byte: u8,
+    /// The word last read from memory.
+    pub last_word: u16,
 }
 impl Cpu {
     /// Create a new [Cpu] with the given [Registers] and [Flags] values.
@@ -42,10 +43,7 @@ impl Cpu {
         Self {
             regs,
             flags,
-            pc: Pc::new(0x0000_0000),
-            sp: 0xFFFF_FFFF,
-            instr: Nop,
-            step_num: Nop.num_steps(),
+            ..Self::default()
         }
     }
 
@@ -112,13 +110,41 @@ impl Cpu {
         self.instr = Instruction::from_opcode(self.read_next_word(ram));
     }
 
-    /// Read a single word from RAM at the program counter, advancing the program counter.
+    /// Read a single byte from RAM at the program counter, advancing the program counter
+    /// accordingly.
+    fn read_next_byte(&mut self, ram: &Ram) -> u8 {
+        let val = ram.read_byte(self.pc.into());
+        self.last_byte = val;
+        self.pc.wrapping_inc();
+        val
+    }
+
+    /// Read a single word from RAM at the program counter, advancing the program counter
+    /// accordingly.
     fn read_next_word(&mut self, ram: &Ram) -> u16 {
         let val = ram.read_word(self.pc.into());
+        self.last_word = val;
         self.pc.wrapping_inc();
         self.pc.wrapping_inc();
         val
     }
+
+    // /// Read a single byte from RAM before the program counter. Does not increment the program
+    // /// counter.
+    // fn read_prev_byte(&self, ram: &Ram) -> u8 {
+    //     let mut address = self.pc;
+    //     address.wrapping_dec();
+    //     ram.read_byte(address.into())
+    // }
+    //
+    // /// Read a single word from RAM before the program counter. Does not increment the program
+    // /// counter.
+    // fn read_prev_word(&self, ram: &Ram) -> u16 {
+    //     let mut address = self.pc;
+    //     address.wrapping_dec();
+    //     address.wrapping_dec();
+    //     ram.read_word(address.into())
+    // }
 }
 impl Default for Cpu {
     /// Default: Stack pointer at top of stack. Everything else initialised to 0/false.
@@ -130,6 +156,8 @@ impl Default for Cpu {
             sp: 0xFFFF_FFFF,
             instr: Instruction::default(),
             step_num: Instruction::default().num_steps(),
+            last_byte: 0x00,
+            last_word: 0x0000,
         }
     }
 }
@@ -140,5 +168,38 @@ impl Display for Cpu {
             "{:<10}|PC:{} SP:{:#010X}|{}|{}",
             self.instr, self.pc, self.sp, self.regs, self.flags
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use pretty_assertions::assert_eq;
+
+    use super::*;
+    use crate::RAM_SIZE;
+
+    #[test]
+    fn test_read() {
+        let mut cpu = Cpu {
+            pc: Pc::new((RAM_SIZE as u32) - 3),
+            ..Cpu::default()
+        };
+        let mut ram = Ram::default();
+        ram.write_word(0x00_0000, 0xABCD);
+        ram.write_byte(0x00_0002, 0x01);
+        ram.write_word((RAM_SIZE as u32) - 2, 0x2345);
+        ram.write_byte((RAM_SIZE as u32) - 3, 0xFE);
+
+        assert_eq!(cpu.read_next_byte(&ram), 0xfe);
+        assert_eq!(cpu.pc, Pc::new((RAM_SIZE as u32) - 2));
+
+        assert_eq!(cpu.read_next_word(&ram), 0x2345);
+        assert_eq!(cpu.pc, Pc::new(0x00_0000));
+
+        assert_eq!(cpu.read_next_word(&ram), 0xABCD);
+        assert_eq!(cpu.pc, Pc::new(0x00_0002));
+
+        assert_eq!(cpu.read_next_byte(&ram), 0x01);
+        assert_eq!(cpu.pc, Pc::new(0x00_0003));
     }
 }
