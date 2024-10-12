@@ -1,2 +1,2 @@
 # mfs16
-A 16-bit virtual CPU.
+A 16-bit virtual computer.
