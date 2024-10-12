@@ -9,7 +9,7 @@ mod register;
 // Re-exports
 pub use flag::Flag;
 pub use pc::Pc;
-pub use register::{Reg16, Reg8};
+pub use register::{Reg16, Reg32, Reg8};
 
 use crate::ram::Ram;
 use flag::Flags;
@@ -32,10 +32,10 @@ pub struct Cpu {
     pub instr: Instruction,
     /// Step number within the current instruction.
     pub step_num: u32,
-    /// The byte last read from memory.
-    pub last_byte: u8,
-    /// The word last read from memory.
-    pub last_word: u16,
+    /// The byte last read by the CPU.
+    last_byte: u8,
+    /// The word last read by the CPU.
+    last_word: u16,
 }
 impl Cpu {
     /// Create a new [Cpu] with the given [Registers] and [Flags] values.
@@ -71,6 +71,18 @@ impl Cpu {
     /// Wrapper function for self.regs.set_reg(Reg16). Set the value of the given CPU register.
     pub fn set_reg(&mut self, reg: Reg16, val: u16) {
         self.regs.set_reg(reg, val)
+    }
+
+    /// Wrapper function for self.regs.breg(Reg32). Fetch the value of the given 32-bit big
+    /// register.
+    pub fn breg(&self, breg: Reg32) -> u32 {
+        self.regs.breg(breg)
+    }
+
+    /// Wrapper function for self.regs.set_breg(Reg32). Set the value of the given 32-bit big
+    /// register.
+    pub fn set_breg(&mut self, breg: Reg32, val: u32) {
+        self.regs.set_breg(breg, val)
     }
 
     /// Wrapper function for self.regs.vreg(Reg8). Fetch the value of the given 8-bit virtual CPU
@@ -126,6 +138,13 @@ impl Cpu {
         self.last_word = val;
         self.pc.wrapping_inc();
         self.pc.wrapping_inc();
+        val
+    }
+
+    /// Read a single word from RAM pointed to by the provided address.
+    fn read_word_at_addr(&mut self, ram: &Ram, addr: u32) -> u16 {
+        let val = ram.read_word(addr);
+        self.last_word = val;
         val
     }
 
