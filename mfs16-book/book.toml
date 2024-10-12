@@ -1,0 +1,6 @@
+[book]
+authors = ["maxgmr"]
+language = "en"
+multilingual = false
+src = "src"
+title = "MFS-16 Documentation"
