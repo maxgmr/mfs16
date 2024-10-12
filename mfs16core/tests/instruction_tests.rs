@@ -113,4 +113,30 @@ fn test_ld() {
     assert_eq!(c.cpu.pc, Pc::new(0x00_000F));
     assert_eq!(c.cpu.breg(HL), 0xDEAD_BEEF);
     assert_eq!(c.cpu.breg(DE), 0xDEAD_BEEF);
+
+    // LD BC,0x0DEF_ACED
+    c.cpu.set_breg(BC, 0x0000_0000);
+    c.ram.write_word(0x00_000F, 0x0310);
+    c.ram.write_word(0x00_0011, 0xACED);
+    c.ram.write_word(0x00_0013, 0x0DEF);
+
+    // Read instruction
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0011));
+    assert_eq!(c.cpu.breg(BC), 0x0000_0000);
+
+    // Read first word
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0013));
+    assert_eq!(c.cpu.breg(BC), 0x0000_0000);
+
+    // Read second word
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0015));
+    assert_eq!(c.cpu.breg(BC), 0x0000_0000);
+
+    // Write to BC
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0015));
+    assert_eq!(c.cpu.breg(BC), 0x0DEF_ACED);
 }

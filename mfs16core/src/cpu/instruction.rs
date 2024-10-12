@@ -214,6 +214,3 @@ fn ld_bra_rb(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, rb: Reg16) {
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
-
-#[cfg(test)]
-mod instruction_tests;
