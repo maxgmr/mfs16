@@ -336,4 +336,19 @@ fn test_ld() {
     assert_eq!(c.ram.memory[0x01_2346], 0xBA);
     assert_eq!(c.ram.memory[0x01_2347], 0xDC);
     assert_eq!(c.ram.memory[0x01_2348], 0xFE);
+
+    // LD SP,DE
+    c.cpu.set_breg(DE, 0xF0E1_D2C3);
+    c.cpu.sp = 0xFFFF_FFFF;
+    c.ram.write_word(0x00_002F, 0x01B1);
+
+    // Read instruction
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0031));
+    assert_eq!(c.cpu.sp, 0xFFFF_FFFF);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0031));
+    assert_eq!(c.cpu.sp, 0xF0E1_D2C3);
 }

@@ -35,6 +35,10 @@ pub enum Instruction {
     /// Load stack pointer into the two words (little-endian) starting at address imm32.
     /// [imm32] = SP
     LdImm32Sp,
+    /// 0x01Ba - LD SP,bra
+    /// Load register bra into stack pointer.
+    /// SP = bra
+    LdSpBra(Reg32),
     /// 0x02ab - LD vra,vrb
     /// 8-bit register-register load.
     /// vra = vrb
@@ -95,6 +99,7 @@ impl Instruction {
             (0x0, 0x0, _, _) => Nop,
             (0x0, 0x1, 0xA, 0x0) => LdSpImm32,
             (0x0, 0x1, 0xA, 0x1) => LdImm32Sp,
+            (0x0, 0x1, 0xB, bra) => LdSpBra(Reg32::from_nibble(bra)),
             (0x0, 0x1, ra, rb) if ra < reg_nibble_offset && rb < reg_nibble_offset => {
                 LdRaRb(Reg16::from_nibble(ra), Reg16::from_nibble(rb))
             }
@@ -124,6 +129,7 @@ impl Instruction {
             LdBraBrb(..) => 2,
             LdSpImm32 => 4,
             LdImm32Sp => 4,
+            LdSpBra(..) => 2,
             LdVraVrb(..) => 2,
             LdRaImm16(..) => 3,
             LdBraImm32(..) => 4,
@@ -149,6 +155,7 @@ impl Display for Instruction {
                 LdBraBrb(bra, brb) => format!("LD {bra},{brb}"),
                 LdSpImm32 => String::from("LD SP,imm32"),
                 LdImm32Sp => String::from("LD [imm32],SP"),
+                LdSpBra(bra) => format!("LD SP,{bra}"),
                 LdVraVrb(vra, vrb) => format!("LD {vra},{vrb}"),
                 LdRaImm16(ra) => format!("LD {ra},imm16"),
                 LdBraImm32(bra) => format!("LD {bra},imm32"),
@@ -173,6 +180,7 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         LdBraBrb(bra, brb) => ld_bra_brb(cpu, bra, brb),
         LdSpImm32 => ld_sp_imm32(cpu, ram),
         LdImm32Sp => ld_imm32_sp(cpu, ram),
+        LdSpBra(bra) => ld_sp_bra(cpu, bra),
         LdVraVrb(vra, vrb) => ld_vra_vrb(cpu, vra, vrb),
         LdRaImm16(ra) => ld_ra_imm16(cpu, ram, ra),
         LdBraImm32(bra) => ld_bra_imm32(cpu, ram, bra),
@@ -225,6 +233,13 @@ fn ld_imm32_sp(cpu: &mut Cpu, ram: &mut Ram) {
         1 => cpu.read_next_word(ram),
         2 => cpu.read_next_word(ram),
         3 => write_dword_to_last(cpu, ram, cpu.sp),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn ld_sp_bra(cpu: &mut Cpu, bra: Reg32) {
+    match cpu.step_num {
+        1 => cpu.sp = cpu.breg(bra),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
