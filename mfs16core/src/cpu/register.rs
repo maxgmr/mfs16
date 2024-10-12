@@ -245,7 +245,7 @@ impl Display for Registers {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "A: {:#06X}, B: {:#06X}, C: {:#06X}, D: {:#06X}, E: {:#06X}, H: {:#06X}, L: {:#06X}",
+            "A:{:#06X} B:{:#06X} C:{:#06X} D:{:#06X} E:{:#06X} H:{:#06X} L:{:#06X}",
             combine_u8_be(self.ah, self.al),
             combine_u8_be(self.bh, self.bl),
             combine_u8_be(self.ch, self.cl),

@@ -12,7 +12,7 @@ fn new_test_cpu(step_num: u32) -> Cpu {
 
 #[test]
 fn test_ld_r1_r2() {
-    let mut cpu = new_test_cpu(3);
+    let mut cpu = new_test_cpu(1);
     cpu.regs.set_reg(A, 0x1234);
     cpu.regs.set_reg(B, 0x5678);
 

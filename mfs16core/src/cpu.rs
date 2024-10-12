@@ -1,5 +1,5 @@
 //! The virtual CPU hardware.
-use std::default::Default;
+use std::{default::Default, fmt::Display};
 
 mod flag;
 mod instruction;
@@ -18,6 +18,8 @@ use instruction::{
 };
 use pc::Pc;
 use register::Registers;
+
+const DEBUG: bool = true;
 
 #[derive(Debug)]
 pub struct Cpu {
@@ -49,9 +51,11 @@ impl Cpu {
 
     /// Perform one clock cycle.
     pub fn cycle(&mut self, ram: &mut Ram) {
-        dbg!(&self.step_num, &self.instr.num_steps());
         if self.step_num >= self.instr.num_steps() {
             // Current instruction is done; move on to the next one.
+            if DEBUG {
+                println!("{}", self);
+            }
             self.step_num = 0;
             self.read_opcode(ram);
         } else {
@@ -85,5 +89,14 @@ impl Default for Cpu {
             instr: Instruction::default(),
             step_num: Instruction::default().num_steps(),
         }
+    }
+}
+impl Display for Cpu {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{:<10}|PC:{} SP:{:#010X}|{}|{}",
+            self.instr, self.pc, self.sp, self.regs, self.flags
+        )
     }
 }

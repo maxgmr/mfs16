@@ -32,8 +32,8 @@ impl Instruction {
     /// Return the number of CPU steps this instruction takes to execute.
     pub fn num_steps(&self) -> u32 {
         match self {
-            Nop => 4,
-            LdR1R2(..) => 4,
+            Nop => 2,
+            LdR1R2(..) => 2,
         }
     }
 }
@@ -41,7 +41,7 @@ impl Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}",
+            "{:<10}",
             match self {
                 Nop => String::from("NOP"),
                 LdR1R2(r1, r2) => format!("LD {}, {}", r1, r2),
@@ -71,8 +71,7 @@ fn invalid_step_panic(instr: Instruction, step_num: u32) {
 // ------- CPU INSTRUCTION FUNCTIONS -------
 fn ld_r1_r2(cpu: &mut Cpu, r1: Reg16, r2: Reg16) {
     match cpu.step_num {
-        1 | 2 => {}
-        3 => {
+        1 => {
             let val = cpu.regs.reg(r2);
             cpu.regs.set_reg(r1, val);
         }

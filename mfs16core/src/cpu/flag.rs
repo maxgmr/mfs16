@@ -55,6 +55,14 @@ impl Default for Flags {
 }
 impl Display for Flags {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "C: {}", self.carry)
+        write!(f, "{}", pf('c', self.carry))
+    }
+}
+
+fn pf(c: char, val: bool) -> String {
+    if val {
+        c.to_uppercase().to_string()
+    } else {
+        c.to_lowercase().to_string()
     }
 }
