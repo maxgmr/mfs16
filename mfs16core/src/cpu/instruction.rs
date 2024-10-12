@@ -24,6 +24,9 @@ pub enum Instruction {
     /// 32-bit register-register load.
     /// bra = brb
     LdBraBrb(Reg32, Reg32),
+    /// 0x01A0 - LD SP,imm32
+    /// Load 32-bit immediate value into stack pointer.
+    LdSpImm32,
     /// 0x02ab - LD vra,vrb
     /// 8-bit register-register load.
     /// vra = vrb
@@ -81,6 +84,7 @@ impl Instruction {
         let nib_4 = (opcode & 0x000F) as u8;
         match (nib_1, nib_2, nib_3, nib_4) {
             (0x0, 0x0, _, _) => Nop,
+            (0x0, 0x1, 0xA, 0x0) => LdSpImm32,
             (0x0, 0x1, ra, rb) if ra < reg_nibble_offset && rb < reg_nibble_offset => {
                 LdRaRb(Reg16::from_nibble(ra), Reg16::from_nibble(rb))
             }
@@ -108,6 +112,7 @@ impl Instruction {
             Nop => 2,
             LdRaRb(..) => 2,
             LdBraBrb(..) => 2,
+            LdSpImm32 => 4,
             LdVraVrb(..) => 2,
             LdRaImm16(..) => 3,
             LdBraImm32(..) => 4,
@@ -131,6 +136,7 @@ impl Display for Instruction {
                 Nop => String::from("NOP"),
                 LdRaRb(ra, rb) => format!("LD {ra},{rb}"),
                 LdBraBrb(bra, brb) => format!("LD {bra},{brb}"),
+                LdSpImm32 => format!("LD SP,imm32"),
                 LdVraVrb(vra, vrb) => format!("LD {vra},{vrb}"),
                 LdRaImm16(ra) => format!("LD {ra},imm16"),
                 LdBraImm32(bra) => format!("LD {bra},imm32"),
@@ -153,6 +159,7 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         Nop => {}
         LdRaRb(ra, rb) => ld_ra_rb(cpu, ra, rb),
         LdBraBrb(bra, brb) => ld_bra_brb(cpu, bra, brb),
+        LdSpImm32 => ld_sp_imm32(cpu, ram),
         LdVraVrb(vra, vrb) => ld_vra_vrb(cpu, vra, vrb),
         LdRaImm16(ra) => ld_ra_imm16(cpu, ram, ra),
         LdBraImm32(bra) => ld_bra_imm32(cpu, ram, bra),
@@ -192,6 +199,22 @@ fn ld_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32) {
         1 => {
             let val = cpu.breg(brb);
             cpu.set_breg(bra, val);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn ld_sp_imm32(cpu: &mut Cpu, ram: &mut Ram) {
+    match cpu.step_num {
+        1 => {
+            cpu.read_next_word(ram);
+        }
+        2 => {
+            cpu.read_next_word(ram);
+        }
+        3 => {
+            let val = combine_u16_be(cpu.last_word, cpu.second_last_word);
+            cpu.sp = val;
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -242,8 +265,6 @@ fn ld_bra_imm32(cpu: &mut Cpu, ram: &Ram, bra: Reg32) {
         }
         3 => {
             let val = combine_u16_be(cpu.last_word, cpu.second_last_word);
-            println!("{:#06X}", cpu.last_word);
-            println!("{:#06X}", cpu.second_last_word);
             cpu.set_breg(bra, val);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),

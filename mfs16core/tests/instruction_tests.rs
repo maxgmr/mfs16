@@ -275,4 +275,30 @@ fn test_ld() {
     assert_eq!(c.cpu.pc, Pc::new(0x00_0023));
     assert_eq!(c.cpu.breg(DE), 0xF1_F1F1);
     assert_eq!(c.cpu.reg(L), 0xDEDE);
+
+    // LD SP,imm32
+    c.cpu.sp = 0xFFFF_FFFF;
+    c.ram.write_word(0x00_0023, 0x01A0);
+    c.ram.write_word(0x00_0025, 0x5678);
+    c.ram.write_word(0x00_0027, 0x1234);
+
+    // Read instruction
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0025));
+    assert_eq!(c.cpu.sp, 0xFFFF_FFFF);
+
+    // Read msw
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0027));
+    assert_eq!(c.cpu.sp, 0xFFFF_FFFF);
+
+    // Read lsw
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0029));
+    assert_eq!(c.cpu.sp, 0xFFFF_FFFF);
+
+    // Set SP
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0029));
+    assert_eq!(c.cpu.sp, 0x1234_5678);
 }
