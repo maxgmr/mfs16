@@ -127,33 +127,28 @@ impl Cpu {
 
     /// Set the current instruction.
     fn read_opcode(&mut self, ram: &mut Ram) {
-        self.instr = Instruction::from_opcode(self.read_next_word(ram));
+        self.read_next_word(ram);
+        self.instr = Instruction::from_opcode(self.last_word);
     }
 
     /// Read a single byte from RAM at the program counter, advancing the program counter
     /// accordingly.
-    fn read_next_byte(&mut self, ram: &Ram) -> u8 {
-        let val = ram.read_byte(self.pc.into());
-        self.last_byte = val;
+    fn read_next_byte(&mut self, ram: &Ram) {
+        self.last_byte = ram.read_byte(self.pc.into());
         self.pc.wrapping_inc();
-        val
     }
 
     /// Read a single word from RAM at the program counter, advancing the program counter
     /// accordingly.
-    fn read_next_word(&mut self, ram: &Ram) -> u16 {
-        let val = ram.read_word(self.pc.into());
-        self.update_last_word(val);
+    fn read_next_word(&mut self, ram: &Ram) {
+        self.update_last_word(ram.read_word(self.pc.into()));
         self.pc.wrapping_inc();
         self.pc.wrapping_inc();
-        val
     }
 
     /// Read a single word from RAM pointed to by the provided address.
-    fn read_word_at_addr(&mut self, ram: &Ram, addr: u32) -> u16 {
-        let val = ram.read_word(addr);
-        self.update_last_word(val);
-        val
+    fn read_word_at_addr(&mut self, ram: &Ram, addr: u32) {
+        self.update_last_word(ram.read_word(addr));
     }
 
     // /// Read a single byte from RAM before the program counter. Does not increment the program
@@ -218,16 +213,20 @@ mod tests {
         ram.write_word((RAM_SIZE as u32) - 2, 0x2345);
         ram.write_byte((RAM_SIZE as u32) - 3, 0xFE);
 
-        assert_eq!(cpu.read_next_byte(&ram), 0xfe);
+        cpu.read_next_byte(&ram);
+        assert_eq!(cpu.last_byte, 0xfe);
         assert_eq!(cpu.pc, Pc::new((RAM_SIZE as u32) - 2));
 
-        assert_eq!(cpu.read_next_word(&ram), 0x2345);
+        cpu.read_next_word(&ram);
+        assert_eq!(cpu.last_word, 0x2345);
         assert_eq!(cpu.pc, Pc::new(0x00_0000));
 
-        assert_eq!(cpu.read_next_word(&ram), 0xABCD);
+        cpu.read_next_word(&ram);
+        assert_eq!(cpu.last_word, 0xABCD);
         assert_eq!(cpu.pc, Pc::new(0x00_0002));
 
-        assert_eq!(cpu.read_next_byte(&ram), 0x01);
+        cpu.read_next_byte(&ram);
+        assert_eq!(cpu.last_byte, 0x01);
         assert_eq!(cpu.pc, Pc::new(0x00_0003));
     }
 }

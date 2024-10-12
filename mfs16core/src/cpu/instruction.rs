@@ -5,8 +5,11 @@
 //! m = memory address, imm{n} = n-bit immediate value
 use std::fmt::Display;
 
-use super::{Cpu, Pc, Ram};
-use crate::{helpers::combine_u16_be, Reg16, Reg32, Reg8};
+mod helpers;
+
+use super::{Cpu, Ram};
+use crate::{Reg16, Reg32, Reg8};
+use helpers::*;
 use Instruction::*;
 
 /// Enum for accessing the different CPU instructions.
@@ -136,7 +139,7 @@ impl Display for Instruction {
                 Nop => String::from("NOP"),
                 LdRaRb(ra, rb) => format!("LD {ra},{rb}"),
                 LdBraBrb(bra, brb) => format!("LD {bra},{brb}"),
-                LdSpImm32 => format!("LD SP,imm32"),
+                LdSpImm32 => String::from("LD SP,imm32"),
                 LdVraVrb(vra, vrb) => format!("LD {vra},{vrb}"),
                 LdRaImm16(ra) => format!("LD {ra},imm16"),
                 LdBraImm32(bra) => format!("LD {bra},imm32"),
@@ -186,142 +189,89 @@ fn invalid_step_panic(instr: Instruction, step_num: u32) {
 // ------- CPU INSTRUCTION FUNCTIONS -------
 fn ld_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
     match cpu.step_num {
-        1 => {
-            let val = cpu.reg(rb);
-            cpu.set_reg(ra, val);
-        }
+        1 => cpu.set_reg(ra, cpu.reg(rb)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
 fn ld_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32) {
     match cpu.step_num {
-        1 => {
-            let val = cpu.breg(brb);
-            cpu.set_breg(bra, val);
-        }
+        1 => cpu.set_breg(bra, cpu.breg(brb)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
 fn ld_sp_imm32(cpu: &mut Cpu, ram: &mut Ram) {
     match cpu.step_num {
-        1 => {
-            cpu.read_next_word(ram);
-        }
-        2 => {
-            cpu.read_next_word(ram);
-        }
-        3 => {
-            let val = combine_u16_be(cpu.last_word, cpu.second_last_word);
-            cpu.sp = val;
-        }
+        1 => cpu.read_next_word(ram),
+        2 => cpu.read_next_word(ram),
+        3 => cpu.sp = get_dword_from_last(cpu),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
 fn ld_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
     match cpu.step_num {
-        1 => {
-            let val = cpu.vreg(vrb);
-            cpu.set_vreg(vra, val);
-        }
+        1 => cpu.set_vreg(vra, cpu.vreg(vrb)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
 fn ld_ra_imm16(cpu: &mut Cpu, ram: &Ram, ra: Reg16) {
     match cpu.step_num {
-        1 => {
-            cpu.read_next_word(ram);
-        }
-        2 => {
-            cpu.set_reg(ra, cpu.last_word);
-        }
+        1 => cpu.read_next_word(ram),
+        2 => cpu.set_reg(ra, cpu.last_word),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
 fn ld_bra_imm16(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32) {
     match cpu.step_num {
-        1 => {
-            cpu.read_next_word(ram);
-        }
-        2 => {
-            let addr = cpu.breg(bra);
-            ram.write_word(addr, cpu.last_word);
-        }
+        1 => cpu.read_next_word(ram),
+        2 => ram.write_word(cpu.breg(bra), cpu.last_word),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
 fn ld_bra_imm32(cpu: &mut Cpu, ram: &Ram, bra: Reg32) {
     match cpu.step_num {
-        1 => {
-            cpu.read_next_word(ram);
-        }
-        2 => {
-            cpu.read_next_word(ram);
-        }
-        3 => {
-            let val = combine_u16_be(cpu.last_word, cpu.second_last_word);
-            cpu.set_breg(bra, val);
-        }
+        1 => cpu.read_next_word(ram),
+        2 => cpu.read_next_word(ram),
+        3 => cpu.set_breg(bra, get_dword_from_last(cpu)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
 fn ld_vra_imm8(cpu: &mut Cpu, ram: &Ram, vra: Reg8) {
     match cpu.step_num {
-        1 => {
-            cpu.read_next_byte(ram);
-        }
-        2 => {
-            cpu.set_vreg(vra, cpu.last_byte);
-        }
+        1 => cpu.read_next_byte(ram),
+        2 => cpu.set_vreg(vra, cpu.last_byte),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
 fn ld_bra_rb(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, rb: Reg16) {
     match cpu.step_num {
-        1 => {
-            cpu.update_last_word(cpu.reg(rb));
-        }
-        2 => {
-            let addr = cpu.breg(bra);
-            ram.write_word(addr, cpu.last_word);
-        }
+        1 => cpu.update_last_word(cpu.reg(rb)),
+        2 => ram.write_word(cpu.breg(bra), cpu.last_word),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
 fn ld_ra_brb(cpu: &mut Cpu, ram: &mut Ram, ra: Reg16, brb: Reg32) {
     match cpu.step_num {
-        1 => {
-            let addr = cpu.breg(brb);
-            cpu.update_last_word(ram.read_word(addr));
-        }
-        2 => {
-            cpu.set_reg(ra, cpu.last_word);
-        }
+        1 => cpu.update_last_word(ram.read_word(cpu.breg(brb))),
+        2 => cpu.set_reg(ra, cpu.last_word),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
 fn ldi_bra_rb(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, rb: Reg16) {
     match cpu.step_num {
-        1 => {
-            cpu.update_last_word(cpu.reg(rb));
-        }
+        1 => cpu.update_last_word(cpu.reg(rb)),
         2 => {
-            let addr = cpu.breg(bra);
-            ram.write_word(addr, cpu.last_word);
-
-            let mut new_addr = Pc::new(addr);
-            new_addr.wrapping_inc();
-            new_addr.wrapping_inc();
-            cpu.set_breg(bra, new_addr.into());
+            ram.write_word(cpu.breg(bra), cpu.last_word);
+            dbl_inc_br(cpu, bra);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -329,17 +279,10 @@ fn ldi_bra_rb(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, rb: Reg16) {
 
 fn ldd_bra_rb(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, rb: Reg16) {
     match cpu.step_num {
-        1 => {
-            cpu.update_last_word(cpu.reg(rb));
-        }
+        1 => cpu.update_last_word(cpu.reg(rb)),
         2 => {
-            let addr = cpu.breg(bra);
-            ram.write_word(addr, cpu.last_word);
-
-            let mut new_addr = Pc::new(addr);
-            new_addr.wrapping_dec();
-            new_addr.wrapping_dec();
-            cpu.set_breg(bra, new_addr.into());
+            ram.write_word(cpu.breg(bra), cpu.last_word);
+            dbl_dec_br(cpu, bra);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -347,15 +290,10 @@ fn ldd_bra_rb(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, rb: Reg16) {
 
 fn ldi_ra_brb(cpu: &mut Cpu, ram: &mut Ram, ra: Reg16, brb: Reg32) {
     match cpu.step_num {
-        1 => {
-            cpu.update_last_word(ram.read_word(cpu.breg(brb)));
-        }
+        1 => cpu.update_last_word(ram.read_word(cpu.breg(brb))),
         2 => {
             cpu.set_reg(ra, cpu.last_word);
-            let mut new_addr = Pc::new(cpu.breg(brb));
-            new_addr.wrapping_inc();
-            new_addr.wrapping_inc();
-            cpu.set_breg(brb, new_addr.into());
+            dbl_inc_br(cpu, brb);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -363,15 +301,10 @@ fn ldi_ra_brb(cpu: &mut Cpu, ram: &mut Ram, ra: Reg16, brb: Reg32) {
 
 fn ldd_ra_brb(cpu: &mut Cpu, ram: &mut Ram, ra: Reg16, brb: Reg32) {
     match cpu.step_num {
-        1 => {
-            cpu.update_last_word(ram.read_word(cpu.breg(brb)));
-        }
+        1 => cpu.update_last_word(ram.read_word(cpu.breg(brb))),
         2 => {
             cpu.set_reg(ra, cpu.last_word);
-            let mut new_addr = Pc::new(cpu.breg(brb));
-            new_addr.wrapping_dec();
-            new_addr.wrapping_dec();
-            cpu.set_breg(brb, new_addr.into());
+            dbl_dec_br(cpu, brb);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
