@@ -160,4 +160,25 @@ fn test_ld() {
     c.cycle();
     assert_eq!(c.cpu.pc, Pc::new(0x00_0019));
     assert_eq!(c.ram.read_word(0x67_89AB), 0xBABE);
+
+    // LD D,[BC]
+    c.cpu.set_breg(BC, 0x0000_CAFE);
+    c.cpu.set_reg(D, 0x0000);
+    c.ram.write_word(0x0000_CAFE, 0xC001);
+    c.ram.write_word(0x00_0019, 0x0530);
+
+    // Read instruction
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_001B));
+    assert_eq!(c.cpu.reg(D), 0x0000);
+
+    // Get [BC]
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_001B));
+    assert_eq!(c.cpu.reg(D), 0x0000);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_001B));
+    assert_eq!(c.cpu.reg(D), 0xC001);
 }

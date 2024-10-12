@@ -47,6 +47,9 @@ pub enum Instruction {
     /// Load rb in the word starting at the address pointed to by bra.
     /// [bra] = rb
     LdBraRb(Reg32, Reg16),
+    /// 0x05ab - LD ra,[brb]
+    /// Load the word pointed to by brb in register ra.
+    LdRaBrb(Reg16, Reg32),
 }
 impl Instruction {
     /// Get the [Instruction] from the given opcode.
@@ -74,6 +77,7 @@ impl Instruction {
             (0x0, 0x3, 0x2, vra) => LdVraImm8(Reg8::from_nibble(vra)),
             (0x0, 0x3, 0x3, bra) => LdBraImm16(Reg32::from_nibble(bra)),
             (0x0, 0x4, bra, rb) => LdBraRb(Reg32::from_nibble(bra), Reg16::from_nibble(rb)),
+            (0x0, 0x5, ra, brb) => LdRaBrb(Reg16::from_nibble(ra), Reg32::from_nibble(brb)),
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
@@ -89,6 +93,7 @@ impl Instruction {
             LdVraImm8(..) => 3,
             LdBraImm16(..) => 3,
             LdBraRb(..) => 3,
+            LdRaBrb(..) => 3,
         }
     }
 }
@@ -107,6 +112,7 @@ impl Display for Instruction {
                 LdVraImm8(vra) => format!("LD {vra},imm8"),
                 LdBraImm16(bra) => format!("LD [{bra}],imm16"),
                 LdBraRb(bra, rb) => format!("LD [{bra}],{rb}"),
+                LdRaBrb(ra, brb) => format!("LD {ra},[{brb}]"),
             }
         )
     }
@@ -124,6 +130,7 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         LdVraImm8(vra) => ld_vra_imm8(cpu, ram, vra),
         LdBraImm16(bra) => ld_bra_imm16(cpu, ram, bra),
         LdBraRb(bra, rb) => ld_bra_rb(cpu, ram, bra, rb),
+        LdRaBrb(ra, brb) => ld_ra_brb(cpu, ram, ra, brb),
     }
 }
 
@@ -230,6 +237,19 @@ fn ld_bra_rb(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, rb: Reg16) {
         2 => {
             let addr = cpu.breg(bra);
             ram.write_word(addr, cpu.last_word);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn ld_ra_brb(cpu: &mut Cpu, ram: &mut Ram, ra: Reg16, brb: Reg32) {
+    match cpu.step_num {
+        1 => {
+            let addr = cpu.breg(brb);
+            cpu.update_last_word(ram.read_word(addr));
+        }
+        2 => {
+            cpu.set_reg(ra, cpu.last_word);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
