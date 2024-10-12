@@ -301,4 +301,39 @@ fn test_ld() {
     c.cycle();
     assert_eq!(c.cpu.pc, Pc::new(0x00_0029));
     assert_eq!(c.cpu.sp, 0x1234_5678);
+
+    // LD imm32,SP
+    c.cpu.sp = 0xFEDC_BA98;
+    // Ensure that things are actually being stored little-endian
+    c.ram.memory[0x00_0029] = 0xA1;
+    c.ram.memory[0x00_002A] = 0x01;
+    c.ram.memory[0x00_002B] = 0x45;
+    c.ram.memory[0x00_002C] = 0x23;
+    c.ram.memory[0x00_002D] = 0x01;
+    c.ram.memory[0x00_002E] = 0x00;
+    c.ram.write_word(0x01_2345, 0x0000);
+
+    // Read instruction
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_002B));
+    assert_eq!(c.ram.read_word(0x01_2345), 0x0000);
+
+    // Read msw
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_002D));
+    assert_eq!(c.ram.read_word(0x01_2345), 0x0000);
+
+    // Read lsw
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_002F));
+    assert_eq!(c.ram.read_word(0x01_2345), 0x0000);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_002F));
+    // Ensure that things are actually being stored little-endian
+    assert_eq!(c.ram.memory[0x01_2345], 0x98);
+    assert_eq!(c.ram.memory[0x01_2346], 0xBA);
+    assert_eq!(c.ram.memory[0x01_2347], 0xDC);
+    assert_eq!(c.ram.memory[0x01_2348], 0xFE);
 }

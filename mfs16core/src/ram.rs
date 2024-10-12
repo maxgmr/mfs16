@@ -9,7 +9,7 @@ use crate::{
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Ram {
     /// The memory contents of the RAM.
-    memory: Vec<u8>,
+    pub memory: Vec<u8>,
 }
 impl Ram {
     /// Create new [Ram] of the set size. All bytes are initialised to the given array.
