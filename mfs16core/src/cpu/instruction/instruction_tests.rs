@@ -27,9 +27,21 @@ fn test_ld_ra_rb() {
 
     ld_ra_rb(&mut cpu, A, B);
 
-    assert_eq!(cpu.reg(A), cpu.regs.reg(B));
+    assert_eq!(cpu.reg(A), cpu.reg(B));
     assert_eq!(cpu.reg(A), 0x5678);
     assert_eq!(cpu.reg(B), 0x5678);
+}
+
+#[test]
+fn test_ld_bra_brb() {
+    let mut cpu = new_test_cpu();
+    cpu.set_breg(BC, 0x1234_5678);
+    cpu.set_breg(DE, 0xFEDC_BA98);
+
+    ld_bra_brb(&mut cpu, BC, DE);
+
+    assert_eq!(cpu.breg(BC), 0xFEDC_BA98);
+    assert_eq!(cpu.breg(DE), 0xFEDC_BA98);
 }
 
 #[test]

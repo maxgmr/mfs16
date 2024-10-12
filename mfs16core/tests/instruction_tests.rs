@@ -97,4 +97,20 @@ fn test_ld() {
     c.cycle();
     assert_eq!(c.cpu.pc, Pc::new(0x00_000D));
     assert_eq!(c.ram.read_word(0x00FE_DCBA), 0x1234);
+
+    // LD HL,DE
+    c.cpu.set_breg(HL, 0x0000_0000);
+    c.cpu.set_breg(DE, 0xDEAD_BEEF);
+    c.ram.write_word(0x00_000D, 0x0198);
+
+    // Read instruction
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000F));
+    assert_eq!(c.cpu.breg(HL), 0x0000_0000);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000F));
+    assert_eq!(c.cpu.breg(HL), 0xDEAD_BEEF);
+    assert_eq!(c.cpu.breg(DE), 0xDEAD_BEEF);
 }

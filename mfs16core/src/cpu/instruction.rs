@@ -20,6 +20,10 @@ pub enum Instruction {
     /// 16-bit register-register load.
     /// ra = rb
     LdRaRb(Reg16, Reg16),
+    /// 0x01ab - LD br(a-7),br(b-7)
+    /// 32-bit register-register load.
+    /// bra = brb
+    LdBraBrb(Reg32, Reg32),
     /// 0x02ab - LD vra,vrb
     /// 8-bit register-register load.
     /// vra = vrb
@@ -46,7 +50,12 @@ impl Instruction {
         let nib_4 = (opcode & 0x000F) as u8;
         match (nib_1, nib_2, nib_3, nib_4) {
             (0x0, 0x0, _, _) => Nop,
-            (0x0, 0x1, ra, rb) => LdRaRb(Reg16::from_nibble(ra), Reg16::from_nibble(rb)),
+            (0x0, 0x1, ra, rb) if ra < 7 && rb < 7 => {
+                LdRaRb(Reg16::from_nibble(ra), Reg16::from_nibble(rb))
+            }
+            (0x0, 0x1, bra, brb) => {
+                LdBraBrb(Reg32::from_nibble(bra - 7), Reg32::from_nibble(brb - 7))
+            }
             (0x0, 0x2, vra, vrb) => LdVraVrb(Reg8::from_nibble(vra), Reg8::from_nibble(vrb)),
             (0x0, 0x3, 0x0, ra) => LdRaImm16(Reg16::from_nibble(ra)),
             (0x0, 0x3, 0x1, vra) => LdVraImm8(Reg8::from_nibble(vra)),
@@ -59,6 +68,7 @@ impl Instruction {
         match self {
             Nop => 2,
             LdRaRb(..) => 2,
+            LdBraBrb(..) => 2,
             LdVraVrb(..) => 2,
             LdRaImm16(..) => 3,
             LdVraImm8(..) => 3,
@@ -74,6 +84,7 @@ impl Display for Instruction {
             match self {
                 Nop => String::from("NOP"),
                 LdRaRb(ra, rb) => format!("LD {ra},{rb}"),
+                LdBraBrb(bra, brb) => format!("LD {bra},{brb}"),
                 LdVraVrb(vra, vrb) => format!("LD {vra},{vrb}"),
                 LdRaImm16(ra) => format!("LD {ra},IMM16"),
                 LdVraImm8(vra) => format!("LD {vra},IMM8"),
@@ -88,6 +99,7 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
     match cpu.instr {
         Nop => {}
         LdRaRb(ra, rb) => ld_ra_rb(cpu, ra, rb),
+        LdBraBrb(bra, brb) => ld_bra_brb(cpu, bra, brb),
         LdVraVrb(vra, vrb) => ld_vra_vrb(cpu, vra, vrb),
         LdRaImm16(ra) => ld_ra_imm16(cpu, ram, ra),
         LdVraImm8(vra) => ld_vra_imm8(cpu, ram, vra),
@@ -111,6 +123,16 @@ fn ld_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
         1 => {
             let val = cpu.reg(rb);
             cpu.set_reg(ra, val);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn ld_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32) {
+    match cpu.step_num {
+        1 => {
+            let val = cpu.breg(brb);
+            cpu.set_breg(bra, val);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
