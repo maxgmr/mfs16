@@ -1,7 +1,7 @@
 use mfs16core::{Computer, Flag::*, Reg16::*, Reg8::*};
 
 #[test]
-fn test_ld_r1_r2() {
+fn test_ld_ra_rb() {
     let mut c = Computer::default();
     // LD A,B
     c.ram.write_word(0x00_0000, 0x0101);

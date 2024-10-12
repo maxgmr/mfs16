@@ -11,12 +11,12 @@ fn new_test_cpu(step_num: u32) -> Cpu {
 }
 
 #[test]
-fn test_ld_r1_r2() {
+fn test_ld_ra_rb() {
     let mut cpu = new_test_cpu(1);
     cpu.regs.set_reg(A, 0x1234);
     cpu.regs.set_reg(B, 0x5678);
 
-    ld_r1_r2(&mut cpu, A, B);
+    ld_ra_rb(&mut cpu, A, B);
 
     assert_eq!(cpu.regs.reg(A), cpu.regs.reg(B));
     assert_eq!(cpu.regs.reg(A), 0x5678);

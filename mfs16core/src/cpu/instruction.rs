@@ -10,12 +10,12 @@ use Instruction::*;
 #[derive(Debug, Clone, Copy, Default)]
 pub enum Instruction {
     #[default]
-    /// NOP
+    /// 0x0000 - NOP
     /// Do nothing for 4 cycles.
     Nop,
-    /// LD r1, r2
-    /// r1 = r2
-    LdR1R2(Reg16, Reg16),
+    /// 0x01ab - LD ra, rb
+    /// ra = rb
+    LdRaRb(Reg16, Reg16),
 }
 impl Instruction {
     /// Get the [Instruction] from the given opcode.
@@ -25,7 +25,7 @@ impl Instruction {
         let arg_2 = (opcode & 0x000F) as u8;
         match (opcode_main, arg_1, arg_2) {
             (0x00, _, _) => Nop,
-            (0x01, r1, r2) => LdR1R2(Reg16::from_nibble(r1), Reg16::from_nibble(r2)),
+            (0x01, ra, rb) => LdRaRb(Reg16::from_nibble(ra), Reg16::from_nibble(rb)),
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
@@ -33,7 +33,7 @@ impl Instruction {
     pub fn num_steps(&self) -> u32 {
         match self {
             Nop => 2,
-            LdR1R2(..) => 2,
+            LdRaRb(..) => 2,
         }
     }
 }
@@ -44,7 +44,7 @@ impl Display for Instruction {
             "{:<10}",
             match self {
                 Nop => String::from("NOP"),
-                LdR1R2(r1, r2) => format!("LD {}, {}", r1, r2),
+                LdRaRb(ra, rb) => format!("LD {}, {}", ra, rb),
             }
         )
     }
@@ -54,7 +54,7 @@ impl Display for Instruction {
 pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
     match cpu.instr {
         Nop => {}
-        LdR1R2(r1, r2) => ld_r1_r2(cpu, r1, r2),
+        LdRaRb(ra, rb) => ld_ra_rb(cpu, ra, rb),
         _ => unimplemented!("Instruction {} is unimplemented.", cpu.instr),
     }
 }
@@ -69,11 +69,11 @@ fn invalid_step_panic(instr: Instruction, step_num: u32) {
 }
 
 // ------- CPU INSTRUCTION FUNCTIONS -------
-fn ld_r1_r2(cpu: &mut Cpu, r1: Reg16, r2: Reg16) {
+fn ld_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
     match cpu.step_num {
         1 => {
-            let val = cpu.regs.reg(r2);
-            cpu.regs.set_reg(r1, val);
+            let val = cpu.regs.reg(rb);
+            cpu.regs.set_reg(ra, val);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
