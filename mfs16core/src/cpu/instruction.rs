@@ -82,13 +82,28 @@ pub enum Instruction {
     /// Load [brb] in ra, then decrement brb by two.
     /// ra = [brb]; brb -= 2
     LddRaBrb(Reg16, Reg32),
+    /// 0x10ab - ADD ra,rb
+    /// Add rb to ra.
+    /// ra += rb
+    /// FLAGS: Z,C,O,P,N
+    AddRaRb(Reg16, Reg16),
+    /// 0x10(a+7)(b+7) - ADD bra,brb
+    /// Add brb to bra. 32-bit addition.
+    /// bra += brb
+    /// FLAGS: Z,C,O,P,N
+    AddBraBrb(Reg32, Reg32),
+    /// 0x11ab - ADD vra,vrb
+    /// Add vrb to vra. 8-bit addition.
+    /// vra += vrb
+    /// FLAGS: Z,C,O,P,N
+    AddVraVrb(Reg8, Reg8),
 }
 impl Instruction {
     /// Get the [Instruction] from the given opcode.
     pub fn from_opcode(opcode: u16) -> Self {
         // The last nibble of some instructions reserve numbers 0-6 for the 16-bit registers, with
         // codes for the 32-bit big registers starting at 7.
-        let reg_nibble_offset = 7;
+        let reg_nib_offset = 7;
 
         let nib_1 = (opcode >> 12) as u8;
         let nib_2 = ((opcode & 0x0F00) >> 8) as u8;
@@ -99,25 +114,33 @@ impl Instruction {
             (0x0, 0x0, _, _) => Nop,
             (0x0, 0x1, 0xA, 0x0) => LdSpImm32,
             (0x0, 0x1, 0xA, 0x1) => LdImm32Sp,
-            (0x0, 0x1, 0xB, bra) => LdSpBra(Reg32::from_nibble(bra)),
-            (0x0, 0x1, ra, rb) if ra < reg_nibble_offset && rb < reg_nibble_offset => {
-                LdRaRb(Reg16::from_nibble(ra), Reg16::from_nibble(rb))
+            (0x0, 0x1, 0xB, bra) => LdSpBra(Reg32::from_nib(bra)),
+            (0x0, 0x1, ra, rb) if ra < reg_nib_offset && rb < reg_nib_offset => {
+                LdRaRb(Reg16::from_nib(ra), Reg16::from_nib(rb))
             }
             (0x0, 0x1, bra, brb) => LdBraBrb(
-                Reg32::from_nibble(bra - reg_nibble_offset),
-                Reg32::from_nibble(brb - reg_nibble_offset),
+                Reg32::from_nib(bra - reg_nib_offset),
+                Reg32::from_nib(brb - reg_nib_offset),
             ),
-            (0x0, 0x2, vra, vrb) => LdVraVrb(Reg8::from_nibble(vra), Reg8::from_nibble(vrb)),
-            (0x0, 0x3, 0x0, ra) => LdRaImm16(Reg16::from_nibble(ra)),
-            (0x0, 0x3, 0x1, bra) => LdBraImm32(Reg32::from_nibble(bra)),
-            (0x0, 0x3, 0x2, vra) => LdVraImm8(Reg8::from_nibble(vra)),
-            (0x0, 0x3, 0x3, bra) => LdBraImm16(Reg32::from_nibble(bra)),
-            (0x0, 0x4, bra, rb) => LdBraRb(Reg32::from_nibble(bra), Reg16::from_nibble(rb)),
-            (0x0, 0x5, ra, brb) => LdRaBrb(Reg16::from_nibble(ra), Reg32::from_nibble(brb)),
-            (0x0, 0x6, bra, rb) => LdiBraRb(Reg32::from_nibble(bra), Reg16::from_nibble(rb)),
-            (0x0, 0x7, bra, rb) => LddBraRb(Reg32::from_nibble(bra), Reg16::from_nibble(rb)),
-            (0x0, 0x8, ra, brb) => LdiRaBrb(Reg16::from_nibble(ra), Reg32::from_nibble(brb)),
-            (0x0, 0x9, ra, brb) => LddRaBrb(Reg16::from_nibble(ra), Reg32::from_nibble(brb)),
+            (0x0, 0x2, vra, vrb) => LdVraVrb(Reg8::from_nib(vra), Reg8::from_nib(vrb)),
+            (0x0, 0x3, 0x0, ra) => LdRaImm16(Reg16::from_nib(ra)),
+            (0x0, 0x3, 0x1, bra) => LdBraImm32(Reg32::from_nib(bra)),
+            (0x0, 0x3, 0x2, vra) => LdVraImm8(Reg8::from_nib(vra)),
+            (0x0, 0x3, 0x3, bra) => LdBraImm16(Reg32::from_nib(bra)),
+            (0x0, 0x4, bra, rb) => LdBraRb(Reg32::from_nib(bra), Reg16::from_nib(rb)),
+            (0x0, 0x5, ra, brb) => LdRaBrb(Reg16::from_nib(ra), Reg32::from_nib(brb)),
+            (0x0, 0x6, bra, rb) => LdiBraRb(Reg32::from_nib(bra), Reg16::from_nib(rb)),
+            (0x0, 0x7, bra, rb) => LddBraRb(Reg32::from_nib(bra), Reg16::from_nib(rb)),
+            (0x0, 0x8, ra, brb) => LdiRaBrb(Reg16::from_nib(ra), Reg32::from_nib(brb)),
+            (0x0, 0x9, ra, brb) => LddRaBrb(Reg16::from_nib(ra), Reg32::from_nib(brb)),
+            (0x1, 0x0, ra, rb) if ra < reg_nib_offset && rb < reg_nib_offset => {
+                AddRaRb(Reg16::from_nib(ra), Reg16::from_nib(rb))
+            }
+            (0x1, 0x0, bra, brb) => AddBraBrb(
+                Reg32::from_nib(bra - reg_nib_offset),
+                Reg32::from_nib(brb - reg_nib_offset),
+            ),
+            (0x1, 0x1, vra, vrb) => AddVraVrb(Reg8::from_nib(vra), Reg8::from_nib(vrb)),
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
@@ -141,6 +164,9 @@ impl Instruction {
             LddBraRb(..) => 3,
             LdiRaBrb(..) => 3,
             LddRaBrb(..) => 3,
+            AddRaRb(..) => 2,
+            AddVraVrb(..) => 2,
+            AddBraBrb(..) => 2,
         }
     }
 }
@@ -167,6 +193,9 @@ impl Display for Instruction {
                 LddBraRb(bra, rb) => format!("LDD [{bra}],{rb}"),
                 LdiRaBrb(ra, brb) => format!("LDI {ra},[{brb}]"),
                 LddRaBrb(ra, brb) => format!("LDD {ra},[{brb}]"),
+                AddRaRb(ra, rb) => format!("ADD {ra},{rb}"),
+                AddBraBrb(bra, brb) => format!("ADD {bra},{brb}"),
+                AddVraVrb(vra, vrb) => format!("ADD {vra},{vrb}"),
             }
         )
     }
@@ -192,6 +221,9 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         LddBraRb(bra, rb) => ldd_bra_rb(cpu, ram, bra, rb),
         LdiRaBrb(ra, brb) => ldi_ra_brb(cpu, ram, ra, brb),
         LddRaBrb(ra, brb) => ldd_ra_brb(cpu, ram, ra, brb),
+        AddRaRb(ra, rb) => add_ra_rb(cpu, ra, rb),
+        AddBraBrb(bra, brb) => add_bra_brb(cpu, bra, brb),
+        AddVraVrb(vra, vrb) => add_vra_vrb(cpu, vra, vrb),
     }
 }
 
@@ -339,6 +371,36 @@ fn ldd_ra_brb(cpu: &mut Cpu, ram: &mut Ram, ra: Reg16, brb: Reg32) {
         2 => {
             cpu.set_reg(ra, cpu.last_word);
             dbl_dec_br(cpu, brb);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn add_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
+    match cpu.step_num {
+        1 => {
+            let result = alu_add16(cpu, ra, rb, false);
+            cpu.set_reg(ra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn add_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32) {
+    match cpu.step_num {
+        1 => {
+            let result = alu_add32(cpu, bra, brb, false);
+            cpu.set_breg(bra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn add_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
+    match cpu.step_num {
+        1 => {
+            let result = alu_add8(cpu, vra, vrb, false);
+            cpu.set_vreg(vra, result);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }

@@ -7,12 +7,11 @@ mod pc;
 mod register;
 
 // Re-exports
-pub use flag::Flag;
+pub use flag::{Flag, Flags};
 pub use pc::Pc;
 pub use register::{Reg16, Reg32, Reg8};
 
 use crate::ram::Ram;
-use flag::Flags;
 use instruction::{step, Instruction};
 use register::Registers;
 
@@ -53,11 +52,11 @@ impl Cpu {
     pub fn cycle(&mut self, ram: &mut Ram) {
         if self.step_num >= self.instr.num_steps() {
             // Current instruction is done; move on to the next one.
+            self.step_num = 0;
+            self.read_opcode(ram);
             if DEBUG {
                 println!("{}", self);
             }
-            self.step_num = 0;
-            self.read_opcode(ram);
         } else {
             // Current instruction is in progress; perform the appropriate instruction step.
             step(self, ram);

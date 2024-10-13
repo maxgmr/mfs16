@@ -1,4 +1,6 @@
-use mfs16core::{Computer, Flag::*, Pc, Reg16::*, Reg32::*, Reg8::*};
+#![cfg(test)]
+
+use mfs16core::{Computer, Pc, Reg16::*, Reg32::*, Reg8::*};
 use pretty_assertions::assert_eq;
 
 #[test]

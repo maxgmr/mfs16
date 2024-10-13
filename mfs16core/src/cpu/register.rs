@@ -29,7 +29,7 @@ pub enum Reg16 {
 impl Reg16 {
     /// Get the [Reg16] corresponding to the given nibble, panicking if the nibble does not
     /// correspond to any variant.
-    pub fn from_nibble(nibble: u8) -> Reg16 {
+    pub fn from_nib(nibble: u8) -> Reg16 {
         match nibble {
             0x0 => A,
             0x1 => B,
@@ -61,7 +61,7 @@ pub enum Reg32 {
 impl Reg32 {
     /// Get the [Reg32] corresponding to the given nibble, panicking if the nibble does not
     /// correspond to any variant.
-    pub fn from_nibble(nibble: u8) -> Reg32 {
+    pub fn from_nib(nibble: u8) -> Reg32 {
         match nibble {
             0x0 => BC,
             0x1 => DE,
@@ -111,7 +111,7 @@ pub enum Reg8 {
 impl Reg8 {
     /// Get the [Reg8] corresponding to the given nibble, panicking if the nibble does not
     /// correspond to any variant.
-    pub fn from_nibble(nibble: u8) -> Reg8 {
+    pub fn from_nib(nibble: u8) -> Reg8 {
         match nibble {
             0x0 => A1,
             0x1 => A0,
