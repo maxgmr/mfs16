@@ -85,18 +85,27 @@ pub enum Instruction {
     /// 0x10ab - ADD ra,rb
     /// Add rb to ra.
     /// ra += rb
-    /// FLAGS: Z,C,O,P,N
     AddRaRb(Reg16, Reg16),
     /// 0x10(a+7)(b+7) - ADD bra,brb
     /// Add brb to bra. 32-bit addition.
     /// bra += brb
-    /// FLAGS: Z,C,O,P,N
     AddBraBrb(Reg32, Reg32),
     /// 0x11ab - ADD vra,vrb
     /// Add vrb to vra. 8-bit addition.
     /// vra += vrb
-    /// FLAGS: Z,C,O,P,N
     AddVraVrb(Reg8, Reg8),
+    /// 0x12ab - ADC ra,rb
+    /// Add rb and the carry flag to ra.
+    /// ra += rb
+    AdcRaRb(Reg16, Reg16),
+    /// 0x12(a+7)(b+7) - ADC bra,brb
+    /// Add brb and the carry flag to bra. 32-bit addition.
+    /// bra += brb
+    AdcBraBrb(Reg32, Reg32),
+    /// 0x13ab - ADC vra,vrb
+    /// Add vrb and the carry flag to vra. 8-bit addition.
+    /// vra += vrb
+    AdcVraVrb(Reg8, Reg8),
 }
 impl Instruction {
     /// Get the [Instruction] from the given opcode.
@@ -141,6 +150,14 @@ impl Instruction {
                 Reg32::from_nib(brb - reg_nib_offset),
             ),
             (0x1, 0x1, vra, vrb) => AddVraVrb(Reg8::from_nib(vra), Reg8::from_nib(vrb)),
+            (0x1, 0x2, ra, rb) if ra < reg_nib_offset && rb < reg_nib_offset => {
+                AdcRaRb(Reg16::from_nib(ra), Reg16::from_nib(rb))
+            }
+            (0x1, 0x2, bra, brb) => AdcBraBrb(
+                Reg32::from_nib(bra - reg_nib_offset),
+                Reg32::from_nib(brb - reg_nib_offset),
+            ),
+            (0x1, 0x3, vra, vrb) => AdcVraVrb(Reg8::from_nib(vra), Reg8::from_nib(vrb)),
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
@@ -167,6 +184,9 @@ impl Instruction {
             AddRaRb(..) => 2,
             AddVraVrb(..) => 2,
             AddBraBrb(..) => 2,
+            AdcRaRb(..) => 2,
+            AdcBraBrb(..) => 2,
+            AdcVraVrb(..) => 2,
         }
     }
 }
@@ -196,6 +216,9 @@ impl Display for Instruction {
                 AddRaRb(ra, rb) => format!("ADD {ra},{rb}"),
                 AddBraBrb(bra, brb) => format!("ADD {bra},{brb}"),
                 AddVraVrb(vra, vrb) => format!("ADD {vra},{vrb}"),
+                AdcRaRb(ra, rb) => format!("ADC {ra},{rb}"),
+                AdcBraBrb(bra, brb) => format!("ADC {bra},{brb}"),
+                AdcVraVrb(vra, vrb) => format!("ADC {vra},{vrb}"),
             }
         )
     }
@@ -224,6 +247,9 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         AddRaRb(ra, rb) => add_ra_rb(cpu, ra, rb),
         AddBraBrb(bra, brb) => add_bra_brb(cpu, bra, brb),
         AddVraVrb(vra, vrb) => add_vra_vrb(cpu, vra, vrb),
+        AdcRaRb(ra, rb) => adc_ra_rb(cpu, ra, rb),
+        AdcBraBrb(bra, brb) => adc_bra_brb(cpu, bra, brb),
+        AdcVraVrb(vra, vrb) => adc_vra_vrb(cpu, vra, vrb),
     }
 }
 
@@ -400,6 +426,36 @@ fn add_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
     match cpu.step_num {
         1 => {
             let result = alu_add8(cpu, vra, vrb, false);
+            cpu.set_vreg(vra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn adc_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
+    match cpu.step_num {
+        1 => {
+            let result = alu_add16(cpu, ra, rb, true);
+            cpu.set_reg(ra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn adc_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32) {
+    match cpu.step_num {
+        1 => {
+            let result = alu_add32(cpu, bra, brb, true);
+            cpu.set_breg(bra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn adc_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
+    match cpu.step_num {
+        1 => {
+            let result = alu_add8(cpu, vra, vrb, true);
             cpu.set_vreg(vra, result);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),

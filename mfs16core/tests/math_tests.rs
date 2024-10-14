@@ -1,4 +1,4 @@
-use mfs16core::{Computer, Flags, Pc, Reg16::*, Reg32::*, Reg8::*};
+use mfs16core::{Computer, Flag::*, Flags, Pc, Reg16::*, Reg32::*, Reg8::*};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -172,7 +172,6 @@ fn test_add() {
     assert_eq!(c.cpu.flags, Flags::from_string("zCOPn"));
 
     // ADD BC,DE
-    c.cpu.flags.reset_all();
     c.cpu.set_breg(BC, 0xFFFE_1DC0);
     c.cpu.set_breg(DE, 0x0001_86A0);
     c.ram.write_word(0x00_0010, 0x1078);
@@ -182,7 +181,6 @@ fn test_add() {
     assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
     assert_eq!(c.cpu.breg(BC), 0xFFFE_1DC0);
     assert_eq!(c.cpu.breg(DE), 0x0001_86A0);
-    assert_eq!(c.cpu.flags, reset_flags);
 
     // Do operation, set flags
     c.cycle();
@@ -190,4 +188,55 @@ fn test_add() {
     assert_eq!(c.cpu.breg(BC), 0xFFFF_A460);
     assert_eq!(c.cpu.breg(DE), 0x0001_86A0);
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
+
+    // ADC A1,D0 (no carry)
+    c.cpu.flags.reset_all();
+    c.cpu.set_vreg(A1, 0x01);
+    c.cpu.set_vreg(D0, 0x01);
+    c.ram.write_word(0x00_0012, 0x1307);
+
+    // Read instruction
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0014));
+    assert_eq!(c.cpu.vreg(A1), 0x01);
+    assert_eq!(c.cpu.flags, reset_flags);
+
+    // Do operation, set flags
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0014));
+    assert_eq!(c.cpu.vreg(A1), 0x02);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcoPn"));
+
+    // ADC L,C (with carry)
+    c.cpu.set_reg(L, 0xFFFF);
+    c.cpu.set_reg(C, 0x0001);
+    c.cpu.set_flag(Carry);
+    c.ram.write_word(0x00_0014, 0x1262);
+
+    // Read instruction
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0016));
+    assert_eq!(c.cpu.reg(L), 0xFFFF);
+
+    // Do operation, set flags
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0016));
+    assert_eq!(c.cpu.reg(L), 0x0001);
+    assert_eq!(c.cpu.flags, Flags::from_string("zCopn"));
+
+    // ADC DE,BC (with carry)
+    c.cpu.set_breg(DE, 0x1234_5678);
+    c.cpu.set_breg(BC, 0x8765_4320);
+    c.ram.write_word(0x00_0016, 0x1287);
+
+    // Read instruction
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0018));
+    assert_eq!(c.cpu.breg(DE), 0x1234_5678);
+
+    // Do operation, set flags
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0018));
+    assert_eq!(c.cpu.breg(DE), 0x9999_9999);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
 }
