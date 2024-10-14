@@ -5,10 +5,12 @@
 //! m = memory address, imm{n} = n-bit immediate value
 use std::fmt::Display;
 
+mod alu;
 mod helpers;
 
 use super::{Cpu, Ram};
 use crate::{Reg16, Reg32, Reg8};
+use alu::{AluOp::*, *};
 use helpers::*;
 use Instruction::*;
 
@@ -106,6 +108,30 @@ pub enum Instruction {
     /// Add vrb and the carry flag to vra. 8-bit addition.
     /// vra += vrb
     AdcVraVrb(Reg8, Reg8),
+    /// 0x14ab - SUB ra,rb
+    /// Subtract rb from ra.
+    /// ra -= rb
+    SubRaRb(Reg16, Reg16),
+    /// 0x14(a+7)(b+7) - SUB bra,brb
+    /// Subtract brb from bra. 32-bit subtraction.
+    /// bra -= brb
+    SubBraBrb(Reg32, Reg32),
+    /// 0x15ab - SUB vra,vrb
+    /// Subtract vrb from vra. 8-bit subtraction.
+    /// vra -= vrb
+    SubVraVrb(Reg8, Reg8),
+    /// 0x16ab - SBB ra,rb
+    /// Subtract rb and the carry flag from ra.
+    /// ra -= rb
+    SbbRaRb(Reg16, Reg16),
+    /// 0x16(a+7)(b+7) - SBB bra,brb
+    /// Subtract brb and the carry flag from bra. 32-bit subtraction.
+    /// bra -= brb
+    SbbBraBrb(Reg32, Reg32),
+    /// 0x17ab - SBB vra,vrb
+    /// Subtract vrb and the carry flag from vra. 8-bit subtraction.
+    /// vra -= vrb
+    SbbVraVrb(Reg8, Reg8),
 }
 impl Instruction {
     /// Get the [Instruction] from the given opcode.
@@ -158,6 +184,23 @@ impl Instruction {
                 Reg32::from_nib(brb - reg_nib_offset),
             ),
             (0x1, 0x3, vra, vrb) => AdcVraVrb(Reg8::from_nib(vra), Reg8::from_nib(vrb)),
+            (0x1, 0x4, ra, rb) if ra < reg_nib_offset && rb < reg_nib_offset => {
+                SubRaRb(Reg16::from_nib(ra), Reg16::from_nib(rb))
+            }
+            (0x1, 0x4, bra, brb) => SubBraBrb(
+                Reg32::from_nib(bra - reg_nib_offset),
+                Reg32::from_nib(brb - reg_nib_offset),
+            ),
+            (0x1, 0x5, vra, vrb) => SubVraVrb(Reg8::from_nib(vra), Reg8::from_nib(vrb)),
+            (0x1, 0x6, ra, rb) if ra < reg_nib_offset && rb < reg_nib_offset => {
+                SbbRaRb(Reg16::from_nib(ra), Reg16::from_nib(rb))
+            }
+            (0x1, 0x6, bra, brb) => SbbBraBrb(
+                Reg32::from_nib(bra - reg_nib_offset),
+                Reg32::from_nib(brb - reg_nib_offset),
+            ),
+            (0x1, 0x7, vra, vrb) => SbbVraVrb(Reg8::from_nib(vra), Reg8::from_nib(vrb)),
+
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
@@ -187,6 +230,12 @@ impl Instruction {
             AdcRaRb(..) => 2,
             AdcBraBrb(..) => 2,
             AdcVraVrb(..) => 2,
+            SubRaRb(..) => 2,
+            SubVraVrb(..) => 2,
+            SubBraBrb(..) => 2,
+            SbbRaRb(..) => 2,
+            SbbBraBrb(..) => 2,
+            SbbVraVrb(..) => 2,
         }
     }
 }
@@ -219,6 +268,12 @@ impl Display for Instruction {
                 AdcRaRb(ra, rb) => format!("ADC {ra},{rb}"),
                 AdcBraBrb(bra, brb) => format!("ADC {bra},{brb}"),
                 AdcVraVrb(vra, vrb) => format!("ADC {vra},{vrb}"),
+                SubRaRb(ra, rb) => format!("SUB {ra},{rb}"),
+                SubBraBrb(bra, brb) => format!("SUB {bra},{brb}"),
+                SubVraVrb(vra, vrb) => format!("SUB {vra},{vrb}"),
+                SbbRaRb(ra, rb) => format!("SBB {ra},{rb}"),
+                SbbBraBrb(bra, brb) => format!("SBB {bra},{brb}"),
+                SbbVraVrb(vra, vrb) => format!("SBB {vra},{vrb}"),
             }
         )
     }
@@ -250,6 +305,12 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         AdcRaRb(ra, rb) => adc_ra_rb(cpu, ra, rb),
         AdcBraBrb(bra, brb) => adc_bra_brb(cpu, bra, brb),
         AdcVraVrb(vra, vrb) => adc_vra_vrb(cpu, vra, vrb),
+        SubRaRb(ra, rb) => sub_ra_rb(cpu, ra, rb),
+        SubBraBrb(bra, brb) => sub_bra_brb(cpu, bra, brb),
+        SubVraVrb(vra, vrb) => sub_vra_vrb(cpu, vra, vrb),
+        SbbRaRb(ra, rb) => sbb_ra_rb(cpu, ra, rb),
+        SbbBraBrb(bra, brb) => sbb_bra_brb(cpu, bra, brb),
+        SbbVraVrb(vra, vrb) => sbb_vra_vrb(cpu, vra, vrb),
     }
 }
 
@@ -352,7 +413,7 @@ fn ld_bra_rb(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, rb: Reg16) {
 
 fn ld_ra_brb(cpu: &mut Cpu, ram: &mut Ram, ra: Reg16, brb: Reg32) {
     match cpu.step_num {
-        1 => cpu.update_last_word(ram.read_word(cpu.breg(brb))),
+        1 => cpu.read_word_at_addr(ram, cpu.breg(brb)),
         2 => cpu.set_reg(ra, cpu.last_word),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -363,7 +424,7 @@ fn ldi_bra_rb(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, rb: Reg16) {
         1 => cpu.update_last_word(cpu.reg(rb)),
         2 => {
             ram.write_word(cpu.breg(bra), cpu.last_word);
-            dbl_inc_br(cpu, bra);
+            dbl_inc_addr(cpu, bra);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -374,7 +435,7 @@ fn ldd_bra_rb(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, rb: Reg16) {
         1 => cpu.update_last_word(cpu.reg(rb)),
         2 => {
             ram.write_word(cpu.breg(bra), cpu.last_word);
-            dbl_dec_br(cpu, bra);
+            dbl_dec_addr(cpu, bra);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -382,10 +443,10 @@ fn ldd_bra_rb(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, rb: Reg16) {
 
 fn ldi_ra_brb(cpu: &mut Cpu, ram: &mut Ram, ra: Reg16, brb: Reg32) {
     match cpu.step_num {
-        1 => cpu.update_last_word(ram.read_word(cpu.breg(brb))),
+        1 => cpu.read_word_at_addr(ram, cpu.breg(brb)),
         2 => {
             cpu.set_reg(ra, cpu.last_word);
-            dbl_inc_br(cpu, brb);
+            dbl_inc_addr(cpu, brb);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -393,10 +454,10 @@ fn ldi_ra_brb(cpu: &mut Cpu, ram: &mut Ram, ra: Reg16, brb: Reg32) {
 
 fn ldd_ra_brb(cpu: &mut Cpu, ram: &mut Ram, ra: Reg16, brb: Reg32) {
     match cpu.step_num {
-        1 => cpu.update_last_word(ram.read_word(cpu.breg(brb))),
+        1 => cpu.read_word_at_addr(ram, cpu.breg(brb)),
         2 => {
             cpu.set_reg(ra, cpu.last_word);
-            dbl_dec_br(cpu, brb);
+            dbl_dec_addr(cpu, brb);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -405,7 +466,9 @@ fn ldd_ra_brb(cpu: &mut Cpu, ram: &mut Ram, ra: Reg16, brb: Reg32) {
 fn add_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
     match cpu.step_num {
         1 => {
-            let result = alu_add16(cpu, ra, rb, false);
+            let a = cpu.reg(ra);
+            let b = cpu.reg(rb);
+            let result = alu(cpu, Add, a, b);
             cpu.set_reg(ra, result);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
@@ -415,7 +478,9 @@ fn add_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
 fn add_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32) {
     match cpu.step_num {
         1 => {
-            let result = alu_add32(cpu, bra, brb, false);
+            let a = cpu.breg(bra);
+            let b = cpu.breg(brb);
+            let result = alu(cpu, Add, a, b);
             cpu.set_breg(bra, result);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
@@ -425,7 +490,9 @@ fn add_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32) {
 fn add_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
     match cpu.step_num {
         1 => {
-            let result = alu_add8(cpu, vra, vrb, false);
+            let a = cpu.vreg(vra);
+            let b = cpu.vreg(vrb);
+            let result = alu(cpu, Add, a, b);
             cpu.set_vreg(vra, result);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
@@ -435,7 +502,9 @@ fn add_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
 fn adc_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
     match cpu.step_num {
         1 => {
-            let result = alu_add16(cpu, ra, rb, true);
+            let a = cpu.reg(ra);
+            let b = cpu.reg(rb);
+            let result = alu(cpu, Adc, a, b);
             cpu.set_reg(ra, result);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
@@ -445,7 +514,9 @@ fn adc_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
 fn adc_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32) {
     match cpu.step_num {
         1 => {
-            let result = alu_add32(cpu, bra, brb, true);
+            let a = cpu.breg(bra);
+            let b = cpu.breg(brb);
+            let result = alu(cpu, Adc, a, b);
             cpu.set_breg(bra, result);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
@@ -455,7 +526,81 @@ fn adc_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32) {
 fn adc_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
     match cpu.step_num {
         1 => {
-            let result = alu_add8(cpu, vra, vrb, true);
+            let a = cpu.vreg(vra);
+            let b = cpu.vreg(vrb);
+            let result = alu(cpu, Adc, a, b);
+            cpu.set_vreg(vra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn sub_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.reg(ra);
+            let b = cpu.reg(rb);
+            let result = alu(cpu, Sub, a, b);
+            cpu.set_reg(ra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn sub_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.breg(bra);
+            let b = cpu.breg(brb);
+            let result = alu(cpu, Sub, a, b);
+            cpu.set_breg(bra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn sub_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.vreg(vra);
+            let b = cpu.vreg(vrb);
+            let result = alu(cpu, Sub, a, b);
+            cpu.set_vreg(vra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn sbb_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.reg(ra);
+            let b = cpu.reg(rb);
+            let result = alu(cpu, Sbb, a, b);
+            cpu.set_reg(ra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn sbb_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.breg(bra);
+            let b = cpu.breg(brb);
+            let result = alu(cpu, Sbb, a, b);
+            cpu.set_breg(bra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn sbb_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.vreg(vra);
+            let b = cpu.vreg(vrb);
+            let result = alu(cpu, Sbb, a, b);
             cpu.set_vreg(vra, result);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),

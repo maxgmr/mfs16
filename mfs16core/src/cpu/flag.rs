@@ -10,10 +10,10 @@ pub enum Flag {
     /// This flag is set iff the operation result is zero.
     Zero,
     /// The Carry flag.
-    /// This flag is set iff an arithmetic carry occurred during the operation.
+    /// This flag is set iff an arithmetic carry/borrow occurred during the operation.
     Carry,
     /// The Overflow flag.
-    /// This flag is set iff an arithmetic overflow/underflow occurred during the operation.
+    /// This flag is set iff an arithmetic overflow occurred during the operation.
     Overflow,
     /// The Parity flag.
     /// This flag is set iff the operation result is even.
