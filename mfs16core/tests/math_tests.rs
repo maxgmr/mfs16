@@ -239,4 +239,38 @@ fn test_add() {
     assert_eq!(c.cpu.pc, Pc::new(0x00_0018));
     assert_eq!(c.cpu.breg(DE), 0x9999_9999);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
+
+    // Test weird overflow + carry case with ADC H1,H0
+    // (Unsigned)       127 + 1 + 1 =  129 (No carry)
+    // (Signed)         127 + 1 + 1 = -127 (Overflow!)
+    c.cpu.flags.reset_all();
+    c.cpu.set_flag(Carry);
+    c.cpu.set_vreg(H1, 0b0111_1111);
+    c.cpu.set_vreg(H0, 0b0000_0001);
+    c.ram.write_word(0x00_0018, 0x13AB);
+
+    // Read instruction
+    c.cycle();
+
+    // Do operation, set flags
+    c.cycle();
+    assert_eq!(c.cpu.vreg(H1), 0b1000_0001);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcOpN"));
+
+    // Test weird overflow + carry case with ADC H0,H1
+    // (Unsigned)       1 + 127 + 1 =  129 (No carry)
+    // (Signed)         1 + 127 + 1 = -127 (Overflow!)
+    c.cpu.flags.reset_all();
+    c.cpu.set_flag(Carry);
+    c.cpu.set_vreg(H1, 0b0111_1111);
+    c.cpu.set_vreg(H0, 0b0000_0001);
+    c.ram.write_word(0x00_001A, 0x13BA);
+
+    // Read instruction
+    c.cycle();
+
+    // Do operation, set flags
+    c.cycle();
+    assert_eq!(c.cpu.vreg(H0), 0b1000_0001);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcOpN"));
 }
