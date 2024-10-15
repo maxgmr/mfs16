@@ -103,9 +103,9 @@ where
     let result = a.trait_wrapping_sub(b).trait_wrapping_sub(c);
 
     let lower_n_minus_1_bits = T::n_minus_1_mask();
-    let n_carry =
+    let n_carry = a < b.trait_wrapping_add(c);
+    let n_minus_1_carry =
         (a & lower_n_minus_1_bits).into() < (b & lower_n_minus_1_bits).into().trait_wrapping_add(c);
-    let n_minus_1_carry = a < b.trait_wrapping_add(c);
     set_add_sub_flags(cpu, n_minus_1_carry, n_carry, result);
 
     result
