@@ -396,6 +396,49 @@ fn test_add() {
     assert_eq!(c.cpu.pc, Pc::new(0x00_0036));
     assert_eq!(c.cpu.breg(BC), 0x0000_0000);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCoPn"));
+
+    // ADD L,[DE]
+    c.cpu.set_breg(DE, 0x0065_6565);
+    c.ram.write_word(0x65_6565, 0x1234);
+    c.cpu.set_reg(L, 0xFFFF);
+    c.ram.write_word(0x00_0036, 0x1961);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0038));
+    assert_eq!(c.cpu.reg(L), 0xFFFF);
+
+    // Read [HL]
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0038));
+    assert_eq!(c.cpu.reg(L), 0xFFFF);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0038));
+    assert_eq!(c.cpu.reg(L), 0x1233);
+    assert_eq!(c.cpu.flags, Flags::from_string("zCopn"));
+
+    // ADC L,[BC]
+    c.cpu.set_breg(BC, 0x004B_4B4B);
+    c.ram.write_word(0x004B_4B4B, 0x0000);
+    c.ram.write_word(0x00_0038, 0x1A60);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_003A));
+    assert_eq!(c.cpu.reg(L), 0x1233);
+
+    // Read [HL]
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_003A));
+    assert_eq!(c.cpu.reg(L), 0x1233);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_003A));
+    assert_eq!(c.cpu.reg(L), 0x1234);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcoPn"));
 }
 
 #[test]
@@ -666,5 +709,49 @@ fn test_sub() {
     c.cycle();
     assert_eq!(c.cpu.pc, Pc::new(0x00_002A));
     assert_eq!(c.cpu.breg(HL), 0x6666_6665);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
+
+    // SUB L,[DE]
+    c.cpu.set_flag(Carry);
+    c.cpu.set_breg(DE, 0x0065_6565);
+    c.ram.write_word(0x65_6565, 0x0124);
+    c.cpu.set_reg(L, 0x8123);
+    c.ram.write_word(0x00_002A, 0x1B61);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_002C));
+    assert_eq!(c.cpu.reg(L), 0x8123);
+
+    // Read [HL]
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_002C));
+    assert_eq!(c.cpu.reg(L), 0x8123);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_002C));
+    assert_eq!(c.cpu.reg(L), 0x7FFF);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcOpn"));
+
+    // ADC L,[BC]
+    c.cpu.set_breg(BC, 0x004B_4B4B);
+    c.ram.write_word(0x004B_4B4B, 0x0000);
+    c.ram.write_word(0x00_002C, 0x1C60);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_002E));
+    assert_eq!(c.cpu.reg(L), 0x7FFF);
+
+    // Read [HL]
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_002E));
+    assert_eq!(c.cpu.reg(L), 0x7FFF);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_002E));
+    assert_eq!(c.cpu.reg(L), 0x7FFF);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 }

@@ -180,6 +180,22 @@ pub enum Instruction {
     /// Subtract the 8-bit immediate value + the carry flag from vra.
     /// vra -= imm8 + C
     SbbVraImm8(Reg8),
+    /// 0x19ab - ADD ra,[brb]
+    /// Add [brb] to ra.
+    /// ra += [brb]
+    AddRaBrb(Reg16, Reg32),
+    /// 0x1Aab - ADC ra,[brb]
+    /// Add [brb] + the carry flag to ra.
+    /// ra += [brb] + C
+    AdcRaBrb(Reg16, Reg32),
+    /// 0x1Bab - SUB ra,[brb]
+    /// Subtract [brb] from ra.
+    /// ra -= brb
+    SubRaBrb(Reg16, Reg32),
+    // 0x1Cab - SBB ra,[brb]
+    // Subtract [brb] + the carry flag from ra.
+    // ra -= [brb] + C
+    SbbRaBrb(Reg16, Reg32),
 }
 impl Instruction {
     /// Get the [Instruction] from the given opcode.
@@ -260,6 +276,10 @@ impl Instruction {
             (0x1, 0x8, 0x9, bra) => SbbBraImm32(Reg32::from_nib(bra)),
             (0x1, 0x8, 0xA, vra) => SubVraImm8(Reg8::from_nib(vra)),
             (0x1, 0x8, 0xB, vra) => SbbVraImm8(Reg8::from_nib(vra)),
+            (0x1, 0x9, ra, brb) => AddRaBrb(Reg16::from_nib(ra), Reg32::from_nib(brb)),
+            (0x1, 0xA, ra, brb) => AdcRaBrb(Reg16::from_nib(ra), Reg32::from_nib(brb)),
+            (0x1, 0xB, ra, brb) => SubRaBrb(Reg16::from_nib(ra), Reg32::from_nib(brb)),
+            (0x1, 0xC, ra, brb) => SbbRaBrb(Reg16::from_nib(ra), Reg32::from_nib(brb)),
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
@@ -307,6 +327,10 @@ impl Instruction {
             SbbBraImm32(..) => 4,
             SubVraImm8(..) => 3,
             SbbVraImm8(..) => 3,
+            AddRaBrb(..) => 3,
+            AdcRaBrb(..) => 3,
+            SubRaBrb(..) => 3,
+            SbbRaBrb(..) => 3,
         }
     }
 }
@@ -357,6 +381,10 @@ impl Display for Instruction {
                 SbbBraImm32(bra) => format!("SBB {bra},imm32"),
                 SubVraImm8(vra) => format!("SUB {vra},imm8"),
                 SbbVraImm8(vra) => format!("SBB {vra},imm8"),
+                AddRaBrb(ra, brb) => format!("ADD {ra}[{brb}]"),
+                AdcRaBrb(ra, brb) => format!("ADC {ra}[{brb}]"),
+                SubRaBrb(ra, brb) => format!("SUB {ra}[{brb}]"),
+                SbbRaBrb(ra, brb) => format!("SBB {ra}[{brb}]"),
             }
         )
     }
@@ -406,6 +434,10 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         SbbBraImm32(bra) => sbb_bra_imm32(cpu, ram, bra),
         SubVraImm8(vra) => sub_vra_imm8(cpu, ram, vra),
         SbbVraImm8(vra) => sbb_vra_imm8(cpu, ram, vra),
+        AddRaBrb(ra, brb) => add_ra_brb(cpu, ram, ra, brb),
+        AdcRaBrb(ra, brb) => adc_ra_brb(cpu, ram, ra, brb),
+        SubRaBrb(ra, brb) => sub_ra_brb(cpu, ram, ra, brb),
+        SbbRaBrb(ra, brb) => sbb_ra_brb(cpu, ram, ra, brb),
     }
 }
 
@@ -857,6 +889,58 @@ fn sbb_vra_imm8(cpu: &mut Cpu, ram: &Ram, vra: Reg8) {
             let b = cpu.last_byte;
             let result = alu(cpu, Sbb, a, b);
             cpu.set_vreg(vra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn add_ra_brb(cpu: &mut Cpu, ram: &Ram, ra: Reg16, brb: Reg32) {
+    match cpu.step_num {
+        1 => cpu.read_word_at_addr(ram, cpu.breg(brb)),
+        2 => {
+            let a = cpu.reg(ra);
+            let b = cpu.last_word;
+            let result = alu(cpu, Add, a, b);
+            cpu.set_reg(ra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn adc_ra_brb(cpu: &mut Cpu, ram: &Ram, ra: Reg16, brb: Reg32) {
+    match cpu.step_num {
+        1 => cpu.read_word_at_addr(ram, cpu.breg(brb)),
+        2 => {
+            let a = cpu.reg(ra);
+            let b = cpu.last_word;
+            let result = alu(cpu, Adc, a, b);
+            cpu.set_reg(ra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn sub_ra_brb(cpu: &mut Cpu, ram: &Ram, ra: Reg16, brb: Reg32) {
+    match cpu.step_num {
+        1 => cpu.read_word_at_addr(ram, cpu.breg(brb)),
+        2 => {
+            let a = cpu.reg(ra);
+            let b = cpu.last_word;
+            let result = alu(cpu, Sub, a, b);
+            cpu.set_reg(ra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn sbb_ra_brb(cpu: &mut Cpu, ram: &Ram, ra: Reg16, brb: Reg32) {
+    match cpu.step_num {
+        1 => cpu.read_word_at_addr(ram, cpu.breg(brb)),
+        2 => {
+            let a = cpu.reg(ra);
+            let b = cpu.last_word;
+            let result = alu(cpu, Sbb, a, b);
+            cpu.set_reg(ra, result);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
