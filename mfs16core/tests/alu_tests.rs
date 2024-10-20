@@ -755,3 +755,65 @@ fn test_sub() {
     assert_eq!(c.cpu.reg(L), 0x7FFF);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 }
+
+#[test]
+fn test_tcp() {
+    let mut c = Computer::default();
+    c.cpu.flags.reset_all();
+
+    // TCP E
+    c.cpu.set_reg(E, 0xFFFF);
+    c.ram.write_word(0x00_0000, 0x1D04);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.reg(E), 0xFFFF);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.reg(E), 0x0001);
+    assert_eq!(c.cpu.flags, Flags::from_string("zCopn"));
+
+    // TCP BC
+    c.cpu.set_breg(BC, 0xEDCB_A988);
+    c.ram.write_word(0x00_0002, 0x1D10);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.breg(BC), 0xEDCB_A988);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.breg(BC), 0x1234_5678);
+    assert_eq!(c.cpu.flags, Flags::from_string("zCoPn"));
+
+    // TCP D1
+    c.cpu.set_vreg(D1, 0x01);
+    c.ram.write_word(0x00_0004, 0x1D26);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.vreg(D1), 0x01);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.vreg(D1), 0xFF);
+    assert_eq!(c.cpu.flags, Flags::from_string("zCopN"));
+
+    // TCP D0 where D0 == 0
+    c.cpu.set_vreg(D0, 0x00);
+    c.ram.write_word(0x00_0006, 0x1D27);
+
+    // Read instr + do operation
+    c.cycle();
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.vreg(D0), 0x00);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
+}

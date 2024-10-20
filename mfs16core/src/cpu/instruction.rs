@@ -196,6 +196,18 @@ pub enum Instruction {
     // Subtract [brb] + the carry flag from ra.
     // ra -= [brb] + C
     SbbRaBrb(Reg16, Reg32),
+    // 0x1D0a - TCP ra
+    // Two's complement ra. Set Carry = 0 iff ra == 0.
+    // ra = -ra
+    TcpRa(Reg16),
+    // 0x1D1a - TCP bra
+    // Two's complement bra. Set Carry = 0 iff bra == 0.
+    // bra = -bra
+    TcpBra(Reg32),
+    // 0x1D2a - TCP vra
+    // Two's complement vra. Set Carry = 0 iff vra == 0.
+    // vra = -vra
+    TcpVra(Reg8),
 }
 impl Instruction {
     /// Get the [Instruction] from the given opcode.
@@ -280,6 +292,9 @@ impl Instruction {
             (0x1, 0xA, ra, brb) => AdcRaBrb(Reg16::from_nib(ra), Reg32::from_nib(brb)),
             (0x1, 0xB, ra, brb) => SubRaBrb(Reg16::from_nib(ra), Reg32::from_nib(brb)),
             (0x1, 0xC, ra, brb) => SbbRaBrb(Reg16::from_nib(ra), Reg32::from_nib(brb)),
+            (0x1, 0xD, 0x0, ra) => TcpRa(Reg16::from_nib(ra)),
+            (0x1, 0xD, 0x1, bra) => TcpBra(Reg32::from_nib(bra)),
+            (0x1, 0xD, 0x2, vra) => TcpVra(Reg8::from_nib(vra)),
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
@@ -331,6 +346,9 @@ impl Instruction {
             AdcRaBrb(..) => 3,
             SubRaBrb(..) => 3,
             SbbRaBrb(..) => 3,
+            TcpRa(..) => 2,
+            TcpBra(..) => 2,
+            TcpVra(..) => 2,
         }
     }
 }
@@ -385,6 +403,9 @@ impl Display for Instruction {
                 AdcRaBrb(ra, brb) => format!("ADC {ra}[{brb}]"),
                 SubRaBrb(ra, brb) => format!("SUB {ra}[{brb}]"),
                 SbbRaBrb(ra, brb) => format!("SBB {ra}[{brb}]"),
+                TcpRa(ra) => format!("TCP {ra}"),
+                TcpBra(bra) => format!("TCP {bra}"),
+                TcpVra(vra) => format!("TCP {vra}"),
             }
         )
     }
@@ -438,6 +459,9 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         AdcRaBrb(ra, brb) => adc_ra_brb(cpu, ram, ra, brb),
         SubRaBrb(ra, brb) => sub_ra_brb(cpu, ram, ra, brb),
         SbbRaBrb(ra, brb) => sbb_ra_brb(cpu, ram, ra, brb),
+        TcpRa(ra) => tcp_ra(cpu, ra),
+        TcpBra(bra) => tcp_bra(cpu, bra),
+        TcpVra(vra) => tcp_vra(cpu, vra),
     }
 }
 
@@ -941,6 +965,39 @@ fn sbb_ra_brb(cpu: &mut Cpu, ram: &Ram, ra: Reg16, brb: Reg32) {
             let b = cpu.last_word;
             let result = alu(cpu, Sbb, a, b);
             cpu.set_reg(ra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn tcp_ra(cpu: &mut Cpu, ra: Reg16) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.reg(ra);
+            let result = alu(cpu, Tcp, a, 0);
+            cpu.set_reg(ra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn tcp_bra(cpu: &mut Cpu, bra: Reg32) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.breg(bra);
+            let result = alu(cpu, Tcp, a, 0);
+            cpu.set_breg(bra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn tcp_vra(cpu: &mut Cpu, vra: Reg8) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.vreg(vra);
+            let result = alu(cpu, Tcp, a, 0);
+            cpu.set_vreg(vra, result);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }

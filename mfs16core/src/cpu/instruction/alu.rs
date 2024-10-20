@@ -17,6 +17,7 @@ pub enum AluOp {
     Adc,
     Sub,
     Sbb,
+    Tcp,
 }
 
 /// ALU function. Take two integer operands and the operation as input. Produce the integer result
@@ -45,6 +46,7 @@ where
         Adc => alu_add(cpu, a, b, true),
         Sub => alu_sub(cpu, a, b, false),
         Sbb => alu_sub(cpu, a, b, true),
+        Tcp => alu_tcp(cpu, a),
     }
 }
 
@@ -108,6 +110,26 @@ where
         (a & lower_n_minus_1_bits).into() < (b & lower_n_minus_1_bits).into().trait_wrapping_add(c);
     set_add_sub_flags(cpu, n_minus_1_carry, n_carry, result);
 
+    result
+}
+
+fn alu_tcp<T>(cpu: &mut Cpu, a: T) -> T
+where
+    T: Zeroable
+        + Oneable
+        + Msb
+        + Copy
+        + PartialEq
+        + PartialOrd
+        + Ord
+        + BitAnd
+        + WrappingSub
+        + WrappingAdd
+        + NMinus1Mask,
+    <T as BitAnd>::Output: PartialEq<T> + Into<T>,
+{
+    let result = alu_sub(cpu, <T>::zero(), a, false);
+    cpu.flags.change_flag(Carry, a != <T>::zero());
     result
 }
 
