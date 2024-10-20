@@ -98,15 +98,15 @@ pub enum Instruction {
     AddVraVrb(Reg8, Reg8),
     /// 0x12ab - ADC ra,rb
     /// Add rb and the carry flag to ra.
-    /// ra += rb
+    /// ra += rb + C
     AdcRaRb(Reg16, Reg16),
     /// 0x12(a+7)(b+7) - ADC bra,brb
     /// Add brb and the carry flag to bra. 32-bit addition.
-    /// bra += brb
+    /// bra += brb + C
     AdcBraBrb(Reg32, Reg32),
     /// 0x13ab - ADC vra,vrb
     /// Add vrb and the carry flag to vra. 8-bit addition.
-    /// vra += vrb
+    /// vra += vrb + C
     AdcVraVrb(Reg8, Reg8),
     /// 0x14ab - SUB ra,rb
     /// Subtract rb from ra.
@@ -122,16 +122,64 @@ pub enum Instruction {
     SubVraVrb(Reg8, Reg8),
     /// 0x16ab - SBB ra,rb
     /// Subtract rb and the carry flag from ra.
-    /// ra -= rb
+    /// ra -= rb + C
     SbbRaRb(Reg16, Reg16),
     /// 0x16(a+7)(b+7) - SBB bra,brb
     /// Subtract brb and the carry flag from bra. 32-bit subtraction.
-    /// bra -= brb
+    /// bra -= brb + C
     SbbBraBrb(Reg32, Reg32),
     /// 0x17ab - SBB vra,vrb
     /// Subtract vrb and the carry flag from vra. 8-bit subtraction.
-    /// vra -= vrb
+    /// vra -= vrb + C
     SbbVraVrb(Reg8, Reg8),
+    /// 0x180a - ADD ra,imm16
+    /// Add the 16-bit immediate value to ra.
+    /// ra += imm16
+    AddRaImm16(Reg16),
+    /// 0x181a - ADC ra,imm16
+    /// Add the 16-bit immediate value + the carry flag to ra.
+    /// ra += imm16 + C
+    AdcRaImm16(Reg16),
+    /// 0x182a - ADD bra,imm32
+    /// Add the 32-bit immediate value to bra.
+    /// bra += imm32
+    AddBraImm32(Reg32),
+    /// 0x183a - ADC bra,imm32
+    /// Add the 32-bit immediate value + the carry flag to bra.
+    /// bra += imm32 + C
+    AdcBraImm32(Reg32),
+    /// 0x184a - ADD vra,imm8
+    /// Add the 8-bit immediate value to vra.
+    /// vra += imm8
+    AddVraImm8(Reg8),
+    /// 0x185a - ADC vra,imm8
+    /// Add the 8-bit immediate value + the carry flag to vra.
+    /// vra += imm8 + C
+    AdcVraImm8(Reg8),
+    /// 0x186a - SUB ra,imm16
+    /// Subtract the 16-bit immediate value from ra.
+    /// ra -= imm16
+    SubRaImm16(Reg16),
+    /// 0x187a - SBB ra,imm16
+    /// Subtract the 16-bit immediate value + the carry flag from ra.
+    /// ra -= imm16 + C
+    SbbRaImm16(Reg16),
+    /// 0x188a - SUB bra,imm32
+    /// Subtract the 32-bit immediate value from bra.
+    /// bra -= imm32
+    SubBraImm32(Reg32),
+    /// 0x189a - SBB bra, imm32
+    /// Subtract the 32-bit immediate value + the carry flag from bra.
+    /// bra -= imm32 + C
+    SbbBraImm32(Reg32),
+    /// 0x18Aa - SUB vra,imm8
+    /// Subtract the 8-bit immediate value from vra.
+    /// vra -= imm8
+    SubVraImm8(Reg8),
+    /// 0x18Ba - SBB vra,imm8
+    /// Subtract the 8-bit immediate value + the carry flag from vra.
+    /// vra -= imm8 + C
+    SbbVraImm8(Reg8),
 }
 impl Instruction {
     /// Get the [Instruction] from the given opcode.
@@ -200,7 +248,18 @@ impl Instruction {
                 Reg32::from_nib(brb - reg_nib_offset),
             ),
             (0x1, 0x7, vra, vrb) => SbbVraVrb(Reg8::from_nib(vra), Reg8::from_nib(vrb)),
-
+            (0x1, 0x8, 0x0, ra) => AddRaImm16(Reg16::from_nib(ra)),
+            (0x1, 0x8, 0x1, ra) => AdcRaImm16(Reg16::from_nib(ra)),
+            (0x1, 0x8, 0x2, bra) => AddBraImm32(Reg32::from_nib(bra)),
+            (0x1, 0x8, 0x3, bra) => AdcBraImm32(Reg32::from_nib(bra)),
+            (0x1, 0x8, 0x4, vra) => AddVraImm8(Reg8::from_nib(vra)),
+            (0x1, 0x8, 0x5, vra) => AdcVraImm8(Reg8::from_nib(vra)),
+            (0x1, 0x8, 0x6, ra) => SubRaImm16(Reg16::from_nib(ra)),
+            (0x1, 0x8, 0x7, ra) => SbbRaImm16(Reg16::from_nib(ra)),
+            (0x1, 0x8, 0x8, bra) => SubBraImm32(Reg32::from_nib(bra)),
+            (0x1, 0x8, 0x9, bra) => SbbBraImm32(Reg32::from_nib(bra)),
+            (0x1, 0x8, 0xA, vra) => SubVraImm8(Reg8::from_nib(vra)),
+            (0x1, 0x8, 0xB, vra) => SbbVraImm8(Reg8::from_nib(vra)),
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
@@ -236,6 +295,18 @@ impl Instruction {
             SbbRaRb(..) => 2,
             SbbBraBrb(..) => 2,
             SbbVraVrb(..) => 2,
+            AddRaImm16(..) => 3,
+            AdcRaImm16(..) => 3,
+            AddBraImm32(..) => 4,
+            AdcBraImm32(..) => 4,
+            AddVraImm8(..) => 3,
+            AdcVraImm8(..) => 3,
+            SubRaImm16(..) => 3,
+            SbbRaImm16(..) => 3,
+            SubBraImm32(..) => 4,
+            SbbBraImm32(..) => 4,
+            SubVraImm8(..) => 3,
+            SbbVraImm8(..) => 3,
         }
     }
 }
@@ -274,6 +345,18 @@ impl Display for Instruction {
                 SbbRaRb(ra, rb) => format!("SBB {ra},{rb}"),
                 SbbBraBrb(bra, brb) => format!("SBB {bra},{brb}"),
                 SbbVraVrb(vra, vrb) => format!("SBB {vra},{vrb}"),
+                AddRaImm16(ra) => format!("ADD {ra},imm16"),
+                AdcRaImm16(ra) => format!("ADC {ra},imm16"),
+                AddBraImm32(bra) => format!("ADD {bra},imm32"),
+                AdcBraImm32(bra) => format!("ADC {bra},imm32"),
+                AddVraImm8(vra) => format!("ADD {vra},imm8"),
+                AdcVraImm8(vra) => format!("ADC {vra},imm8"),
+                SubRaImm16(ra) => format!("SUB {ra},imm16"),
+                SbbRaImm16(ra) => format!("SBB {ra},imm16"),
+                SubBraImm32(bra) => format!("SUB {bra},imm32"),
+                SbbBraImm32(bra) => format!("SBB {bra},imm32"),
+                SubVraImm8(vra) => format!("SUB {vra},imm8"),
+                SbbVraImm8(vra) => format!("SBB {vra},imm8"),
             }
         )
     }
@@ -311,6 +394,18 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         SbbRaRb(ra, rb) => sbb_ra_rb(cpu, ra, rb),
         SbbBraBrb(bra, brb) => sbb_bra_brb(cpu, bra, brb),
         SbbVraVrb(vra, vrb) => sbb_vra_vrb(cpu, vra, vrb),
+        AddRaImm16(ra) => add_ra_imm16(cpu, ram, ra),
+        AdcRaImm16(ra) => adc_ra_imm16(cpu, ram, ra),
+        AddBraImm32(bra) => add_bra_imm32(cpu, ram, bra),
+        AdcBraImm32(bra) => adc_bra_imm32(cpu, ram, bra),
+        AddVraImm8(vra) => add_vra_imm8(cpu, ram, vra),
+        AdcVraImm8(vra) => adc_vra_imm8(cpu, ram, vra),
+        SubRaImm16(ra) => sub_ra_imm16(cpu, ram, ra),
+        SbbRaImm16(ra) => sbb_ra_imm16(cpu, ram, ra),
+        SubBraImm32(bra) => sub_bra_imm32(cpu, ram, bra),
+        SbbBraImm32(bra) => sbb_bra_imm32(cpu, ram, bra),
+        SubVraImm8(vra) => sub_vra_imm8(cpu, ram, vra),
+        SbbVraImm8(vra) => sbb_vra_imm8(cpu, ram, vra),
     }
 }
 
@@ -600,6 +695,166 @@ fn sbb_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
         1 => {
             let a = cpu.vreg(vra);
             let b = cpu.vreg(vrb);
+            let result = alu(cpu, Sbb, a, b);
+            cpu.set_vreg(vra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn add_ra_imm16(cpu: &mut Cpu, ram: &Ram, ra: Reg16) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => {
+            let a = cpu.reg(ra);
+            let b = cpu.last_word;
+            let result = alu(cpu, Add, a, b);
+            cpu.set_reg(ra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn adc_ra_imm16(cpu: &mut Cpu, ram: &Ram, ra: Reg16) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => {
+            let a = cpu.reg(ra);
+            let b = cpu.last_word;
+            let result = alu(cpu, Adc, a, b);
+            cpu.set_reg(ra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn add_bra_imm32(cpu: &mut Cpu, ram: &Ram, bra: Reg32) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => cpu.read_next_word(ram),
+        3 => {
+            let a = cpu.breg(bra);
+            let b = get_dword_from_last(cpu);
+            let result = alu(cpu, Add, a, b);
+            cpu.set_breg(bra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn adc_bra_imm32(cpu: &mut Cpu, ram: &Ram, bra: Reg32) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => cpu.read_next_word(ram),
+        3 => {
+            let a = cpu.breg(bra);
+            let b = get_dword_from_last(cpu);
+            let result = alu(cpu, Adc, a, b);
+            cpu.set_breg(bra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn add_vra_imm8(cpu: &mut Cpu, ram: &Ram, vra: Reg8) {
+    match cpu.step_num {
+        1 => cpu.read_next_byte(ram),
+        2 => {
+            let a = cpu.vreg(vra);
+            let b = cpu.last_byte;
+            let result = alu(cpu, Add, a, b);
+            cpu.set_vreg(vra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn adc_vra_imm8(cpu: &mut Cpu, ram: &Ram, vra: Reg8) {
+    match cpu.step_num {
+        1 => cpu.read_next_byte(ram),
+        2 => {
+            let a = cpu.vreg(vra);
+            let b = cpu.last_byte;
+            let result = alu(cpu, Adc, a, b);
+            cpu.set_vreg(vra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn sub_ra_imm16(cpu: &mut Cpu, ram: &Ram, ra: Reg16) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => {
+            let a = cpu.reg(ra);
+            let b = cpu.last_word;
+            let result = alu(cpu, Sub, a, b);
+            cpu.set_reg(ra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn sbb_ra_imm16(cpu: &mut Cpu, ram: &Ram, ra: Reg16) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => {
+            let a = cpu.reg(ra);
+            let b = cpu.last_word;
+            let result = alu(cpu, Sbb, a, b);
+            cpu.set_reg(ra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn sub_bra_imm32(cpu: &mut Cpu, ram: &Ram, bra: Reg32) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => cpu.read_next_word(ram),
+        3 => {
+            let a = cpu.breg(bra);
+            let b = get_dword_from_last(cpu);
+            let result = alu(cpu, Sub, a, b);
+            cpu.set_breg(bra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn sbb_bra_imm32(cpu: &mut Cpu, ram: &Ram, bra: Reg32) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => cpu.read_next_word(ram),
+        3 => {
+            let a = cpu.breg(bra);
+            let b = get_dword_from_last(cpu);
+            let result = alu(cpu, Sbb, a, b);
+            cpu.set_breg(bra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn sub_vra_imm8(cpu: &mut Cpu, ram: &Ram, vra: Reg8) {
+    match cpu.step_num {
+        1 => cpu.read_next_byte(ram),
+        2 => {
+            let a = cpu.vreg(vra);
+            let b = cpu.last_byte;
+            let result = alu(cpu, Sub, a, b);
+            cpu.set_vreg(vra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn sbb_vra_imm8(cpu: &mut Cpu, ram: &Ram, vra: Reg8) {
+    match cpu.step_num {
+        1 => cpu.read_next_byte(ram),
+        2 => {
+            let a = cpu.vreg(vra);
+            let b = cpu.last_byte;
             let result = alu(cpu, Sbb, a, b);
             cpu.set_vreg(vra, result);
         }

@@ -149,23 +149,6 @@ impl Cpu {
     fn read_word_at_addr(&mut self, ram: &Ram, addr: u32) {
         self.update_last_word(ram.read_word(addr));
     }
-
-    // /// Read a single byte from RAM before the program counter. Does not increment the program
-    // /// counter.
-    // fn read_prev_byte(&self, ram: &Ram) -> u8 {
-    //     let mut address = self.pc;
-    //     address.wrapping_dec();
-    //     ram.read_byte(address.into())
-    // }
-    //
-    // /// Read a single word from RAM before the program counter. Does not increment the program
-    // /// counter.
-    // fn read_prev_word(&self, ram: &Ram) -> u16 {
-    //     let mut address = self.pc;
-    //     address.wrapping_dec();
-    //     address.wrapping_dec();
-    //     ram.read_word(address.into())
-    // }
 }
 impl Default for Cpu {
     /// Default: Stack pointer at top of stack. Everything else initialised to 0/false.
