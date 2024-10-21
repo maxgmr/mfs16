@@ -208,6 +208,32 @@ pub enum Instruction {
     // Two's complement vra. Set Carry = 0 iff vra == 0.
     // vra = -vra
     TcpVra(Reg8),
+    // 0x1D3a - INC ra
+    // Increment ra. Does not affect the Carry, Overflow, and Negative flags.
+    // ra += 1
+    IncRa(Reg16),
+    // 0x1D4a - INC bra
+    // Increment bra. Does not affect the Carry, Overflow, and Negative flags.
+    // bra += 1
+    IncBra(Reg32),
+    // 0x1D5a - INC vra
+    // Increment vra. Does not affect the Carry, Overflow, and Negative flags.
+    // vra += 1
+    IncVra(Reg8),
+    // 0x1D6a - DEC ra
+    // Decrement ra. Does not affect the Carry, Overflow, and Negative flags.
+    // ra -= 1
+    DecRa(Reg16),
+    // 0x1D7a - DEC bra
+    // Decrement bra. Does not affect the Carry, Overflow, and Negative flags.
+    // bra -= 1
+    DecBra(Reg32),
+    // 0x1D8a - DEC vra
+    // Decrement vra. Does not affect the Carry, Overflow, and Negative flags.
+    // vra -= 1
+    DecVra(Reg8),
+    // TODO
+    // Read/write the state of a flag from/to a register.
 }
 impl Instruction {
     /// Get the [Instruction] from the given opcode.
@@ -295,6 +321,12 @@ impl Instruction {
             (0x1, 0xD, 0x0, ra) => TcpRa(Reg16::from_nib(ra)),
             (0x1, 0xD, 0x1, bra) => TcpBra(Reg32::from_nib(bra)),
             (0x1, 0xD, 0x2, vra) => TcpVra(Reg8::from_nib(vra)),
+            (0x1, 0xD, 0x3, ra) => IncRa(Reg16::from_nib(ra)),
+            (0x1, 0xD, 0x4, bra) => IncBra(Reg32::from_nib(bra)),
+            (0x1, 0xD, 0x5, vra) => IncVra(Reg8::from_nib(vra)),
+            (0x1, 0xD, 0x6, ra) => DecRa(Reg16::from_nib(ra)),
+            (0x1, 0xD, 0x7, bra) => DecBra(Reg32::from_nib(bra)),
+            (0x1, 0xD, 0x8, vra) => DecVra(Reg8::from_nib(vra)),
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
@@ -349,6 +381,12 @@ impl Instruction {
             TcpRa(..) => 2,
             TcpBra(..) => 2,
             TcpVra(..) => 2,
+            IncRa(..) => 2,
+            IncBra(..) => 2,
+            IncVra(..) => 2,
+            DecRa(..) => 2,
+            DecBra(..) => 2,
+            DecVra(..) => 2,
         }
     }
 }
@@ -406,6 +444,12 @@ impl Display for Instruction {
                 TcpRa(ra) => format!("TCP {ra}"),
                 TcpBra(bra) => format!("TCP {bra}"),
                 TcpVra(vra) => format!("TCP {vra}"),
+                IncRa(ra) => format!("INC {ra}"),
+                IncBra(bra) => format!("INC {bra}"),
+                IncVra(vra) => format!("INC {vra}"),
+                DecRa(ra) => format!("DEC {ra}"),
+                DecBra(bra) => format!("DEC {bra}"),
+                DecVra(vra) => format!("DEC {vra}"),
             }
         )
     }
@@ -462,6 +506,12 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         TcpRa(ra) => tcp_ra(cpu, ra),
         TcpBra(bra) => tcp_bra(cpu, bra),
         TcpVra(vra) => tcp_vra(cpu, vra),
+        IncRa(ra) => inc_ra(cpu, ra),
+        IncBra(bra) => inc_bra(cpu, bra),
+        IncVra(vra) => inc_vra(cpu, vra),
+        DecRa(ra) => dec_ra(cpu, ra),
+        DecBra(bra) => dec_bra(cpu, bra),
+        DecVra(vra) => dec_vra(cpu, vra),
     }
 }
 
@@ -997,6 +1047,72 @@ fn tcp_vra(cpu: &mut Cpu, vra: Reg8) {
         1 => {
             let a = cpu.vreg(vra);
             let result = alu(cpu, Tcp, a, 0);
+            cpu.set_vreg(vra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn inc_ra(cpu: &mut Cpu, ra: Reg16) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.reg(ra);
+            let result = alu(cpu, Inc, a, 0);
+            cpu.set_reg(ra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn inc_bra(cpu: &mut Cpu, bra: Reg32) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.breg(bra);
+            let result = alu(cpu, Inc, a, 0);
+            cpu.set_breg(bra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn inc_vra(cpu: &mut Cpu, vra: Reg8) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.vreg(vra);
+            let result = alu(cpu, Inc, a, 0);
+            cpu.set_vreg(vra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn dec_ra(cpu: &mut Cpu, ra: Reg16) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.reg(ra);
+            let result = alu(cpu, Dec, a, 0);
+            cpu.set_reg(ra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn dec_bra(cpu: &mut Cpu, bra: Reg32) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.breg(bra);
+            let result = alu(cpu, Dec, a, 0);
+            cpu.set_breg(bra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn dec_vra(cpu: &mut Cpu, vra: Reg8) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.vreg(vra);
+            let result = alu(cpu, Dec, a, 0);
             cpu.set_vreg(vra, result);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),

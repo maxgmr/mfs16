@@ -18,10 +18,14 @@ pub enum AluOp {
     Sub,
     Sbb,
     Tcp,
+    Inc,
+    Dec,
 }
 
 /// ALU function. Take two integer operands and the operation as input. Produce the integer result
 /// and set CPU flags accordingly.
+///
+/// Argument 'b' is ignored for single-operand operations.
 pub fn alu<T>(cpu: &mut Cpu, operation: AluOp, a: T, b: T) -> T
 where
     T: Zeroable
@@ -47,6 +51,8 @@ where
         Sub => alu_sub(cpu, a, b, false),
         Sbb => alu_sub(cpu, a, b, true),
         Tcp => alu_tcp(cpu, a),
+        Inc => alu_inc_dec(cpu, a, true),
+        Dec => alu_inc_dec(cpu, a, false),
     }
 }
 
@@ -130,6 +136,42 @@ where
 {
     let result = alu_sub(cpu, <T>::zero(), a, false);
     cpu.flags.change_flag(Carry, a != <T>::zero());
+    result
+}
+
+fn alu_inc_dec<T>(cpu: &mut Cpu, a: T, is_inc: bool) -> T
+where
+    T: Zeroable
+        + Oneable
+        + Msb
+        + Copy
+        + PartialEq
+        + PartialOrd
+        + Ord
+        + BitAnd
+        + WrappingAdd
+        + WrappingSub
+        + NMinus1Mask
+        + AsLargerType
+        + HasMax,
+    <T as BitAnd>::Output: PartialEq<T> + Into<T>,
+    <T as AsLargerType>::Output: std::ops::Add + PartialOrd,
+    <<T as AsLargerType>::Output as std::ops::Add>::Output: Into<<T as AsLargerType>::Output>,
+{
+    let original_carry = cpu.flag(Carry);
+    let original_overflow = cpu.flag(Overflow);
+    let original_negative = cpu.flag(Negative);
+
+    let result = if is_inc {
+        alu_add(cpu, a, <T>::one(), false)
+    } else {
+        alu_sub(cpu, a, <T>::one(), false)
+    };
+
+    cpu.change_flag(Carry, original_carry);
+    cpu.change_flag(Negative, original_negative);
+    cpu.change_flag(Overflow, original_overflow);
+
     result
 }
 
