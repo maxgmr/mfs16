@@ -20,6 +20,7 @@ pub enum AluOp {
     Tcp,
     Inc,
     Dec,
+    Pss,
 }
 
 /// ALU function. Take two integer operands and the operation as input. Produce the integer result
@@ -53,6 +54,7 @@ where
         Tcp => alu_tcp(cpu, a),
         Inc => alu_inc_dec(cpu, a, true),
         Dec => alu_inc_dec(cpu, a, false),
+        Pss => alu_pss(cpu, a),
     }
 }
 
@@ -173,6 +175,22 @@ where
     cpu.change_flag(Overflow, original_overflow);
 
     result
+}
+
+fn alu_pss<T>(cpu: &mut Cpu, a: T) -> T
+where
+    T: Zeroable + Oneable + Msb + PartialEq + Eq + BitAnd + Copy,
+    <T as BitAnd>::Output: PartialEq<T>,
+{
+    let original_carry = cpu.flag(Carry);
+    let original_overflow = cpu.flag(Overflow);
+
+    set_add_sub_flags(cpu, false, false, a);
+
+    cpu.change_flag(Carry, original_carry);
+    cpu.change_flag(Overflow, original_overflow);
+
+    a
 }
 
 fn get_carry<T>(cpu: &Cpu, use_carry: bool) -> T

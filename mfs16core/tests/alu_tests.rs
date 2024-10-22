@@ -915,3 +915,126 @@ fn test_inc_dec() {
     assert_eq!(c.cpu.vreg(B1), 0x12);
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPn"));
 }
+
+#[test]
+fn test_pss() {
+    let mut c = Computer::default();
+    let starting_flags = c.cpu.flags.clone();
+
+    // PSS H
+    c.cpu.set_reg(H, 0x0000);
+    c.ram.write_word(0x00_0000, 0x1D95);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.flags, starting_flags);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.reg(H), 0x0000);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
+
+    // PSS BC
+    c.cpu.set_breg(BC, 0x1234_6567);
+    c.cpu.flags = starting_flags.clone();
+    c.ram.write_word(0x00_0002, 0x1DA0);
+    // Ensure that carry and overflow flags are untouched
+    c.cpu.set_flag(Carry);
+    c.cpu.set_flag(Overflow);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.breg(BC), 0x1234_6567);
+    assert_eq!(c.cpu.flags, Flags::from_string("zCOpn"));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.breg(BC), 0x1234_6567);
+    assert_eq!(c.cpu.flags, Flags::from_string("zCOpn"));
+
+    // PSS D0
+    c.cpu.set_vreg(D0, 0x80);
+    c.cpu.flags = starting_flags.clone();
+    c.ram.write_word(0x00_0004, 0x1DB7);
+    c.cpu.set_flag(Overflow);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.vreg(D0), 0x80);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcOpn"));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.vreg(D0), 0x80);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcOPN"));
+
+    // PSS imm16
+    c.cpu.flags = starting_flags.clone();
+    c.ram.write_word(0x00_0006, 0x1DC0);
+    c.ram.write_word(0x00_0008, 0x9ABC);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.flags, starting_flags);
+
+    // Read imm16
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.flags, starting_flags);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
+
+    // PSS imm32
+    c.ram.write_word(0x00_000A, 0x1DC1);
+    c.ram.write_word(0x00_000C, 0xABCD);
+    c.ram.write_word(0x00_000E, 0x1234);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
+
+    // Read word 0 of imm32
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000E));
+    assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
+
+    // Read word 1 of imm32
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0010));
+    assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0010));
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
+
+    // PSS imm8
+    c.ram.write_word(0x00_0010, 0x1DC2);
+    c.ram.write_byte(0x00_0012, 0x99);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
+
+    // Read imm8
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0013));
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0013));
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
+}

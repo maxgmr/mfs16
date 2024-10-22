@@ -232,6 +232,27 @@ pub enum Instruction {
     // Decrement vra. Does not affect the Carry, Overflow, and Negative flags.
     // vra -= 1
     DecVra(Reg8),
+    // 0x1D9a - PSS ra
+    // Pass through ra. Sets the ALU flags based on ra.
+    // ra = ra
+    PssRa(Reg16),
+    // 0x1DAa - PSS bra
+    // Pass through bra. Sets the ALU flags based on bra.
+    // bra = bra
+    PssBra(Reg32),
+    // 0x1DBa - PSS vra
+    // Pass through vra. Sets the ALU flags based on vra.
+    // vra = vra
+    PssVra(Reg8),
+    // 0x1DC0 - PSS imm16
+    // Pass through the immediate 16-bit value. Sets the ALU flags accordingly.
+    PssImm16,
+    // 0x1DC1 - PSS imm32
+    // Pass through the immediate 32-bit value. Sets the ALU flags accordingly.
+    PssImm32,
+    // 0x1DC2 - PSS imm8
+    // Pass through the immediate 8-bit value. Sets the ALU flags accordingly.
+    PssImm8,
     // TODO
     // Read/write the state of a flag from/to a register.
 }
@@ -327,6 +348,12 @@ impl Instruction {
             (0x1, 0xD, 0x6, ra) => DecRa(Reg16::from_nib(ra)),
             (0x1, 0xD, 0x7, bra) => DecBra(Reg32::from_nib(bra)),
             (0x1, 0xD, 0x8, vra) => DecVra(Reg8::from_nib(vra)),
+            (0x1, 0xD, 0x9, ra) => PssRa(Reg16::from_nib(ra)),
+            (0x1, 0xD, 0xA, bra) => PssBra(Reg32::from_nib(bra)),
+            (0x1, 0xD, 0xB, vra) => PssVra(Reg8::from_nib(vra)),
+            (0x1, 0xD, 0xC, 0x0) => PssImm16,
+            (0x1, 0xD, 0xC, 0x1) => PssImm32,
+            (0x1, 0xD, 0xC, 0x2) => PssImm8,
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
@@ -387,6 +414,12 @@ impl Instruction {
             DecRa(..) => 2,
             DecBra(..) => 2,
             DecVra(..) => 2,
+            PssRa(..) => 2,
+            PssBra(..) => 2,
+            PssVra(..) => 2,
+            PssImm16 => 3,
+            PssImm32 => 4,
+            PssImm8 => 3,
         }
     }
 }
@@ -450,6 +483,12 @@ impl Display for Instruction {
                 DecRa(ra) => format!("DEC {ra}"),
                 DecBra(bra) => format!("DEC {bra}"),
                 DecVra(vra) => format!("DEC {vra}"),
+                PssRa(ra) => format!("PSS {ra}"),
+                PssBra(bra) => format!("PSS {bra}"),
+                PssVra(vra) => format!("PSS {vra}"),
+                PssImm16 => String::from("PSS imm16"),
+                PssImm32 => String::from("PSS imm32"),
+                PssImm8 => String::from("PSS imm8"),
             }
         )
     }
@@ -512,6 +551,12 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         DecRa(ra) => dec_ra(cpu, ra),
         DecBra(bra) => dec_bra(cpu, bra),
         DecVra(vra) => dec_vra(cpu, vra),
+        PssRa(ra) => pss_ra(cpu, ra),
+        PssBra(bra) => pss_bra(cpu, bra),
+        PssVra(vra) => pss_vra(cpu, vra),
+        PssImm16 => pss_imm16(cpu, ram),
+        PssImm32 => pss_imm32(cpu, ram),
+        PssImm8 => pss_imm8(cpu, ram),
     }
 }
 
@@ -1114,6 +1159,70 @@ fn dec_vra(cpu: &mut Cpu, vra: Reg8) {
             let a = cpu.vreg(vra);
             let result = alu(cpu, Dec, a, 0);
             cpu.set_vreg(vra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn pss_ra(cpu: &mut Cpu, ra: Reg16) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.reg(ra);
+            alu(cpu, Pss, a, 0);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn pss_bra(cpu: &mut Cpu, bra: Reg32) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.breg(bra);
+            alu(cpu, Pss, a, 0);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn pss_vra(cpu: &mut Cpu, vra: Reg8) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.vreg(vra);
+            alu(cpu, Pss, a, 0);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn pss_imm16(cpu: &mut Cpu, ram: &Ram) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => {
+            let a = cpu.last_word;
+            alu(cpu, Pss, a, 0);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn pss_imm32(cpu: &mut Cpu, ram: &Ram) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => cpu.read_next_word(ram),
+        3 => {
+            let a = get_dword_from_last(cpu);
+            alu(cpu, Pss, a, 0);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn pss_imm8(cpu: &mut Cpu, ram: &Ram) {
+    match cpu.step_num {
+        1 => cpu.read_next_byte(ram),
+        2 => {
+            let a = cpu.last_byte;
+            alu(cpu, Pss, a, 0);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
