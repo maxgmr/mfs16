@@ -1038,3 +1038,522 @@ fn test_pss() {
     assert_eq!(c.cpu.pc, Pc::new(0x00_0013));
     assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
 }
+
+#[test]
+fn test_and() {
+    let mut c = Computer::default();
+    let starting_flags = c.cpu.flags.clone();
+
+    // AND A,B
+    c.cpu.flags = Flags::from_string("ZCOPN");
+    c.cpu.set_reg(A, 0b1010_1010_1010_1010);
+    c.cpu.set_reg(B, 0b1100_1111_0000_0101);
+    c.ram.write_word(0x00_0000, 0x1E01);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.reg(A), 0b1010_1010_1010_1010);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCOPN"));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.reg(A), 0b1000_1010_0000_0000);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
+
+    // AND DE,HL
+    c.cpu.flags = starting_flags.clone();
+    c.cpu
+        .set_breg(DE, 0b1111_1111_1111_1111_0000_0000_0000_0000);
+    c.cpu
+        .set_breg(HL, 0b0000_0000_0000_0000_1111_1111_1111_1111);
+    c.ram.write_word(0x00_0002, 0x1F12);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.breg(DE), 0b1111_1111_1111_1111_0000_0000_0000_0000);
+    assert_eq!(c.cpu.flags, starting_flags);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.breg(DE), 0);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
+
+    // AND C1,C0
+    c.cpu.flags = starting_flags.clone();
+    c.cpu.set_vreg(C1, 0b1111_1000);
+    c.cpu.set_vreg(C0, 0b1010_1100);
+    c.ram.write_word(0x00_0004, 0x2045);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.vreg(C1), 0b1111_1000);
+    assert_eq!(c.cpu.flags, starting_flags);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.vreg(C1), 0b1010_1000);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
+
+    // AND B,[HL]
+    c.cpu.flags = Flags::from_string("ZCOpn");
+    c.cpu.set_reg(B, 0b1111_1111_0000_0000);
+    c.cpu.set_breg(HL, 0xFE_DCBA);
+    c.ram.write_word(0xFE_DCBA, 0b0101_0101_0101_0101);
+    c.ram.write_word(0x00_0006, 0x2112);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.reg(B), 0b1111_1111_0000_0000);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCOpn"));
+
+    // Get [HL]
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.reg(B), 0b1111_1111_0000_0000);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCOpn"));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.reg(B), 0b0101_0101_0000_0000);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcoPn"));
+
+    // AND D,0b0000_0000_1111_1111
+    c.cpu.set_reg(D, 0b1111_1111_1111_1111);
+    c.ram.write_word(0x00_0008, 0x2A03);
+    c.ram.write_word(0x00_000A, 0b0000_0000_1111_1111);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.reg(D), 0xFFFF);
+
+    // Read imm8
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.reg(D), 0xFFFF);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.reg(D), 0x00FF);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
+
+    // AND BC,0x0F0F_F0F0
+    c.cpu.set_breg(BC, 0xFFFF_FFFF);
+    c.ram.write_word(0x00_000C, 0x2A10);
+    c.ram.write_word(0x00_000E, 0xF0F0);
+    c.ram.write_word(0x00_0010, 0x0F0F);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000E));
+    assert_eq!(c.cpu.breg(BC), 0xFFFF_FFFF);
+
+    // Read word 0 of imm32
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0010));
+    assert_eq!(c.cpu.breg(BC), 0xFFFF_FFFF);
+
+    // Read word 1 of imm32
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.breg(BC), 0xFFFF_FFFF);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.breg(BC), 0x0F0F_F0F0);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcoPn"));
+
+    // AND L0,0x81
+    c.cpu.set_vreg(L0, 0b0000_1111);
+    c.ram.write_word(0x00_0012, 0x2A2D);
+    c.ram.write_byte(0x00_0014, 0x81);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0014));
+    assert_eq!(c.cpu.vreg(L0), 0b0000_1111);
+
+    // Read imm8
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0015));
+    assert_eq!(c.cpu.vreg(L0), 0b0000_1111);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0015));
+    assert_eq!(c.cpu.vreg(L0), 0b0000_0001);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
+}
+
+#[test]
+fn test_or() {
+    let mut c = Computer::default();
+    let starting_flags = c.cpu.flags.clone();
+
+    // OR B,A
+    c.cpu.flags = Flags::from_string("ZCOPN");
+    c.cpu.set_reg(A, 0b1010_1010_1010_1010);
+    c.cpu.set_reg(B, 0b1100_1111_0000_0101);
+    c.ram.write_word(0x00_0000, 0x2210);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.reg(B), 0b1100_1111_0000_0101);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCOPN"));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.reg(B), 0b1110_1111_1010_1111);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
+
+    // OR DE,HL
+    c.cpu.flags = starting_flags.clone();
+    c.cpu
+        .set_breg(DE, 0b1111_1111_1111_1111_0000_0000_0000_0000);
+    c.cpu
+        .set_breg(HL, 0b0000_0000_0000_0000_1111_1111_1111_1111);
+    c.ram.write_word(0x00_0002, 0x2312);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.breg(DE), 0b1111_1111_1111_1111_0000_0000_0000_0000);
+    assert_eq!(c.cpu.flags, starting_flags);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.breg(DE), 0xFFFF_FFFF);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
+
+    // OR C1,C0
+    c.cpu.flags = starting_flags.clone();
+    c.cpu.set_vreg(C1, 0b0000_0000);
+    c.cpu.set_vreg(C0, 0b0000_0000);
+    c.ram.write_word(0x00_0004, 0x2445);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.flags, starting_flags);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
+
+    // OR B,[HL]
+    c.cpu.flags = Flags::from_string("ZCOpn");
+    c.cpu.set_reg(B, 0b0011_0000_0000_1111);
+    c.cpu.set_breg(HL, 0xFE_DCBA);
+    c.ram.write_word(0xFE_DCBA, 0b1000_0100_0000_0011);
+    c.ram.write_word(0x00_0006, 0x2512);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.reg(B), 0b0011_0000_0000_1111);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCOpn"));
+
+    // Get [HL]
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.reg(B), 0b0011_0000_0000_1111);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCOpn"));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.reg(B), 0b1011_0100_0000_1111);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
+
+    // OR D,0b0000_0000_1111_1111
+    c.cpu.set_reg(D, 0x0000);
+    c.ram.write_word(0x00_0008, 0x2A33);
+    c.ram.write_word(0x00_000A, 0b0000_0000_1111_1111);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.reg(D), 0x0000);
+
+    // Read imm8
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.reg(D), 0x0000);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.reg(D), 0x00FF);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
+
+    // OR BC,0x0F0F_F0F0
+    c.cpu.set_breg(BC, 0x1010_0101);
+    c.ram.write_word(0x00_000C, 0x2A40);
+    c.ram.write_word(0x00_000E, 0xF0F0);
+    c.ram.write_word(0x00_0010, 0x0F0F);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000E));
+    assert_eq!(c.cpu.breg(BC), 0x1010_0101);
+
+    // Read word 0 of imm32
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0010));
+    assert_eq!(c.cpu.breg(BC), 0x1010_0101);
+
+    // Read word 1 of imm32
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.breg(BC), 0x1010_0101);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.breg(BC), 0x1F1F_F1F1);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
+
+    // OR L0,0x81
+    c.cpu.set_vreg(L0, 0b0000_1111);
+    c.ram.write_word(0x00_0012, 0x2A5D);
+    c.ram.write_byte(0x00_0014, 0x81);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0014));
+    assert_eq!(c.cpu.vreg(L0), 0b0000_1111);
+
+    // Read imm8
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0015));
+    assert_eq!(c.cpu.vreg(L0), 0b0000_1111);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0015));
+    assert_eq!(c.cpu.vreg(L0), 0b1000_1111);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
+}
+
+#[test]
+fn test_xor() {
+    let mut c = Computer::default();
+    let starting_flags = c.cpu.flags.clone();
+
+    // XOR B,A
+    c.cpu.flags = Flags::from_string("ZCOPN");
+    c.cpu.set_reg(A, 0b1010_1010_1010_1010);
+    c.cpu.set_reg(B, 0b1100_1111_0000_0101);
+    c.ram.write_word(0x00_0000, 0x2610);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.reg(B), 0b1100_1111_0000_0101);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCOPN"));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.reg(B), 0b0110_0101_1010_1111);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
+
+    // XOR DE,HL
+    c.cpu.flags = starting_flags.clone();
+    c.cpu
+        .set_breg(DE, 0b1111_1111_1111_1111_0000_0000_0000_0000);
+    c.cpu
+        .set_breg(HL, 0b0000_0000_0000_0000_1111_1111_1111_1111);
+    c.ram.write_word(0x00_0002, 0x2712);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.breg(DE), 0b1111_1111_1111_1111_0000_0000_0000_0000);
+    assert_eq!(c.cpu.flags, starting_flags);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.breg(DE), 0xFFFF_FFFF);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
+
+    // XOR C1,C0
+    c.cpu.flags = starting_flags.clone();
+    c.cpu.set_vreg(C1, 0b1010_1010);
+    c.cpu.set_vreg(C0, 0b1010_1010);
+    c.ram.write_word(0x00_0004, 0x2845);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.vreg(C1), 0b1010_1010);
+    assert_eq!(c.cpu.flags, starting_flags);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.vreg(C1), 0b0000_0000);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
+
+    // XOR B,[HL]
+    c.cpu.flags = Flags::from_string("ZCOpn");
+    c.cpu.set_reg(B, 0b0011_0000_0000_1111);
+    c.cpu.set_breg(HL, 0xFE_DCBA);
+    c.ram.write_word(0xFE_DCBA, 0b1000_0100_0000_0011);
+    c.ram.write_word(0x00_0006, 0x2912);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.reg(B), 0b0011_0000_0000_1111);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCOpn"));
+
+    // Get [HL]
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.reg(B), 0b0011_0000_0000_1111);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCOpn"));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.reg(B), 0b1011_0100_0000_1100);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
+
+    // XOR D,0b0000_0000_1111_1111
+    c.cpu.set_reg(D, 0x0000);
+    c.ram.write_word(0x00_0008, 0x2A63);
+    c.ram.write_word(0x00_000A, 0b0000_0000_1111_1111);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.reg(D), 0x0000);
+
+    // Read imm8
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.reg(D), 0x0000);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.reg(D), 0x00FF);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
+
+    // XOR BC,0x0F0F_F0F0
+    c.cpu.set_breg(BC, 0x1010_0101);
+    c.ram.write_word(0x00_000C, 0x2A70);
+    c.ram.write_word(0x00_000E, 0xF0F0);
+    c.ram.write_word(0x00_0010, 0x0F0F);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000E));
+    assert_eq!(c.cpu.breg(BC), 0x1010_0101);
+
+    // Read word 0 of imm32
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0010));
+    assert_eq!(c.cpu.breg(BC), 0x1010_0101);
+
+    // Read word 1 of imm32
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.breg(BC), 0x1010_0101);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.breg(BC), 0x1F1F_F1F1);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
+
+    // XOR L0,0x81
+    c.cpu.set_vreg(L0, 0b0000_1111);
+    c.ram.write_word(0x00_0012, 0x2A8D);
+    c.ram.write_byte(0x00_0014, 0x81);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0014));
+    assert_eq!(c.cpu.vreg(L0), 0b0000_1111);
+
+    // Read imm8
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0015));
+    assert_eq!(c.cpu.vreg(L0), 0b0000_1111);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0015));
+    assert_eq!(c.cpu.vreg(L0), 0b1000_1110);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
+}
+
+#[test]
+fn test_not() {
+    let mut c = Computer::default();
+
+    // NOT A
+    c.cpu.set_reg(A, 0b1010_1010_1010_1010);
+    c.ram.write_word(0x00_0000, 0x2A90);
+    c.cpu.flags = Flags::from_string("ZCOPN");
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.reg(A), 0b1010_1010_1010_1010);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCOPN"));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.reg(A), 0b0101_0101_0101_0101);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
+
+    // NOT BC
+    c.cpu.set_breg(BC, 0xFFFF_FFFF);
+    c.ram.write_word(0x00_0002, 0x2AA0);
+    c.cpu.flags = Flags::from_string("zcopn");
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.breg(BC), 0xFFFF_FFFF);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.breg(BC), 0x0000_0000);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
+
+    // NOT D1
+    c.cpu.set_vreg(D1, 0x00);
+    c.ram.write_word(0x00_0004, 0x2AB6);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.vreg(D1), 0x00);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.vreg(D1), 0xFF);
+}

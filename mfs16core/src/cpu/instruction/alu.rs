@@ -1,5 +1,5 @@
 //! All the Arithmetic Logic Unit (ALU) instructions.
-use std::ops::BitAnd;
+use std::ops::{BitAnd, BitOr, BitXor, Not as OpsNot};
 
 use crate::{
     cpu::{
@@ -21,6 +21,10 @@ pub enum AluOp {
     Inc,
     Dec,
     Pss,
+    And,
+    Or,
+    Xor,
+    Not,
 }
 
 /// ALU function. Take two integer operands and the operation as input. Produce the integer result
@@ -37,12 +41,18 @@ where
         + PartialOrd
         + Ord
         + BitAnd
+        + BitOr
+        + BitXor
+        + OpsNot
         + WrappingAdd
         + WrappingSub
         + NMinus1Mask
         + AsLargerType
         + HasMax,
     <T as BitAnd>::Output: PartialEq<T> + Into<T>,
+    <T as BitOr>::Output: PartialEq<T> + Into<T>,
+    <T as BitXor>::Output: PartialEq<T> + Into<T>,
+    <T as OpsNot>::Output: PartialEq<T> + Into<T>,
     <T as AsLargerType>::Output: std::ops::Add + PartialOrd,
     <<T as AsLargerType>::Output as std::ops::Add>::Output: Into<<T as AsLargerType>::Output>,
 {
@@ -55,6 +65,10 @@ where
         Inc => alu_inc_dec(cpu, a, true),
         Dec => alu_inc_dec(cpu, a, false),
         Pss => alu_pss(cpu, a),
+        And => alu_and(cpu, a, b),
+        Or => alu_or(cpu, a, b),
+        Xor => alu_xor(cpu, a, b),
+        Not => alu_not(cpu, a),
     }
 }
 
@@ -193,6 +207,49 @@ where
     a
 }
 
+fn alu_and<T>(cpu: &mut Cpu, a: T, b: T) -> T
+where
+    T: Zeroable + Oneable + Msb + PartialEq + Eq + BitAnd + Copy,
+    <T as BitAnd>::Output: PartialEq<T> + Into<T>,
+{
+    let result: T = (a & b).into();
+    set_bitwise_flags(cpu, result);
+    result
+}
+
+fn alu_or<T>(cpu: &mut Cpu, a: T, b: T) -> T
+where
+    T: Zeroable + Oneable + Msb + PartialEq + Eq + BitAnd + BitOr + Copy,
+    <T as BitAnd>::Output: PartialEq<T>,
+    <T as BitOr>::Output: PartialEq<T> + Into<T>,
+{
+    let result: T = (a | b).into();
+    set_bitwise_flags(cpu, result);
+    result
+}
+
+fn alu_xor<T>(cpu: &mut Cpu, a: T, b: T) -> T
+where
+    T: Zeroable + Oneable + Msb + PartialEq + Eq + BitAnd + BitXor + Copy,
+    <T as BitAnd>::Output: PartialEq<T>,
+    <T as BitXor>::Output: PartialEq<T> + Into<T>,
+{
+    let result: T = (a ^ b).into();
+    set_bitwise_flags(cpu, result);
+    result
+}
+
+fn alu_not<T>(cpu: &mut Cpu, a: T) -> T
+where
+    T: OpsNot + Copy + Zeroable + Oneable + Msb + Eq + BitAnd,
+    <T as BitAnd>::Output: PartialEq<T>,
+    <T as OpsNot>::Output: PartialEq<T> + Into<T>,
+{
+    let result: T = (!a).into();
+    set_bitwise_flags(cpu, result);
+    result
+}
+
 fn get_carry<T>(cpu: &Cpu, use_carry: bool) -> T
 where
     T: Oneable + Zeroable,
@@ -212,6 +269,18 @@ where
     cpu.flags.change_zero(result);
     cpu.flags.change_flag(Carry, n_carry);
     cpu.flags.change_flag(Overflow, n_minus_1_carry ^ n_carry);
+    cpu.flags.change_parity(result);
+    cpu.flags.change_negative(result);
+}
+
+fn set_bitwise_flags<T>(cpu: &mut Cpu, result: T)
+where
+    T: Zeroable + Copy + Eq + BitAnd + Oneable + Msb,
+    <T as BitAnd>::Output: PartialEq<T>,
+{
+    cpu.flags.change_zero(result);
+    cpu.flags.reset_flag(Carry);
+    cpu.flags.reset_flag(Overflow);
     cpu.flags.change_parity(result);
     cpu.flags.change_negative(result);
 }
