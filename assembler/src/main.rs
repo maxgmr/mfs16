@@ -16,8 +16,8 @@ fn main() -> eyre::Result<()> {
     }
 
     for path in args.files {
-        let mut asm_parser = AsmParser::from_path(&path)?;
-        asm_parser.parse();
+        let mut asm_parser = AsmParser::from_path(path, args.debug)?;
+        asm_parser.parse_input()?;
     }
 
     Ok(())
