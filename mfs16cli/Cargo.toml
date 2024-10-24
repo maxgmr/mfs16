@@ -1,9 +1,0 @@
-[package]
-name = "mfs16cli"
-version = "0.1.0"
-edition = "2021"
-authors = ["Max Gilmour"]
-repository = "https://github.com/maxgmr/mfs16"
-
-[dependencies]
-mfs16core = { path = "../mfs16core" }
