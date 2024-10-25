@@ -2,6 +2,7 @@
 
 use std::{default::Default, fmt::Display};
 
+use super::Cpu;
 use crate::helpers::{combine_u16_be, combine_u8_be, split_dword, split_word};
 
 use Reg16::*;
@@ -9,9 +10,10 @@ use Reg32::*;
 use Reg8::*;
 
 /// Enum to access the individual 16-bit CPU registers.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 pub enum Reg16 {
     /// Register A.
+    #[default]
     A,
     /// Register B.
     B,
@@ -47,11 +49,26 @@ impl Display for Reg16 {
         write!(f, "{:?}", self,)
     }
 }
+#[allow(clippy::from_over_into)]
+impl Into<u16> for Reg16 {
+    fn into(self) -> u16 {
+        match self {
+            A => 0,
+            B => 1,
+            C => 2,
+            D => 3,
+            E => 4,
+            H => 5,
+            L => 6,
+        }
+    }
+}
 
 /// Enum to access the 32-bit "big" virtual CPU registers.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 pub enum Reg32 {
     /// Register B & C.
+    #[default]
     BC,
     /// Register D & E.
     DE,
@@ -75,11 +92,22 @@ impl Display for Reg32 {
         write!(f, "{:?}", self,)
     }
 }
+#[allow(clippy::from_over_into)]
+impl Into<u16> for Reg32 {
+    fn into(self) -> u16 {
+        match self {
+            BC => 0,
+            DE => 1,
+            HL => 2,
+        }
+    }
+}
 
 /// Enum to access the 8-bit virtual CPU registers.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 pub enum Reg8 {
     /// High bit of register A.
+    #[default]
     A1,
     /// Low bit of register A.
     A0,
@@ -136,9 +164,30 @@ impl Display for Reg8 {
         write!(f, "{:?}", self,)
     }
 }
+#[allow(clippy::from_over_into)]
+impl Into<u16> for Reg8 {
+    fn into(self) -> u16 {
+        match self {
+            A1 => 0,
+            A0 => 1,
+            B1 => 2,
+            B0 => 3,
+            C1 => 4,
+            C0 => 5,
+            D1 => 6,
+            D0 => 7,
+            E1 => 8,
+            E0 => 9,
+            H1 => 10,
+            H0 => 11,
+            L1 => 12,
+            L0 => 13,
+        }
+    }
+}
 
 /// The registers of the CPU.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Registers {
     /// High bit of register A.
     a1: u8,
@@ -314,11 +363,50 @@ impl Display for Registers {
     }
 }
 
+/// Implementors of this trait can be used as labels to identify [Cpu] registers.
+pub trait Reg {
+    type ValueType;
+    /// Get the register of the given [Cpu] matching the given value.
+    fn get(&self, cpu: &Cpu) -> Self::ValueType;
+    /// Set the register of the given [Cpu] to the given value.
+    fn set(&self, cpu: &mut Cpu, val: Self::ValueType);
+}
+macro_rules! impl_reg {
+    ($(($t:ty, $g_fn:ident, $s_fn:ident, $vt:ty)),+) => {
+        $(
+            impl Reg for $t {
+                type ValueType = $vt;
+
+                fn get(&self, cpu: &Cpu) -> Self::ValueType {
+                    cpu.$g_fn(*self)
+                }
+
+                fn set(&self, cpu: &mut Cpu, val: Self::ValueType) {
+                    cpu.$s_fn(*self, val)
+                }
+            }
+        )+
+    };
+}
+
+impl_reg!(
+    (Reg16, reg, set_reg, u16),
+    (Reg32, breg, set_breg, u32),
+    (Reg8, vreg, set_vreg, u8)
+);
+
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
 
     use super::*;
+
+    #[test]
+    fn test_trait() {
+        let mut cpu = Cpu::default();
+        A0.set(&mut cpu, 0x12);
+        assert_eq!(A0.get(&cpu), 0x12);
+    }
 
     #[test]
     fn test_registers() {

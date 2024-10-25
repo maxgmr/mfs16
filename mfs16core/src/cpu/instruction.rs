@@ -2,8 +2,11 @@
 //! rn = register n
 //! vrn = 8-bit virtual half-register n
 //! brn = 32-bit big register n
-//! m = memory address, imm{n} = n-bit immediate value
+//! imm{n} = n-bit immediate value
 use std::fmt::Display;
+
+#[cfg(test)]
+use strum_macros::EnumIter;
 
 mod alu;
 mod helpers;
@@ -14,8 +17,16 @@ use alu::{AluOp::*, *};
 use helpers::*;
 use Instruction::*;
 
+// Re-exports
+pub use alu::{AsLargerType, HasMax, NMinus1Mask, NumBits, WrappingAdd, WrappingSub};
+
+// The last nibble of some instructions reserve numbers 0-6 for the 16-bit registers, with
+// codes for the 32-bit big registers starting at 7.
+const NUM_REGS: u8 = 7;
+
 /// Enum for accessing the different CPU instructions.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[cfg_attr(test, derive(EnumIter))]
 pub enum Instruction {
     #[default]
     /// 0x0000 - NOP
@@ -34,7 +45,7 @@ pub enum Instruction {
     /// SP = imm32
     LdSpImm32,
     /// 0x01A1 - LD [imm32],SP
-    /// Load stack pointer into the two words (little-endian) starting at address imm32.
+    /// Load stack pointer into the dword (little-endian) starting at address imm32.
     /// [imm32] = SP
     LdImm32Sp,
     /// 0x01Ba - LD SP,bra
@@ -192,173 +203,242 @@ pub enum Instruction {
     /// Subtract [brb] from ra.
     /// ra -= brb
     SubRaBrb(Reg16, Reg32),
-    // 0x1Cab - SBB ra,[brb]
-    // Subtract [brb] + the carry flag from ra.
-    // ra -= [brb] + C
+    /// 0x1Cab - SBB ra,[brb]
+    /// Subtract [brb] + the carry flag from ra.
+    /// ra -= [brb] + C
     SbbRaBrb(Reg16, Reg32),
-    // 0x1D0a - TCP ra
-    // Two's complement ra. Set Carry = 0 iff ra == 0.
-    // ra = -ra
+    /// 0x1D0a - TCP ra
+    /// Two's complement ra. Set Carry = 0 iff ra == 0.
+    /// ra = -ra
     TcpRa(Reg16),
-    // 0x1D1a - TCP bra
-    // Two's complement bra. Set Carry = 0 iff bra == 0.
-    // bra = -bra
+    /// 0x1D1a - TCP bra
+    /// Two's complement bra. Set Carry = 0 iff bra == 0.
+    /// bra = -bra
     TcpBra(Reg32),
-    // 0x1D2a - TCP vra
-    // Two's complement vra. Set Carry = 0 iff vra == 0.
-    // vra = -vra
+    /// 0x1D2a - TCP vra
+    /// Two's complement vra. Set Carry = 0 iff vra == 0.
+    /// vra = -vra
     TcpVra(Reg8),
-    // 0x1D3a - INC ra
-    // Increment ra. Does not affect the Carry, Overflow, and Negative flags.
-    // ra += 1
+    /// 0x1D3a - INC ra
+    /// Increment ra. Does not affect the Carry, Overflow, and Negative flags.
+    /// ra += 1
     IncRa(Reg16),
-    // 0x1D4a - INC bra
-    // Increment bra. Does not affect the Carry, Overflow, and Negative flags.
-    // bra += 1
+    /// 0x1D4a - INC bra
+    /// Increment bra. Does not affect the Carry, Overflow, and Negative flags.
+    /// bra += 1
     IncBra(Reg32),
-    // 0x1D5a - INC vra
-    // Increment vra. Does not affect the Carry, Overflow, and Negative flags.
-    // vra += 1
+    /// 0x1D5a - INC vra
+    /// Increment vra. Does not affect the Carry, Overflow, and Negative flags.
+    /// vra += 1
     IncVra(Reg8),
-    // 0x1D6a - DEC ra
-    // Decrement ra. Does not affect the Carry, Overflow, and Negative flags.
-    // ra -= 1
+    /// 0x1D6a - DEC ra
+    /// Decrement ra. Does not affect the Carry, Overflow, and Negative flags.
+    /// ra -= 1
     DecRa(Reg16),
-    // 0x1D7a - DEC bra
-    // Decrement bra. Does not affect the Carry, Overflow, and Negative flags.
-    // bra -= 1
+    /// 0x1D7a - DEC bra
+    /// Decrement bra. Does not affect the Carry, Overflow, and Negative flags.
+    /// bra -= 1
     DecBra(Reg32),
-    // 0x1D8a - DEC vra
-    // Decrement vra. Does not affect the Carry, Overflow, and Negative flags.
-    // vra -= 1
+    /// 0x1D8a - DEC vra
+    /// Decrement vra. Does not affect the Carry, Overflow, and Negative flags.
+    /// vra -= 1
     DecVra(Reg8),
-    // 0x1D9a - PSS ra
-    // Pass through ra. Sets the ALU flags based on ra.
-    // ra = ra
+    /// 0x1D9a - PSS ra
+    /// Pass through ra. Sets the ALU flags based on ra.
+    /// ra = ra
     PssRa(Reg16),
-    // 0x1DAa - PSS bra
-    // Pass through bra. Sets the ALU flags based on bra.
-    // bra = bra
+    /// 0x1DAa - PSS bra
+    /// Pass through bra. Sets the ALU flags based on bra.
+    /// bra = bra
     PssBra(Reg32),
-    // 0x1DBa - PSS vra
-    // Pass through vra. Sets the ALU flags based on vra.
-    // vra = vra
+    /// 0x1DBa - PSS vra
+    /// Pass through vra. Sets the ALU flags based on vra.
+    /// vra = vra
     PssVra(Reg8),
-    // 0x1DC0 - PSS imm16
-    // Pass through the immediate 16-bit value. Sets the ALU flags accordingly.
+    /// 0x1DC0 - PSS imm16
+    /// Pass through the immediate 16-bit value. Sets the ALU flags accordingly.
     PssImm16,
-    // 0x1DC1 - PSS imm32
-    // Pass through the immediate 32-bit value. Sets the ALU flags accordingly.
+    /// 0x1DC1 - PSS imm32
+    /// Pass through the immediate 32-bit value. Sets the ALU flags accordingly.
     PssImm32,
-    // 0x1DC2 - PSS imm8
-    // Pass through the immediate 8-bit value. Sets the ALU flags accordingly.
+    /// 0x1DC2 - PSS imm8
+    /// Pass through the immediate 8-bit value. Sets the ALU flags accordingly.
     PssImm8,
-    // 0x1Eab - AND ra,rb
-    // Set ra to bitwise AND of ra and rb.
-    // ra &= rb
+    /// 0x1Eab - AND ra,rb
+    /// Set ra to bitwise AND of ra and rb.
+    /// ra &= rb
     AndRaRb(Reg16, Reg16),
-    // 0x1Fab - AND bra,brb
-    // Set bra to bitwise AND of bra and brb.
-    // bra &= brb
+    /// 0x1Fab - AND bra,brb
+    /// Set bra to bitwise AND of bra and brb.
+    /// bra &= brb
     AndBraBrb(Reg32, Reg32),
-    // 0x20ab - AND vra,vrb
-    // Set vra to bitwise AND of vra and vrb.
-    // vra &= vrb
+    /// 0x20ab - AND vra,vrb
+    /// Set vra to bitwise AND of vra and vrb.
+    /// vra &= vrb
     AndVraVrb(Reg8, Reg8),
-    // 0x21ab - AND ra,[brb]
-    // Set ra to bitwise AND of ra and [brb].
-    // ra &= [brb]
+    /// 0x21ab - AND ra,[brb]
+    /// Set ra to bitwise AND of ra and [brb].
+    /// ra &= [brb]
     AndRaBrb(Reg16, Reg32),
-    // 0x22ab - OR ra,rb
-    // Set ra to bitwise OR of ra and rb.
-    // ra |= rb
+    /// 0x22ab - OR ra,rb
+    /// Set ra to bitwise OR of ra and rb.
+    /// ra |= rb
     OrRaRb(Reg16, Reg16),
-    // 0x23ab - OR bra,brb
-    // Set bra to bitwise OR of bra and brb.
-    // bra |= brb
+    /// 0x23ab - OR bra,brb
+    /// Set bra to bitwise OR of bra and brb.
+    /// bra |= brb
     OrBraBrb(Reg32, Reg32),
-    // 0x24ab - OR vra,vrb
-    // Set vra to bitwise OR of vra and vrb.
-    // vra |= vrb
+    /// 0x24ab - OR vra,vrb
+    /// Set vra to bitwise OR of vra and vrb.
+    /// vra |= vrb
     OrVraVrb(Reg8, Reg8),
-    // 0x25ab - OR ra,[brb]
-    // Set ra to bitwise OR of ra and [brb].
-    // ra |= [brb]
+    /// 0x25ab - OR ra,[brb]
+    /// Set ra to bitwise OR of ra and [brb].
+    /// ra |= [brb]
     OrRaBrb(Reg16, Reg32),
-    // 0x26ab - XOR ra,rb
-    // Set ra to bitwise XOR of ra and rb.
-    // ra ^= rb
+    /// 0x26ab - XOR ra,rb
+    /// Set ra to bitwise XOR of ra and rb.
+    /// ra ^= rb
     XorRaRb(Reg16, Reg16),
-    // 0x27ab - XOR bra,brb
-    // Set bra to bitwise XOR of bra and brb.
-    // bra ^= brb
+    /// 0x27ab - XOR bra,brb
+    /// Set bra to bitwise XOR of bra and brb.
+    /// bra ^= brb
     XorBraBrb(Reg32, Reg32),
-    // 0x28ab - XOR vra,vrb
-    // Set vra to bitwise XOR of vra and vrb.
-    // vra ^= vrb
+    /// 0x28ab - XOR vra,vrb
+    /// Set vra to bitwise XOR of vra and vrb.
+    /// vra ^= vrb
     XorVraVrb(Reg8, Reg8),
-    // 0x29ab - XOR ra,[brb]
-    // Set ra to bitwise XOR of ra and [brb].
-    // ra ^= [brb]
+    /// 0x29ab - XOR ra,[brb]
+    /// Set ra to bitwise XOR of ra and [brb].
+    /// ra ^= [brb]
     XorRaBrb(Reg16, Reg32),
-    // 0x2A0a - AND ra,imm16
-    // Set ra to bitwise AND of ra and 16-bit immediate value.
-    // ra &= imm16
+    /// 0x2A0a - AND ra,imm16
+    /// Set ra to bitwise AND of ra and 16-bit immediate value.
+    /// ra &= imm16
     AndRaImm16(Reg16),
-    // 0x2A1a - AND bra,imm32
-    // Set bra to bitwise AND of bra and 32-bit immediate value.
-    // bra &= imm32
+    /// 0x2A1a - AND bra,imm32
+    /// Set bra to bitwise AND of bra and 32-bit immediate value.
+    /// bra &= imm32
     AndBraImm32(Reg32),
-    // 0x2A2a - AND vra,imm8
-    // Set vra to bitwise AND of vra and 8-bit immediate value.
-    // vra &= imm8
+    /// 0x2A2a - AND vra,imm8
+    /// Set vra to bitwise AND of vra and 8-bit immediate value.
+    /// vra &= imm8
     AndVraImm8(Reg8),
-    // 0x2A3a - OR ra,imm16
-    // Set ra to bitwise OR of ra and 16-bit immediate value.
-    // ra |= imm16
+    /// 0x2A3a - OR ra,imm16
+    /// Set ra to bitwise OR of ra and 16-bit immediate value.
+    /// ra |= imm16
     OrRaImm16(Reg16),
-    // 0x2A4a - OR bra,imm32
-    // Set bra to bitwise OR of bra and 32-bit immediate value.
-    // bra |= imm32
+    /// 0x2A4a - OR bra,imm32
+    /// Set bra to bitwise OR of bra and 32-bit immediate value.
+    /// bra |= imm32
     OrBraImm32(Reg32),
-    // 0x2A5a - OR vra,imm8
-    // Set vra to bitwise OR of vra and 8-bit immediate value.
-    // vra |= imm8
+    /// 0x2A5a - OR vra,imm8
+    /// Set vra to bitwise OR of vra and 8-bit immediate value.
+    /// vra |= imm8
     OrVraImm8(Reg8),
-    // 0x2A6a - XOR ra,imm16
-    // Set ra to bitwise XOR of ra and 16-bit immediate value.
-    // ra ^= imm16
+    /// 0x2A6a - XOR ra,imm16
+    /// Set ra to bitwise XOR of ra and 16-bit immediate value.
+    /// ra ^= imm16
     XorRaImm16(Reg16),
-    // 0x2A7a - XOR bra,imm32
-    // Set bra to bitwise XOR of bra and 32-bit immediate value.
-    // bra ^= imm32
+    /// 0x2A7a - XOR bra,imm32
+    /// Set bra to bitwise XOR of bra and 32-bit immediate value.
+    /// bra ^= imm32
     XorBraImm32(Reg32),
-    // 0x2A8a - XOR vra,imm8
-    // Set vra to bitwise XOR of vra and 8-bit immediate value.
-    // vra ^= imm8
+    /// 0x2A8a - XOR vra,imm8
+    /// Set vra to bitwise XOR of vra and 8-bit immediate value.
+    /// vra ^= imm8
     XorVraImm8(Reg8),
-    // 0x2A9a - NOT ra
-    // Flip all the bits of ra.
-    // ra = !ra
+    /// 0x2A9a - NOT ra
+    /// Flip all the bits of ra.
+    /// ra = !ra
     NotRa(Reg16),
-    // 0x2AAa - NOT bra
-    // Flip all the bits of bra.
-    // bra = !bra
+    /// 0x2AAa - NOT bra
+    /// Flip all the bits of bra.
+    /// bra = !bra
     NotBra(Reg32),
-    // 0x2ABa - NOT vra
-    // Flip all the bits of vra.
-    // vra = !vra
+    /// 0x2ABa - NOT vra
+    /// Flip all the bits of vra.
+    /// vra = !vra
     NotVra(Reg8),
+    /// 0x2Bab - ASR ra,b
+    /// Arithmetic shift. Shift ra right b bits, preserving the most significant bit.
+    /// ra >>= b
+    AsrRaB(Reg16, u8),
+    /// 0x2Cab - ASR bra,b
+    /// Arithmetic shift. Shift bra right b bits, preserving the most significant bit.
+    /// bra >>= b
+    AsrBraB(Reg32, u8),
+    /// 0x2Dab - ASR vra,b
+    /// Arithmetic shift. Shift vra right b bits, preserving the most significant bit.
+    /// vra >>= b
+    AsrVraB(Reg8, u8),
+    /// 0x2Eab - ASL ra,b
+    /// Arithmetic shift. Shift ra left b bits, shifting on zeroes.
+    /// ra <<= b
+    AslRaB(Reg16, u8),
+    /// 0x2Fab - ASL bra,b
+    /// Arithmetic shift. Shift bra left b bits, shifting on zeroes.
+    /// ra <<= b
+    AslBraB(Reg32, u8),
+    /// 0x30ab - ASL vra,b
+    /// Arithmetic shift. Shift vra left b bits, shifting on zeroes.
+    /// ra <<= b
+    AslVraB(Reg8, u8),
+    /// 0x31ab - LSR ra,b
+    /// Logical shift. Shift ra right b bits, shifting on zeroes.
+    /// ra >>= b
+    LsrRaB(Reg16, u8),
+    /// 0x32ab - LSR bra,b
+    /// Logical shift. Shift bra right b bits, shifting on zeroes.
+    /// bra >>= b
+    LsrBraB(Reg32, u8),
+    /// 0x33ab - LSR vra,b
+    /// Logical shift. Shift vra right b bits, shifting on zeroes.
+    /// vra >>= b
+    LsrVraB(Reg8, u8),
+    /// 0x34ab - RTR ra,b
+    /// Rotate. Rotate ra right b bits.
+    RtrRaB(Reg16, u8),
+    /// 0x35ab - RTR bra,b
+    /// Rotate. Rotate bra right b bits.
+    RtrBraB(Reg32, u8),
+    /// 0x36ab - RTR vra,b
+    /// Rotate. Rotate vra right b bits.
+    RtrVraB(Reg8, u8),
+    /// 0x37ab - RTL ra,b
+    /// Rotate. Rotate ra left b bits.
+    RtlRaB(Reg16, u8),
+    /// 0x38ab - RTL bra,b
+    /// Rotate. Rotate bra left b bits.
+    RtlBraB(Reg32, u8),
+    /// 0x39ab - RTL vra,b
+    /// Rotate. Rotate vra left b bits.
+    RtlVraB(Reg8, u8),
+    /// 0x3Aab - RCR ra,b
+    /// Rotate carry. Rotate ra right b bits through the carry flag.
+    RcrRaB(Reg16, u8),
+    /// 0x3Bab - RCR bra,b
+    /// Rotate carry. Rotate bra right b bits through the carry flag.
+    RcrBraB(Reg32, u8),
+    /// 0x3Cab - RCR vra,b
+    /// Rotate carry. Rotate vra right b bits through the carry flag.
+    RcrVraB(Reg8, u8),
+    /// 0x3Dab - RCL ra,b
+    /// Rotate carry. Rotate ra left b bits through the carry flag.
+    RclRaB(Reg16, u8),
+    /// 0x3Eab - RCL bra,b
+    /// Rotate carry. Rotate bra left b bits through the carry flag.
+    RclBraB(Reg32, u8),
+    /// 0x3Fab - RCL vra,b
+    /// Rotate carry. Rotate vra left b bits through the carry flag.
+    RclVraB(Reg8, u8),
     // TODO
+    // Read/write the program counter from/to a register.
     // Read/write the state of a flag from/to a register.
 }
 impl Instruction {
     /// Get the [Instruction] from the given opcode.
     pub fn from_opcode(opcode: u16) -> Self {
-        // The last nibble of some instructions reserve numbers 0-6 for the 16-bit registers, with
-        // codes for the 32-bit big registers starting at 7.
-        let reg_nib_offset = 7;
-
         let nib_1 = (opcode >> 12) as u8;
         let nib_2 = ((opcode & 0x0F00) >> 8) as u8;
         let nib_3 = ((opcode & 0x00F0) >> 4) as u8;
@@ -369,12 +449,12 @@ impl Instruction {
             (0x0, 0x1, 0xA, 0x0) => LdSpImm32,
             (0x0, 0x1, 0xA, 0x1) => LdImm32Sp,
             (0x0, 0x1, 0xB, bra) => LdSpBra(Reg32::from_nib(bra)),
-            (0x0, 0x1, ra, rb) if ra < reg_nib_offset && rb < reg_nib_offset => {
+            (0x0, 0x1, ra, rb) if ra < NUM_REGS && rb < NUM_REGS => {
                 LdRaRb(Reg16::from_nib(ra), Reg16::from_nib(rb))
             }
             (0x0, 0x1, bra, brb) => LdBraBrb(
-                Reg32::from_nib(bra - reg_nib_offset),
-                Reg32::from_nib(brb - reg_nib_offset),
+                Reg32::from_nib(bra - NUM_REGS),
+                Reg32::from_nib(brb - NUM_REGS),
             ),
             (0x0, 0x2, vra, vrb) => LdVraVrb(Reg8::from_nib(vra), Reg8::from_nib(vrb)),
             (0x0, 0x3, 0x0, ra) => LdRaImm16(Reg16::from_nib(ra)),
@@ -387,36 +467,36 @@ impl Instruction {
             (0x0, 0x7, bra, rb) => LddBraRb(Reg32::from_nib(bra), Reg16::from_nib(rb)),
             (0x0, 0x8, ra, brb) => LdiRaBrb(Reg16::from_nib(ra), Reg32::from_nib(brb)),
             (0x0, 0x9, ra, brb) => LddRaBrb(Reg16::from_nib(ra), Reg32::from_nib(brb)),
-            (0x1, 0x0, ra, rb) if ra < reg_nib_offset && rb < reg_nib_offset => {
+            (0x1, 0x0, ra, rb) if ra < NUM_REGS && rb < NUM_REGS => {
                 AddRaRb(Reg16::from_nib(ra), Reg16::from_nib(rb))
             }
             (0x1, 0x0, bra, brb) => AddBraBrb(
-                Reg32::from_nib(bra - reg_nib_offset),
-                Reg32::from_nib(brb - reg_nib_offset),
+                Reg32::from_nib(bra - NUM_REGS),
+                Reg32::from_nib(brb - NUM_REGS),
             ),
             (0x1, 0x1, vra, vrb) => AddVraVrb(Reg8::from_nib(vra), Reg8::from_nib(vrb)),
-            (0x1, 0x2, ra, rb) if ra < reg_nib_offset && rb < reg_nib_offset => {
+            (0x1, 0x2, ra, rb) if ra < NUM_REGS && rb < NUM_REGS => {
                 AdcRaRb(Reg16::from_nib(ra), Reg16::from_nib(rb))
             }
             (0x1, 0x2, bra, brb) => AdcBraBrb(
-                Reg32::from_nib(bra - reg_nib_offset),
-                Reg32::from_nib(brb - reg_nib_offset),
+                Reg32::from_nib(bra - NUM_REGS),
+                Reg32::from_nib(brb - NUM_REGS),
             ),
             (0x1, 0x3, vra, vrb) => AdcVraVrb(Reg8::from_nib(vra), Reg8::from_nib(vrb)),
-            (0x1, 0x4, ra, rb) if ra < reg_nib_offset && rb < reg_nib_offset => {
+            (0x1, 0x4, ra, rb) if ra < NUM_REGS && rb < NUM_REGS => {
                 SubRaRb(Reg16::from_nib(ra), Reg16::from_nib(rb))
             }
             (0x1, 0x4, bra, brb) => SubBraBrb(
-                Reg32::from_nib(bra - reg_nib_offset),
-                Reg32::from_nib(brb - reg_nib_offset),
+                Reg32::from_nib(bra - NUM_REGS),
+                Reg32::from_nib(brb - NUM_REGS),
             ),
             (0x1, 0x5, vra, vrb) => SubVraVrb(Reg8::from_nib(vra), Reg8::from_nib(vrb)),
-            (0x1, 0x6, ra, rb) if ra < reg_nib_offset && rb < reg_nib_offset => {
+            (0x1, 0x6, ra, rb) if ra < NUM_REGS && rb < NUM_REGS => {
                 SbbRaRb(Reg16::from_nib(ra), Reg16::from_nib(rb))
             }
             (0x1, 0x6, bra, brb) => SbbBraBrb(
-                Reg32::from_nib(bra - reg_nib_offset),
-                Reg32::from_nib(brb - reg_nib_offset),
+                Reg32::from_nib(bra - NUM_REGS),
+                Reg32::from_nib(brb - NUM_REGS),
             ),
             (0x1, 0x7, vra, vrb) => SbbVraVrb(Reg8::from_nib(vra), Reg8::from_nib(vrb)),
             (0x1, 0x8, 0x0, ra) => AddRaImm16(Reg16::from_nib(ra)),
@@ -474,9 +554,142 @@ impl Instruction {
             (0x2, 0xA, 0x9, ra) => NotRa(Reg16::from_nib(ra)),
             (0x2, 0xA, 0xA, bra) => NotBra(Reg32::from_nib(bra)),
             (0x2, 0xA, 0xB, vra) => NotVra(Reg8::from_nib(vra)),
+            (0x2, 0xB, ra, b) => AsrRaB(Reg16::from_nib(ra), b),
+            (0x2, 0xC, bra, b) => AsrBraB(Reg32::from_nib(bra), b),
+            (0x2, 0xD, vra, b) => AsrVraB(Reg8::from_nib(vra), b),
+            (0x2, 0xE, ra, b) => AslRaB(Reg16::from_nib(ra), b),
+            (0x2, 0xF, bra, b) => AslBraB(Reg32::from_nib(bra), b),
+            (0x3, 0x0, vra, b) => AslVraB(Reg8::from_nib(vra), b),
+            (0x3, 0x1, ra, b) => LsrRaB(Reg16::from_nib(ra), b),
+            (0x3, 0x2, bra, b) => LsrBraB(Reg32::from_nib(bra), b),
+            (0x3, 0x3, vra, b) => LsrVraB(Reg8::from_nib(vra), b),
+            (0x3, 0x4, ra, b) => RtrRaB(Reg16::from_nib(ra), b),
+            (0x3, 0x5, bra, b) => RtrBraB(Reg32::from_nib(bra), b),
+            (0x3, 0x6, vra, b) => RtrVraB(Reg8::from_nib(vra), b),
+            (0x3, 0x7, ra, b) => RtlRaB(Reg16::from_nib(ra), b),
+            (0x3, 0x8, bra, b) => RtlBraB(Reg32::from_nib(bra), b),
+            (0x3, 0x9, vra, b) => RtlVraB(Reg8::from_nib(vra), b),
+            (0x3, 0xA, ra, b) => RcrRaB(Reg16::from_nib(ra), b),
+            (0x3, 0xB, bra, b) => RcrBraB(Reg32::from_nib(bra), b),
+            (0x3, 0xC, vra, b) => RcrVraB(Reg8::from_nib(vra), b),
+            (0x3, 0xD, ra, b) => RclRaB(Reg16::from_nib(ra), b),
+            (0x3, 0xE, bra, b) => RclBraB(Reg32::from_nib(bra), b),
+            (0x3, 0xF, vra, b) => RclVraB(Reg8::from_nib(vra), b),
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
+
+    /// Convert the [Instruction] into its opcode.
+    pub fn into_opcode(&self) -> u16 {
+        match self {
+            Nop => 0x0000,
+            LdRaRb(ra, rb) => opc_2arg(0x01_u16, *ra, *rb),
+            LdBraBrb(bra, brb) => opc_2arg_off(0x01_u16, *bra, *brb, NUM_REGS as u16),
+            LdSpImm32 => 0x01A0,
+            LdImm32Sp => 0x01A1,
+            LdSpBra(bra) => opc_1arg(0x01B_u16, *bra),
+            LdVraVrb(vra, vrb) => opc_2arg(0x02_u16, *vra, *vrb),
+            LdRaImm16(ra) => opc_1arg(0x030_u16, *ra),
+            LdBraImm32(bra) => opc_1arg(0x031_u16, *bra),
+            LdVraImm8(vra) => opc_1arg(0x032_u16, *vra),
+            LdBraImm16(bra) => opc_1arg(0x033_u16, *bra),
+            LdBraRb(bra, rb) => opc_2arg(0x04_u16, *bra, *rb),
+            LdRaBrb(ra, brb) => opc_2arg(0x05_u16, *ra, *brb),
+            LdiBraRb(bra, rb) => opc_2arg(0x06_u16, *bra, *rb),
+            LddBraRb(bra, rb) => opc_2arg(0x07_u16, *bra, *rb),
+            LdiRaBrb(ra, brb) => opc_2arg(0x08_u16, *ra, *brb),
+            LddRaBrb(ra, brb) => opc_2arg(0x09_u16, *ra, *brb),
+            AddRaRb(ra, rb) => opc_2arg(0x10_u16, *ra, *rb),
+            AddBraBrb(bra, brb) => opc_2arg_off(0x10_u16, *bra, *brb, NUM_REGS as u16),
+            AddVraVrb(vra, vrb) => opc_2arg(0x11_u16, *vra, *vrb),
+            AdcRaRb(ra, rb) => opc_2arg(0x12_u16, *ra, *rb),
+            AdcBraBrb(bra, brb) => opc_2arg_off(0x12_u16, *bra, *brb, NUM_REGS as u16),
+            AdcVraVrb(vra, vrb) => opc_2arg(0x13_u16, *vra, *vrb),
+            SubRaRb(ra, rb) => opc_2arg(0x14_u16, *ra, *rb),
+            SubBraBrb(bra, brb) => opc_2arg_off(0x14_u16, *bra, *brb, NUM_REGS as u16),
+            SubVraVrb(vra, vrb) => opc_2arg(0x15_u16, *vra, *vrb),
+            SbbRaRb(ra, rb) => opc_2arg(0x16_u16, *ra, *rb),
+            SbbBraBrb(bra, brb) => opc_2arg_off(0x16_u16, *bra, *brb, NUM_REGS as u16),
+            SbbVraVrb(vra, vrb) => opc_2arg(0x17_u16, *vra, *vrb),
+            AddRaImm16(ra) => opc_1arg(0x180_u16, *ra),
+            AdcRaImm16(ra) => opc_1arg(0x181_u16, *ra),
+            AddBraImm32(bra) => opc_1arg(0x182_u16, *bra),
+            AdcBraImm32(bra) => opc_1arg(0x183_u16, *bra),
+            AddVraImm8(vra) => opc_1arg(0x184_u16, *vra),
+            AdcVraImm8(vra) => opc_1arg(0x185_u16, *vra),
+            SubRaImm16(ra) => opc_1arg(0x186_u16, *ra),
+            SbbRaImm16(ra) => opc_1arg(0x187_u16, *ra),
+            SubBraImm32(bra) => opc_1arg(0x188_u16, *bra),
+            SbbBraImm32(bra) => opc_1arg(0x189_u16, *bra),
+            SubVraImm8(vra) => opc_1arg(0x18A_u16, *vra),
+            SbbVraImm8(vra) => opc_1arg(0x18B_u16, *vra),
+            AddRaBrb(ra, brb) => opc_2arg(0x19_u16, *ra, *brb),
+            AdcRaBrb(ra, brb) => opc_2arg(0x1A_u16, *ra, *brb),
+            SubRaBrb(ra, brb) => opc_2arg(0x1B_u16, *ra, *brb),
+            SbbRaBrb(ra, brb) => opc_2arg(0x1C_u16, *ra, *brb),
+            TcpRa(ra) => opc_1arg(0x1D0_u16, *ra),
+            TcpBra(bra) => opc_1arg(0x1D1_u16, *bra),
+            TcpVra(vra) => opc_1arg(0x1D2_u16, *vra),
+            IncRa(ra) => opc_1arg(0x1D3_u16, *ra),
+            IncBra(bra) => opc_1arg(0x1D4_u16, *bra),
+            IncVra(vra) => opc_1arg(0x1D5_u16, *vra),
+            DecRa(ra) => opc_1arg(0x1D6_u16, *ra),
+            DecBra(bra) => opc_1arg(0x1D7_u16, *bra),
+            DecVra(vra) => opc_1arg(0x1D8_u16, *vra),
+            PssRa(ra) => opc_1arg(0x1D9_u16, *ra),
+            PssBra(bra) => opc_1arg(0x1DA_u16, *bra),
+            PssVra(vra) => opc_1arg(0x1DB_u16, *vra),
+            PssImm16 => 0x1DC0,
+            PssImm32 => 0x1DC1,
+            PssImm8 => 0x1DC2,
+            AndRaRb(ra, rb) => opc_2arg(0x1E_u16, *ra, *rb),
+            AndBraBrb(bra, brb) => opc_2arg(0x1F_u16, *bra, *brb),
+            AndVraVrb(vra, vrb) => opc_2arg(0x20_u16, *vra, *vrb),
+            AndRaBrb(ra, brb) => opc_2arg(0x21_u16, *ra, *brb),
+            OrRaRb(ra, rb) => opc_2arg(0x22_u16, *ra, *rb),
+            OrBraBrb(bra, brb) => opc_2arg(0x23_u16, *bra, *brb),
+            OrVraVrb(vra, vrb) => opc_2arg(0x24_u16, *vra, *vrb),
+            OrRaBrb(ra, brb) => opc_2arg(0x25_u16, *ra, *brb),
+            XorRaRb(ra, rb) => opc_2arg(0x26_u16, *ra, *rb),
+            XorBraBrb(bra, brb) => opc_2arg(0x27_u16, *bra, *brb),
+            XorVraVrb(vra, vrb) => opc_2arg(0x28_u16, *vra, *vrb),
+            XorRaBrb(ra, brb) => opc_2arg(0x29_u16, *ra, *brb),
+            AndRaImm16(ra) => opc_1arg(0x2A0_u16, *ra),
+            AndBraImm32(bra) => opc_1arg(0x2A1_u16, *bra),
+            AndVraImm8(vra) => opc_1arg(0x2A2_u16, *vra),
+            OrRaImm16(ra) => opc_1arg(0x2A3_u16, *ra),
+            OrBraImm32(bra) => opc_1arg(0x2A4_u16, *bra),
+            OrVraImm8(vra) => opc_1arg(0x2A5_u16, *vra),
+            XorRaImm16(ra) => opc_1arg(0x2A6_u16, *ra),
+            XorBraImm32(bra) => opc_1arg(0x2A7_u16, *bra),
+            XorVraImm8(vra) => opc_1arg(0x2A8_u16, *vra),
+            NotRa(ra) => opc_1arg(0x2A9_u16, *ra),
+            NotBra(bra) => opc_1arg(0x2AA_u16, *bra),
+            NotVra(vra) => opc_1arg(0x2AB_u16, *vra),
+            AsrRaB(ra, b) => opc_2arg(0x2B_u16, *ra, *b),
+            AsrBraB(bra, b) => opc_2arg(0x2C_u16, *bra, *b),
+            AsrVraB(vra, b) => opc_2arg(0x2D_u16, *vra, *b),
+            AslRaB(ra, b) => opc_2arg(0x2E_u16, *ra, *b),
+            AslBraB(bra, b) => opc_2arg(0x2F_u16, *bra, *b),
+            AslVraB(vra, b) => opc_2arg(0x30_u16, *vra, *b),
+            LsrRaB(ra, b) => opc_2arg(0x31_u16, *ra, *b),
+            LsrBraB(bra, b) => opc_2arg(0x32_u16, *bra, *b),
+            LsrVraB(vra, b) => opc_2arg(0x33_u16, *vra, *b),
+            RtrRaB(ra, b) => opc_2arg(0x34_u16, *ra, *b),
+            RtrBraB(bra, b) => opc_2arg(0x35_u16, *bra, *b),
+            RtrVraB(vra, b) => opc_2arg(0x36_u16, *vra, *b),
+            RtlRaB(ra, b) => opc_2arg(0x37_u16, *ra, *b),
+            RtlBraB(bra, b) => opc_2arg(0x38_u16, *bra, *b),
+            RtlVraB(vra, b) => opc_2arg(0x39_u16, *vra, *b),
+            RcrRaB(ra, b) => opc_2arg(0x3A_u16, *ra, *b),
+            RcrBraB(bra, b) => opc_2arg(0x3B_u16, *bra, *b),
+            RcrVraB(vra, b) => opc_2arg(0x3C_u16, *vra, *b),
+            RclRaB(ra, b) => opc_2arg(0x3D_u16, *ra, *b),
+            RclBraB(bra, b) => opc_2arg(0x3E_u16, *bra, *b),
+            RclVraB(vra, b) => opc_2arg(0x3F_u16, *vra, *b),
+        }
+    }
+
     /// Return the number of CPU steps this instruction takes to execute.
     pub fn num_steps(&self) -> u32 {
         match self {
@@ -564,6 +777,27 @@ impl Instruction {
             NotRa(..) => 2,
             NotBra(..) => 2,
             NotVra(..) => 2,
+            AsrRaB(..) => 2,
+            AsrBraB(..) => 2,
+            AsrVraB(..) => 2,
+            AslRaB(..) => 2,
+            AslBraB(..) => 2,
+            AslVraB(..) => 2,
+            LsrRaB(..) => 2,
+            LsrBraB(..) => 2,
+            LsrVraB(..) => 2,
+            RtrRaB(..) => 2,
+            RtrBraB(..) => 2,
+            RtrVraB(..) => 2,
+            RtlRaB(..) => 2,
+            RtlBraB(..) => 2,
+            RtlVraB(..) => 2,
+            RcrRaB(..) => 2,
+            RcrBraB(..) => 2,
+            RcrVraB(..) => 2,
+            RclRaB(..) => 2,
+            RclBraB(..) => 2,
+            RclVraB(..) => 2,
         }
     }
 }
@@ -657,6 +891,27 @@ impl Display for Instruction {
                 NotRa(ra) => format!("NOT {ra}"),
                 NotBra(bra) => format!("NOT {bra}"),
                 NotVra(vra) => format!("NOT {vra}"),
+                AsrRaB(ra, b) => format!("ASR {ra},{b}"),
+                AsrBraB(bra, b) => format!("ASR {bra},{b}"),
+                AsrVraB(vra, b) => format!("ASR {vra},{b}"),
+                AslRaB(ra, b) => format!("ASL {ra},{b}"),
+                AslBraB(bra, b) => format!("ASL {bra},{b}"),
+                AslVraB(vra, b) => format!("ASL {vra},{b}"),
+                LsrRaB(ra, b) => format!("LSR {ra},{b}"),
+                LsrBraB(bra, b) => format!("LSR {bra},{b}"),
+                LsrVraB(vra, b) => format!("LSR {vra},{b}"),
+                RtrRaB(ra, b) => format!("RTR {ra},{b}"),
+                RtrBraB(bra, b) => format!("RTR {bra},{b}"),
+                RtrVraB(vra, b) => format!("RTR {vra},{b}"),
+                RtlRaB(ra, b) => format!("RTL {ra},{b}"),
+                RtlBraB(bra, b) => format!("RTL {bra},{b}"),
+                RtlVraB(vra, b) => format!("RTL {vra},{b}"),
+                RcrRaB(ra, b) => format!("RCR {ra},{b}"),
+                RcrBraB(bra, b) => format!("RCR {bra},{b}"),
+                RcrVraB(vra, b) => format!("RCR {vra},{b}"),
+                RclRaB(ra, b) => format!("RCL {ra},{b}"),
+                RclBraB(bra, b) => format!("RCL {bra},{b}"),
+                RclVraB(vra, b) => format!("RCL {vra},{b}"),
             }
         )
     }
@@ -749,6 +1004,27 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         NotRa(ra) => alu_ra_rb(cpu, ra, ra, Not),
         NotBra(bra) => alu_bra_brb(cpu, bra, bra, Not),
         NotVra(vra) => alu_vra_vrb(cpu, vra, vra, Not),
+        AsrRaB(ra, b) => alu_ra_b(cpu, ra, b, Asr),
+        AsrBraB(bra, b) => alu_bra_b(cpu, bra, b, Asr),
+        AsrVraB(vra, b) => alu_vra_b(cpu, vra, b, Asr),
+        AslRaB(ra, b) => alu_ra_b(cpu, ra, b, Asl),
+        AslBraB(bra, b) => alu_bra_b(cpu, bra, b, Asl),
+        AslVraB(vra, b) => alu_vra_b(cpu, vra, b, Asl),
+        LsrRaB(ra, b) => alu_ra_b(cpu, ra, b, Lsr),
+        LsrBraB(bra, b) => alu_bra_b(cpu, bra, b, Lsr),
+        LsrVraB(vra, b) => alu_vra_b(cpu, vra, b, Lsr),
+        RtrRaB(ra, b) => alu_ra_b(cpu, ra, b, Rtr),
+        RtrBraB(bra, b) => alu_bra_b(cpu, bra, b, Rtr),
+        RtrVraB(vra, b) => alu_vra_b(cpu, vra, b, Rtr),
+        RtlRaB(ra, b) => alu_ra_b(cpu, ra, b, Rtl),
+        RtlBraB(bra, b) => alu_bra_b(cpu, bra, b, Rtl),
+        RtlVraB(vra, b) => alu_vra_b(cpu, vra, b, Rtl),
+        RcrRaB(ra, b) => alu_ra_b(cpu, ra, b, Rcr),
+        RcrBraB(bra, b) => alu_bra_b(cpu, bra, b, Rcr),
+        RcrVraB(vra, b) => alu_vra_b(cpu, vra, b, Rcr),
+        RclRaB(ra, b) => alu_ra_b(cpu, ra, b, Rcl),
+        RclBraB(bra, b) => alu_bra_b(cpu, bra, b, Rcl),
+        RclVraB(vra, b) => alu_vra_b(cpu, vra, b, Rcl),
     }
 }
 
@@ -759,6 +1035,23 @@ fn invalid_step_panic(instr: Instruction, step_num: u32) {
         instr,
         instr.num_steps()
     );
+}
+
+fn opc_1arg<T: Into<u16>, U: Into<u16>>(instr: T, a: U) -> u16 {
+    (instr.into() << 4) | a.into()
+}
+
+fn opc_2arg<T: Into<u16>, U: Into<u16>, V: Into<u16>>(instr: T, a: U, b: V) -> u16 {
+    (instr.into() << 8) | (a.into() << 4) | b.into()
+}
+
+fn opc_2arg_off<T: Into<u16>, U: Into<u16>, V: Into<u16>>(
+    instr: T,
+    a: U,
+    b: V,
+    offset: u16,
+) -> u16 {
+    opc_2arg(instr, a.into() + offset, b.into() + offset)
 }
 
 // ------- CPU INSTRUCTION FUNCTIONS -------
@@ -1053,3 +1346,39 @@ fn pss_imm8(cpu: &mut Cpu, ram: &Ram) {
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
+
+fn alu_ra_b<T: Into<u16>>(cpu: &mut Cpu, ra: Reg16, b: T, operation: AluOp) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.reg(ra);
+            let result = alu(cpu, operation, a, b.into());
+            cpu.set_reg(ra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn alu_bra_b<T: Into<u32>>(cpu: &mut Cpu, bra: Reg32, b: T, operation: AluOp) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.breg(bra);
+            let result = alu(cpu, operation, a, b.into());
+            cpu.set_breg(bra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn alu_vra_b<T: Into<u8>>(cpu: &mut Cpu, vra: Reg8, b: T, operation: AluOp) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.vreg(vra);
+            let result = alu(cpu, operation, a, b.into());
+            cpu.set_vreg(vra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+#[cfg(test)]
+mod instruction_tests;

@@ -8,7 +8,7 @@ pub const CLOCK_FREQ: u32 = 2_u32.pow(25);
 pub const RAM_SIZE: usize = 0x100_0000;
 
 /// The MFS-16 virtual computer.
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq, Eq, Clone)]
 pub struct Computer {
     /// The CPU of the computer.
     pub cpu: Cpu,

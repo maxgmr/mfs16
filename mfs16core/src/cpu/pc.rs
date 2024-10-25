@@ -43,7 +43,7 @@ impl Into<u32> for &Pc {
 }
 impl Display for Pc {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:#010X}", self.0)
+        write!(f, "{:#08X}", self.0)
     }
 }
 

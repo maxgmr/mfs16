@@ -1,5 +1,12 @@
-use mfs16core::{Computer, Flag::*, Flags, Pc, Reg16::*, Reg32::*, Reg8::*};
+use mfs16core::{
+    gen_ram, Computer, Flag::*, Flags, Instruction::*, Pc, Ram, RamWritable, Reg, Reg16::*,
+    Reg32::*, Reg8::*,
+};
 use pretty_assertions::assert_eq;
+
+mod helpers;
+
+use helpers::instr_test;
 
 #[test]
 fn test_add() {
@@ -1556,4 +1563,639 @@ fn test_not() {
     c.cycle();
     assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
     assert_eq!(c.cpu.vreg(D1), 0xFF);
+}
+
+#[test]
+fn test_as() {
+    let mut c = Computer::default();
+
+    // ASR A1,0
+    c.ram.write_word(0x00_0000, 0x2D00);
+    c.cpu.set_vreg(A1, 0b1010_1010);
+    c.cpu.flags = Flags::from_string("ZCOPN");
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.vreg(A1), 0b1010_1010);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCOPN"));
+
+    // ASR A1,1
+    c.ram.write_word(0x00_0002, 0x2D01);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.vreg(A1), 0b1010_1010);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCOPN"));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.vreg(A1), 0b1101_0101);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZcoPN"));
+
+    // ASR A1,8
+    c.ram.write_word(0x00_0004, 0x2D08);
+
+    // Read instr + do operation
+    c.cycle();
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.vreg(A1), 0b1111_1111);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCoPN"));
+
+    // ASR C1,9
+    c.cpu.set_vreg(C1, 0b0101_0101);
+    c.ram.write_word(0x00_0006, 0x2D49);
+    c.cpu.flags = Flags::from_string("ZCOPN");
+
+    // Read instr + do operation
+    c.cycle();
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.vreg(C1), 0b0000_0000);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZPN"));
+
+    // ASR B,0
+    c.ram.write_word(0x00_0008, 0x2B10);
+    c.cpu.set_reg(B, 0x2F05);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.reg(B), 0x2F05);
+
+    // ASR B,1
+    c.cpu.flags = Flags::from_string("");
+    c.ram.write_word(0x00_000A, 0x2B11);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.reg(B), 0x2F05);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.reg(B), 0x1782);
+    assert_eq!(c.cpu.flags, Flags::from_string("C"));
+
+    // ASR B,4
+    c.ram.write_word(0x00_000C, 0x2B14);
+
+    // Read instr + do operation
+    c.cycle();
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000E));
+    assert_eq!(c.cpu.reg(B), 0x0178);
+    assert_eq!(c.cpu.flags, Flags::from_string(""));
+
+    // ASR HL,0
+    c.cpu.set_breg(HL, 0x80F1_9696);
+    c.ram.write_word(0x00_000E, 0x2C20);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0010));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0010));
+    assert_eq!(c.cpu.breg(HL), 0x80F1_9696);
+    assert_eq!(c.cpu.flags, Flags::from_string(""));
+
+    // ASR HL,1
+    c.ram.write_word(0x00_0010, 0x2C21);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.breg(HL), 0x80F1_9696);
+    assert_eq!(c.cpu.flags, Flags::from_string(""));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.breg(HL), 0xC078_CB4B);
+    assert_eq!(c.cpu.flags, Flags::from_string(""));
+
+    // ASR DE,15
+    c.cpu.set_breg(DE, 0x8000_0000);
+    c.ram.write_word(0x00_0012, 0x2C1F);
+
+    // Read instr + do operation
+    c.cycle();
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0014));
+    assert_eq!(c.cpu.breg(DE), 0xFFFF_0000);
+    assert_eq!(c.cpu.flags, Flags::from_string(""));
+
+    // ASL ra,b
+    instr_test!(
+        REGS: [(A, 0b1010_1111_0000_0101)],
+        RAM: gen_ram![
+            AslRaB(A, 0).into_opcode(),
+            AslRaB(A, 1).into_opcode(),
+            AslRaB(A, 2).into_opcode()
+        ],
+        FLAGS: "",
+        [
+            // ASL A,0
+            (0x00_0002, [(A, 0xAF05)], ""),
+            (0x00_0002, [(A, 0xAF05)], ""),
+            // ASL A,1
+            (0x00_0004, [(A, 0xAF05)], ""),
+            (0x00_0004, [(A, 0x5E0A)], "CO"),
+            // ASL A,2
+            (0x00_0006, [(A, 0b0101_1110_0000_1010)], "CO"),
+            (0x00_0006, [(A, 0x7828)], "C")
+        ]
+    );
+
+    // ASL vra,b
+    instr_test!(
+        REGS: [(B1, 0b0100_1011)],
+        RAM: gen_ram![
+            AslVraB(B1, 0).into_opcode(),
+            AslVraB(B1, 1).into_opcode(),
+            AslVraB(B1, 15).into_opcode()
+        ],
+        FLAGS: "",
+        [
+            // ASL B1,0
+            (0x00_0002, [(B1, 0x4B)], ""),
+            (0x00_0002, [(B1, 0x4B)], ""),
+            // ASL B1,1
+            (0x00_0004, [(B1, 0x4B)], ""),
+            (0x00_0004, [(B1, 0x96)], "O"),
+            // ASL B1,15
+            (0x00_0006, [(B1, 0x96)], "O"),
+            (0x00_0006, [(B1, 0x00)], "O")
+        ]
+    );
+
+    // ASL bra,b
+    instr_test!(
+        REGS: [(DE, 0x6969_0F0F)],
+        RAM: gen_ram![
+            AslBraB(DE, 0).into_opcode(),
+            AslBraB(DE, 1).into_opcode(),
+            AslBraB(DE, 12).into_opcode()
+        ],
+        FLAGS: "ZCOPN",
+        [
+            // ASL DE,0
+            (0x00_0002, [(DE, 0x6969_0F0F)], "ZCOPN"),
+            (0x00_0002, [(DE, 0x6969_0F0F)], "ZCOPN"),
+            // ASL DE,1
+            (0x00_0004, [(DE, 0x6969_0F0F)], "ZNCPO"),
+            (0x00_0004, [(DE, 0xD2D2_1E1E_u32)], "ZOPN"),
+            // ASL DE,12
+            (0x00_0006, [(DE, 0xD2D2_1E1E_u32)], "ZOPN"),
+            (0x00_0006, [(DE, 0x21E1_E000)], "ZCOPN")
+        ]
+    );
+}
+
+#[test]
+fn test_lsr() {
+    instr_test!(
+        REGS: [(L, 0x9696), (BC, 0xA4A4_A4A4), (E0, 0x81)],
+        RAM: gen_ram![
+            LsrRaB(L, 0).into_opcode(),
+            LsrRaB(L, 1).into_opcode(),
+            LsrRaB(L, 1).into_opcode(),
+            LsrRaB(L, 15).into_opcode(),
+            LsrBraB(BC, 0).into_opcode(),
+            LsrBraB(BC, 1).into_opcode(),
+            LsrBraB(BC, 4).into_opcode(),
+            LsrVraB(E0, 0).into_opcode(),
+            LsrVraB(E0, 1).into_opcode(),
+            LsrVraB(E0, 15).into_opcode()
+        ],
+        FLAGS: "ZPN",
+        [
+            // LSR L,0
+            (0x00_0002, [(L, 0x9696)], "ZPN"),
+            (0x00_0002, [(L, 0x9696)], "ZPN"),
+            // LSR L,1
+            (0x00_0004, [(L, 0x9696)], "ZPN"),
+            (0x00_0004, [(L, 0x4B4B)], "ZOPN"),
+            // LSR L,1
+            (0x00_0006, [(L, 0x4B4B)], "ZOPN"),
+            (0x00_0006, [(L, 0x25A5)], "ZCPN"),
+            // LSR L,15
+            (0x00_0008, [(L, 0x25A5)], "ZCPN"),
+            (0x00_0008, [(L, 0x0000)], "ZPN"),
+            // LSR BC,0
+            (0x00_000A, [(BC, 0xA4A4_A4A4_u32)], "ZPN"),
+            (0x00_000A, [(BC, 0xA4A4_A4A4_u32)], "ZPN"),
+            // LSR BC,1
+            (0x00_000C, [(BC, 0xA4A4_A4A4_u32)], "ZPN"),
+            (0x00_000C, [(BC, 0x5252_5252)], "ZOPN"),
+            // LSR BC,4
+            (0x00_000E, [(BC, 0x5252_5252)], "ZOPN"),
+            (0x00_000E, [(BC, 0x0525_2525)], "ZPN")
+        ]
+    );
+}
+
+#[test]
+fn test_rt() {
+    instr_test!(
+        REGS: [
+            (A, 0x9696),
+            (BC, 0xA4A4_A4A4),
+            (D1, 0x81),
+            (E, 0x1234),
+            (HL, 0xE1E1_1E1E),
+            (D0, 0x75)
+        ],
+        RAM: gen_ram![
+            RtrRaB(A, 0).into_opcode(),
+            RtrRaB(A, 1).into_opcode(),
+            RtrRaB(A, 2).into_opcode(),
+            RtrBraB(BC, 0).into_opcode(),
+            RtrBraB(BC, 1).into_opcode(),
+            RtrBraB(BC, 2).into_opcode(),
+            RtrVraB(D1, 0).into_opcode(),
+            RtrVraB(D1, 1).into_opcode(),
+            RtrVraB(D1, 2).into_opcode(),
+            RtrVraB(D1, 8).into_opcode(),
+            RtrVraB(D1, 9).into_opcode(),
+            RtlRaB(E, 0).into_opcode(),
+            RtlRaB(E, 1).into_opcode(),
+            RtlRaB(E, 2).into_opcode(),
+            RtlBraB(HL, 0).into_opcode(),
+            RtlBraB(HL, 1).into_opcode(),
+            RtlBraB(HL, 2).into_opcode(),
+            RtlVraB(D0, 0).into_opcode(),
+            RtlVraB(D0, 1).into_opcode(),
+            RtlVraB(D0, 2).into_opcode(),
+            RtlVraB(D0, 8).into_opcode(),
+            RtlVraB(D0, 9).into_opcode()
+        ],
+        FLAGS: "",
+        [
+            // RTR A,0
+            (0x00_0002, [(A,0x9696)], ""),
+            (0x00_0002, [(A,0x9696)], ""),
+            // RTR A,1
+            (0x00_0004, [(A,0x9696)], ""),
+            (0x00_0004, [(A,0x4B4B)], "O"),
+            // RTR A,2
+            (0x00_0006, [(A,0x4B4B)], "O"),
+            (0x00_0006, [(A,0xD2D2)], "CO"),
+            // RTR BC,0
+            (0x00_0008, [(BC,0xA4A4_A4A4_u32)], "CO"),
+            (0x00_0008, [(BC,0xA4A4_A4A4_u32)], "CO"),
+            // RTR BC,1
+            (0x00_000A, [(BC,0xA4A4_A4A4_u32)], "CO"),
+            (0x00_000A, [(BC,0x5252_5252)], "O"),
+            // RTR BC,2
+            (0x00_000C, [(BC,0x5252_5252)], "O"),
+            (0x00_000C, [(BC,0x9494_9494_u32)], "OC"),
+            // RTR D1,0
+            (0x00_000E, [(D1,0x81)], "CO"),
+            (0x00_000E, [(D1,0x81)], "CO"),
+            // RTR D1,1
+            (0x00_0010, [(D1,0x81)], "CO"),
+            (0x00_0010, [(D1,0xC0)], "C"),
+            // RTR D1,2
+            (0x00_0012, [(D1,0xC0)], "C"),
+            (0x00_0012, [(D1,0x30)], "O"),
+            // RTR D1,8
+            (0x00_0014, [(D1,0x30)], "O"),
+            (0x00_0014, [(D1,0x30)], "O"),
+            // RTR D1,9
+            (0x00_0016, [(D1,0x30)], "O"),
+            (0x00_0016, [(D1,0x18)], ""),
+            // RTL E,0
+            (0x00_0018, [(E,0x1234)], ""),
+            (0x00_0018, [(E,0x1234)], ""),
+            // RTL E,1
+            (0x00_001A, [(E,0x1234)], ""),
+            (0x00_001A, [(E,0x2468)], ""),
+            // RTL E,2
+            (0x00_001C, [(E,0x2468)], ""),
+            (0x00_001C, [(E,0x91A0)], "O"),
+            // RTL HL,0
+            (0x00_001E, [(HL,0xE1E1_1E1E_u32)], "O"),
+            (0x00_001E, [(HL,0xE1E1_1E1E_u32)], "O"),
+            // RTL HL,1
+            (0x00_0020, [(HL,0xE1E1_1E1E_u32)], "O"),
+            (0x00_0020, [(HL,0xC3C2_3C3D_u32)], "C"),
+            // RTL HL,2
+            (0x00_0022, [(HL,0xC3C2_3C3D_u32)], "C"),
+            (0x00_0022, [(HL,0x0F08_F0F7)], "OC"),
+            // RTL D0,0
+            (0x00_0024, [(D0,0x75)], "OC"),
+            (0x00_0024, [(D0,0x75)], "OC"),
+            // RTL D0,1
+            (0x00_0026, [(D0,0x75)], "CO"),
+            (0x00_0026, [(D0,0xEA)], "O"),
+            // RTL D0,2
+            (0x00_0028, [(D0,0xEA)], "O"),
+            (0x00_0028, [(D0,0xAB)], "C"),
+            // RTL D0,8
+            (0x00_002A, [(D0,0xAB)], "C"),
+            (0x00_002A, [(D0,0xAB)], "C"),
+            // RTL D0,9
+            (0x00_002C, [(D0,0xAB)], "C"),
+            (0x00_002C, [(D0,0x57)], "CO")
+        ]
+    );
+}
+
+#[test]
+fn test_rc() {
+    let mut c = Computer::default();
+
+    // RCR A1,0; Carry reset
+    c.ram.write_word(0x00_0000, 0x3C00);
+    c.cpu.set_vreg(A1, 0b1010_1010);
+    c.cpu.flags = Flags::from_string("ZcOPN");
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.flags, Flags::from_string("ZcOPN"));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.flags, Flags::from_string("ZcOPN"));
+    assert_eq!(c.cpu.vreg(A1), 0b1010_1010);
+
+    // RCR A1,4; Carry reset
+    c.ram.write_word(0x00_0002, 0x3C04);
+    c.cpu.set_vreg(A1, 0b1010_1010);
+    c.cpu.flags = Flags::from_string("zcopn");
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.flags, Flags::from_string("zCOpn"));
+    assert_eq!(c.cpu.vreg(A1), 0b0100_1010);
+
+    // RCR A0,1; Carry set
+    c.ram.write_word(0x00_0004, 0x3C11);
+    c.cpu.set_vreg(A0, 0b0101_0101);
+    c.cpu.flags = Flags::from_string("ZCoPn");
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCoPn"));
+    assert_eq!(c.cpu.vreg(A0), 0b0101_0101);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCOPn"));
+    assert_eq!(c.cpu.vreg(A0), 0b1010_1010);
+
+    // RCR B1,2; Carry set
+    c.ram.write_word(0x00_0006, 0x3C22);
+    c.cpu.set_vreg(B1, 0b0001_0111);
+
+    // Read + do operation
+    c.cycle();
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCOPn"));
+    assert_eq!(c.cpu.vreg(B1), 0b1100_0101);
+
+    // RCR B1,11; Carry set
+    c.ram.write_word(0x00_0008, 0x3C2B);
+
+    // Read + do operation
+    c.cycle();
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
+    assert_eq!(c.cpu.vreg(B1), 0b1111_0001);
+
+    // RCR B0,8; Carry reset
+    c.cpu.set_vreg(B0, 0b0001_0111);
+    c.ram.write_word(0x00_000A, 0x3C38);
+
+    // Read + do operation
+    c.cycle();
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
+    assert_eq!(c.cpu.vreg(B0), 0b0010_1110);
+
+    // RCR A,0; Carry set
+    c.cpu.flags = Flags::from_string("zCopn");
+    c.cpu.set_reg(A, 0b1010_1010_1010_1010);
+    c.ram.write_word(0x00_000C, 0x3A00);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000E));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.reg(A), 0b1010_1010_1010_1010);
+    assert_eq!(c.cpu.pc, Pc::new(0x00_000E));
+    assert_eq!(c.cpu.flags, Flags::from_string("zCopn"));
+
+    // RCR A,1; Carry set
+    c.ram.write_word(0x00_000E, 0x3A01);
+
+    // Read + do operation
+    c.cycle();
+    assert_eq!(c.cpu.reg(A), 0b1010_1010_1010_1010);
+    assert_eq!(c.cpu.flags, Flags::from_string("zCopn"));
+    c.cycle();
+    assert_eq!(c.cpu.reg(A), 0b1101_0101_0101_0101);
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
+
+    // RCR B,15; Carry reset
+    c.cpu.set_reg(B, 0b0100_0000_0000_0000);
+    c.ram.write_word(0x00_0010, 0x3A1F);
+
+    // Read + do operation
+    c.cycle();
+    assert_eq!(c.cpu.reg(B), 0x4000);
+    c.cycle();
+    assert_eq!(c.cpu.reg(B), 0);
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.flags, Flags::from_string("zCopn"));
+
+    // RCR DE,0; Carry set
+    c.cpu.flags = Flags::from_string("zCOpn");
+    c.cpu.set_breg(DE, 0xAAAA_AAAA);
+    c.ram.write_word(0x00_0012, 0x3B10);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0014));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.breg(DE), 0xAAAA_AAAA);
+    assert_eq!(c.cpu.flags, Flags::from_string("zCOpn"));
+
+    // RCR DE,1; Carry set
+    c.ram.write_word(0x00_0014, 0x3B11);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0016));
+    assert_eq!(c.cpu.flags, Flags::from_string("zCOpn"));
+    assert_eq!(c.cpu.breg(DE), 0xAAAA_AAAA);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0016));
+    assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
+    assert_eq!(c.cpu.breg(DE), 0xD555_5555);
+
+    // RCR HL,15; Carry reset
+    c.cpu.set_breg(HL, 0x8000_0000);
+    c.ram.write_word(0x00_0016, 0x3B2F);
+
+    // Read + do op
+    c.cycle();
+    assert_eq!(c.cpu.breg(HL), 0x8000_0000);
+    c.cycle();
+    assert_eq!(c.cpu.flags, Flags::from_string("zcOpn"));
+    assert_eq!(c.cpu.breg(HL), 0x0001_0000);
+
+    // RCL A1,0; Carry set
+    c.cpu.set_vreg(A1, 0x88);
+    c.cpu.flags = Flags::from_string("ZCOPN");
+    c.ram.write_word(0x00_0018, 0x3F00);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_001A));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_001A));
+    assert_eq!(c.cpu.vreg(A1), 0x88);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCOPN"));
+
+    // RCL A1,1; Carry set
+    c.cpu.flags = Flags::from_string("ZCoPN");
+    c.ram.write_word(0x00_001A, 0x3F01);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_001C));
+    assert_eq!(c.cpu.vreg(A1), 0x88);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCoPN"));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_001C));
+    assert_eq!(c.cpu.vreg(A1), 0x11);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZCOPN"));
+
+    // RCL A1,10; Carry set
+    c.ram.write_word(0x00_001C, 0x3F0A);
+
+    // Read + do operation
+    c.cycle();
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_001E));
+    assert_eq!(c.cpu.vreg(A1), 0x23);
+    assert_eq!(c.cpu.flags, Flags::from_string("ZcoPN"));
+
+    // RCL D,0; Carry reset
+    c.cpu.set_reg(D, 0x9600);
+    c.cpu.flags = Flags::from_string("");
+    c.ram.write_word(0x00_001E, 0x3D30);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0020));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0020));
+    assert_eq!(c.cpu.reg(D), 0x9600);
+    assert_eq!(c.cpu.flags, Flags::from_string(""));
+
+    // RCL D,1; Carry reset
+    c.ram.write_word(0x00_0020, 0x3D31);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0022));
+    assert_eq!(c.cpu.flags, Flags::from_string(""));
+    assert_eq!(c.cpu.reg(D), 0x9600);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0022));
+    assert_eq!(c.cpu.flags, Flags::from_string("CO"));
+    assert_eq!(c.cpu.reg(D), 0x2C00);
+
+    // RCL E,15; Carry set
+    c.cpu.set_reg(E, 0x0000);
+    c.ram.write_word(0x00_0022, 0x3D4F);
+
+    // Read + do operation
+    c.cycle();
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0024));
+    assert_eq!(c.cpu.reg(E), 0x4000);
+    assert_eq!(c.cpu.flags, Flags::from_string(""));
+
+    // RCL HL,0; Carry reset
+    c.cpu.set_breg(HL, 0xAAAA_00FF);
+    c.ram.write_word(0x00_0024, 0x3E20);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0026));
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0026));
+    assert_eq!(c.cpu.breg(HL), 0xAAAA_00FF);
+    assert_eq!(c.cpu.flags, Flags::from_string(""));
+
+    // RCL HL,1; Carry reset
+    c.ram.write_word(0x00_0026, 0x3E21);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0028));
+    assert_eq!(c.cpu.flags, Flags::from_string(""));
+    assert_eq!(c.cpu.breg(HL), 0xAAAA_00FF);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_0028));
+    assert_eq!(c.cpu.flags, Flags::from_string("CO"));
+    assert_eq!(c.cpu.breg(HL), 0x5554_01FE);
+
+    // RCL DE,15; Carry set
+    c.cpu.set_breg(DE, 0x0000_0001);
+    c.ram.write_word(0x00_0028, 0x3E1F);
+
+    // Read instr + do operation
+    c.cycle();
+    c.cycle();
+    assert_eq!(c.cpu.pc, Pc::new(0x00_002A));
+    assert_eq!(c.cpu.breg(DE), 0x0000_C000);
+    assert_eq!(c.cpu.flags, Flags::from_string(""));
 }

@@ -122,8 +122,7 @@ impl Flags {
     /// [Parity] is set iff the value is even.
     pub fn change_parity<T>(&mut self, val: T)
     where
-        T: BitAnd + Oneable + Zeroable,
-        <T as BitAnd>::Output: PartialEq<T>,
+        T: BitAnd<Output = T> + Oneable + Zeroable + PartialEq,
     {
         self.change_flag(Parity, (val & T::one()) == T::zero())
     }

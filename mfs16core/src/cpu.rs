@@ -7,17 +7,19 @@ mod pc;
 mod register;
 
 // Re-exports
-pub use flag::{Flag, Flags};
+pub use flag::{Flag, Flags, Msb, Oneable, Zeroable};
+pub use instruction::{
+    step, AsLargerType, HasMax, Instruction, NMinus1Mask, NumBits, WrappingAdd, WrappingSub,
+};
 pub use pc::Pc;
-pub use register::{Reg16, Reg32, Reg8};
+pub use register::{Reg, Reg16, Reg32, Reg8};
 
 use crate::ram::Ram;
-use instruction::{step, Instruction};
 use register::Registers;
 
 const DEBUG: bool = true;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Cpu {
     /// The CPU [Registers].
     pub regs: Registers,
