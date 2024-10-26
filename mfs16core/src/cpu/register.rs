@@ -49,6 +49,22 @@ impl Display for Reg16 {
         write!(f, "{:?}", self,)
     }
 }
+impl TryFrom<&str> for Reg16 {
+    type Error = String;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "A" => Ok(A),
+            "B" => Ok(B),
+            "C" => Ok(C),
+            "D" => Ok(D),
+            "E" => Ok(E),
+            "H" => Ok(H),
+            "L" => Ok(L),
+            _ => Err(format!("String `{value}` does not correspond to a Reg16.")),
+        }
+    }
+}
 #[allow(clippy::from_over_into)]
 impl Into<u16> for Reg16 {
     fn into(self) -> u16 {
@@ -90,6 +106,18 @@ impl Reg32 {
 impl Display for Reg32 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self,)
+    }
+}
+impl TryFrom<&str> for Reg32 {
+    type Error = String;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "BC" => Ok(BC),
+            "DE" => Ok(DE),
+            "HL" => Ok(HL),
+            _ => Err(format!("String `{value}` does not correspond to a Reg32.")),
+        }
     }
 }
 #[allow(clippy::from_over_into)]
@@ -162,6 +190,29 @@ impl Reg8 {
 impl Display for Reg8 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self,)
+    }
+}
+impl TryFrom<&str> for Reg8 {
+    type Error = String;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "A1" => Ok(A1),
+            "A0" => Ok(A0),
+            "B1" => Ok(B1),
+            "B0" => Ok(B0),
+            "C1" => Ok(C1),
+            "C0" => Ok(C0),
+            "D1" => Ok(D1),
+            "D0" => Ok(D0),
+            "E1" => Ok(E1),
+            "E0" => Ok(E0),
+            "H1" => Ok(H1),
+            "H0" => Ok(H0),
+            "L1" => Ok(L1),
+            "L0" => Ok(L0),
+            _ => Err(format!("String `{value}` does not correspond to a Reg8.")),
+        }
     }
 }
 #[allow(clippy::from_over_into)]
@@ -365,6 +416,7 @@ impl Display for Registers {
 
 /// Implementors of this trait can be used as labels to identify [Cpu] registers.
 pub trait Reg {
+    /// The type of the value held by the register.
     type ValueType;
     /// Get the register of the given [Cpu] matching the given value.
     fn get(&self, cpu: &Cpu) -> Self::ValueType;
@@ -388,7 +440,6 @@ macro_rules! impl_reg {
         )+
     };
 }
-
 impl_reg!(
     (Reg16, reg, set_reg, u16),
     (Reg32, breg, set_breg, u32),
