@@ -7,7 +7,7 @@ mod asm_lexer;
 mod asm_parser;
 mod codemap;
 
-use crate::{arg_parser::Cli, asm_parser::AsmParser};
+use crate::arg_parser::Cli;
 
 fn main() -> eyre::Result<()> {
     color_eyre::install()?;
@@ -15,11 +15,6 @@ fn main() -> eyre::Result<()> {
     let args = Cli::parse();
     if args.files.is_empty() {
         return Err(eyre!("No input files given."));
-    }
-
-    for path in args.files {
-        let mut asm_parser = AsmParser::from_path(path, args.debug)?;
-        asm_parser.parse_input()?;
     }
 
     Ok(())
