@@ -1,5 +1,6 @@
 //! Performs lexical analysis on MFS-16 assembly language.
 use color_eyre::eyre::{self, eyre};
+use mfs16core::{Reg16, Reg32, Reg8};
 
 mod token_type;
 
@@ -17,6 +18,39 @@ const WORD_SUFFIX_CHAR: char = 'w';
 const DWORD_SUFFIX_CHAR: char = 'd';
 const QWORD_SUFFIX_CHAR: char = 'q';
 
+/// Attempt to lex a single token from the input stream.
+pub fn lex_token(data: &str) -> eyre::Result<(TokenType, usize)> {
+    let next = match data.chars().next() {
+        Some(c) => c,
+        None => {
+            return Err(eyre!("Unexpected end of file"));
+        }
+    };
+
+    Ok(match next {
+        '=' => (Equals, 1),
+        '#' => (Pound, 1),
+        '[' => (OpenBracket, 1),
+        ']' => (CloseBracket, 1),
+        '(' => (OpenParen, 1),
+        ')' => (CloseParen, 1),
+        '+' => (Plus, 1),
+        '-' => (Minus, 1),
+        '*' => (Asterisk, 1),
+        '/' => (Slash, 1),
+        '\\' => (Backslash, 1),
+        ',' => (Comma, 1),
+        ';' => (Semicolon, 1),
+        ':' => (Colon, 1),
+        '\n' => (Newline, 1),
+        c if c.is_ascii_digit() => tokenise_number(data)?,
+        c if is_identifier_char(c) => tokenise_identifier(data)?,
+        _ => {
+            return Err(eyre!("Unknown character."));
+        }
+    })
+}
+
 fn tokenise_identifier(data: &str) -> eyre::Result<(TokenType, usize)> {
     // Identifiers can't start with a number
     match data.chars().next() {
@@ -31,7 +65,16 @@ fn tokenise_identifier(data: &str) -> eyre::Result<(TokenType, usize)> {
 
     let (contents, num_bytes) = consume_chars_while(data, |c| c == '_' || c.is_alphanumeric())?;
 
-    // TODO check for keyword
+    // Check if register instead of normal identifier
+    if let Ok(reg) = <Reg16>::try_from(contents) {
+        return Ok((Reg(reg), num_bytes));
+    }
+    if let Ok(breg) = <Reg32>::try_from(contents) {
+        return Ok((Breg(breg), num_bytes));
+    }
+    if let Ok(vreg) = <Reg8>::try_from(contents) {
+        return Ok((Vreg(vreg), num_bytes));
+    }
 
     Ok((Identifier(contents.to_owned()), num_bytes))
 }
@@ -81,6 +124,44 @@ fn tokenise_number(data: &str) -> eyre::Result<(TokenType, usize)> {
     Ok((token_type, contents_bytes + suffix_bytes))
 }
 
+/// Skip whitespace and/or comments.
+fn skip_ws_com(data: &str) -> usize {
+    let mut remaining = data;
+
+    loop {
+        let ws = skip_whitespace(remaining);
+        remaining = &remaining[ws..];
+        let com = skip_comment(remaining);
+        remaining = &remaining[com..];
+
+        if (ws + com) == 0 {
+            return data.len() - remaining.len();
+        }
+    }
+}
+
+fn skip_whitespace(data: &str) -> usize {
+    match consume_chars_while(data, |c| c.is_whitespace()) {
+        Ok((_, skipped_bytes)) => skipped_bytes,
+        _ => 0,
+    }
+}
+
+fn skip_comment(data: &str) -> usize {
+    let pairs = [("//", "\n"), ("/*", "*/")];
+
+    for &(pat, matcher) in &pairs {
+        if data.starts_with(pat) {
+            let remaining = skip_until(data, matcher);
+            return data.len() - remaining.len();
+        }
+    }
+
+    0
+}
+
+// ------- HELPERS -------
+
 /// Consume n chars.
 fn consume_n_chars(data: &str, n: usize) -> eyre::Result<(&str, usize)> {
     let mut count = 0;
@@ -110,6 +191,19 @@ fn consume_chars_while<F: FnMut(char) -> bool>(
     }
 
     Ok((&data[..index], index))
+}
+
+/// Skip chars until a pattern is found, returning everything after the pattern.
+fn skip_until<'a>(mut data: &'a str, pattern: &str) -> &'a str {
+    while !data.is_empty() && !data.starts_with(pattern) {
+        let next_char_size = data
+            .chars()
+            .next()
+            .expect("The string isn't empty.")
+            .len_utf8();
+        data = &data[next_char_size..];
+    }
+    &data[pattern.len()..]
 }
 
 /// Return true iff the given char is a valid identifier char.

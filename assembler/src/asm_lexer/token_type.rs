@@ -14,8 +14,10 @@ pub enum TokenType {
     QWord(u64),
     /// A single identifier; e.g., variable name
     Identifier(String),
-    /// A single string literal; e.g., "good morning"
-    StringLiteral(String),
+    /// =
+    Equals,
+    /// #
+    Pound,
     /// [
     OpenBracket,
     /// ]
