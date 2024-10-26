@@ -2,6 +2,10 @@
 
     // Comment.
 
+// Unicode should work!
+    // Hallöchen
+    // 汉字
+
 /*
     Multi-line comment.
 */
@@ -11,12 +15,17 @@
     pretty cool. */
 
 // Set registers to values.
-ld A, 0x0000                        // load 0x0000 (0) into A
-ld B, 0b1010_1010_1010_1010         // load 0xAAAA (43690) into B
-ld C,B                              // load B into C
-ld D, C                             // load C into D
-ld E,  1234                         // load 0x04D2 (1234) into E
-ld              H,           E      // load E into H
-    ld L, H                         // load H into L
+ld A, 0x0000;                        // load 0x0000 (0) into A
+nop;                                 // do nothin'
+ld B, 0b1010_1010_1010_1010;         // load 0xAAAA (43690) into B
+ld C,B;                              // load B into C
+ld D, C;                             // load C into D
+ld E,  1234;                         // load 0x04D2 (1234) into E
+ld                                   // load E into H
+    E,  H;
+    ld                               // load...
+    L,                               // ...into L...
+    H                                // ...H.
+;
 /* A final
 multi-line comment. */

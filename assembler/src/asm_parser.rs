@@ -19,6 +19,8 @@ pub struct AsmParser {
     input: String,
     /// If true, print debug messages.
     debug: bool,
+    /// The binary output.
+    binary: Vec<u8>,
 }
 impl AsmParser {
     /// Create a new [AsmParser] from the given file path.
@@ -33,6 +35,7 @@ impl AsmParser {
             contents,
             input,
             debug,
+            binary: vec![],
         })
     }
 
@@ -84,17 +87,17 @@ impl AsmParser {
     fn skip_ws_com(&mut self) {
         'ws_com_loop: loop {
             // Match + remove whitespace.
-            if self.consume_regex(ws_reg()).is_some() {
+            if self.consume_regex(vec![ws_re()], false).is_some() {
                 continue 'ws_com_loop;
             }
 
             // Match + remove comments.
-            if self.consume_regex(com_reg()).is_some() {
+            if self.consume_regex(vec![com_re()], false).is_some() {
                 continue 'ws_com_loop;
             }
 
             // Match + remove multi-line comments.
-            if self.consume_regex(mcom_reg()).is_some() {
+            if self.consume_regex(vec![mcom_re()], false).is_some() {
                 continue 'ws_com_loop;
             }
 
@@ -104,36 +107,116 @@ impl AsmParser {
 
     /// Parse an instruction.
     fn parse_instruction(&mut self) -> eyre::Result<()> {
-        if self.consume_regex(ld_reg()).is_some() {
-        } else {
-            self.parse_error(String::from("Unknown instruction."))?;
+        // TODO match all instructions instead of just ld
+        let instr_string = match self.consume_regex(vec![ld_re()], true) {
+            Some(result) => result,
+            None => {
+                return self.parse_error(String::from("Unknown instruction."));
+            }
+        };
+
+        for (arg_string, reg_num) in self.parse_instr_args()? {
+            match reg_num {
+                // reg
+                0 => {}
+                // breg
+                1 => {}
+                // vreg
+                2 => {}
+                // breg deref
+                3 => {}
+                // stack pointer
+                4 => {}
+                // program counter
+                5 => {}
+                // binary
+                6 => {}
+                // hex
+                7 => {}
+                // octal
+                8 => {}
+                // decimal
+                9 => {}
+                _ => unreachable!("Regex number {} out of range.", reg_num),
+            }
         }
+
         Ok(())
     }
 
-    /// If regex matches start of input, consume the match from input and return said match.
-    fn consume_regex(&mut self, re: &'static Regex) -> Option<String> {
-        if let Some(mtch) = re.find(&self.input) {
-            let match_str = mtch.as_str().to_owned();
+    /// Parse instruction arguments.
+    fn parse_instr_args(&mut self) -> eyre::Result<Vec<(String, usize)>> {
+        let mut arg_strings: Vec<(String, usize)> = Vec::new();
 
-            let mut chars = self.input.chars();
-            for _ in 0..(mtch.end()) {
-                chars.next();
+        'parse_args_loop: loop {
+            match self.consume_regex(instr_arg_res(), true) {
+                Some(result) => arg_strings.push(result),
+                None => self.parse_error(String::from("Expected argument."))?,
             }
-            self.input = chars.as_str().to_owned();
 
-            if self.debug {
-                println!("{match_str}");
+            match self.consume_regex(vec![comma_re(), semicolon_re()], true) {
+                // Semicolon was found, instruction is done
+                Some((_, 1)) => break 'parse_args_loop,
+                // Comma was found, continue
+                Some((_, _)) => continue 'parse_args_loop,
+                // Match failure
+                None => self.parse_error(String::from("Expected `,` or `;`."))?,
             }
-            Some(match_str)
-        } else {
-            None
         }
+
+        Ok(arg_strings)
+    }
+
+    /// If any regex matches the start of the input, consume the match and return the value of said
+    /// match along with the index of the regex that matched it.
+    fn consume_regex(
+        &mut self,
+        res: Vec<&'static Regex>,
+        skip_ws_com_after: bool,
+    ) -> Option<(String, usize)> {
+        for (i, re) in res.iter().enumerate() {
+            if let Some(mtch) = re.find(&self.input) {
+                let match_str = mtch.as_str().to_owned();
+
+                let mut chars = self.input.chars();
+                for _ in match_str.chars() {
+                    chars.next();
+                }
+                self.input = chars.as_str().to_owned();
+
+                if self.debug {
+                    println!("{match_str}");
+                }
+
+                if skip_ws_com_after {
+                    self.skip_ws_com();
+                }
+
+                return Some((match_str, i));
+            }
+        }
+        None
     }
 }
 
+/// Return a vector of all the regexes which can match instruction arguments.
+fn instr_arg_res() -> Vec<&'static Regex> {
+    vec![
+        reg_re(),
+        breg_re(),
+        vreg_re(),
+        breg_deref_re(),
+        sp_re(),
+        pc_re(),
+        binary_re(),
+        hex_re(),
+        octal_re(),
+        decimal_re(),
+    ]
+}
+
 // --- STATIC REGEXES ---
-macro_rules! static_reg {
+macro_rules! static_re {
     ($fn_name:ident, $const_name:ident, $reg_str:literal) => {
         fn $fn_name() -> &'static Regex {
             static $const_name: OnceLock<Regex> = OnceLock::new();
@@ -141,7 +224,19 @@ macro_rules! static_reg {
         }
     };
 }
-static_reg!(ws_reg, WS_REG, r"^\s+");
-static_reg!(com_reg, COM_REG, r"^//.*[\n$]");
-static_reg!(mcom_reg, MCOM_REG, r"(?s)^/\*.*?\*/");
-static_reg!(ld_reg, LD_REG, r"(?i)^ld");
+static_re!(ws_re, WS_RE, r"^\s+");
+static_re!(com_re, COM_RE, r"^//.*[\n$]");
+static_re!(mcom_re, MCOM_RE, r"(?s)^/\*.*?\*/");
+static_re!(ld_re, LD_RE, r"(?i)^ld\b");
+static_re!(reg_re, REG_RE, r"^[A-EHL]\b");
+static_re!(breg_re, BREG_RE, r"^(?:BC|DE|HL)\b");
+static_re!(breg_deref_re, BREG_DEREF_RE, r"^\[(?:BC|DE|HL)\]\b");
+static_re!(vreg_re, REG_RE, r"^[A-EHL][01]\b");
+static_re!(decimal_re, DECIMAL_RE, r"^-?[\d_]+\b");
+static_re!(hex_re, HEX_RE, r"^0x[\dA-Fa-f_]+\b");
+static_re!(octal_re, OCTAL_RE, r"^0o[0-7_]+\b");
+static_re!(binary_re, BINARY_RE, r"^0b[01_]+\b");
+static_re!(sp_re, SP_RE, r"^SP\b");
+static_re!(pc_re, PC_RE, r"^PC\b");
+static_re!(comma_re, COMMA_RE, r"^,");
+static_re!(semicolon_re, SEMICOLON_RE, r"^;");
