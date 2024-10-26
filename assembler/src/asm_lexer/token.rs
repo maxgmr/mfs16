@@ -1,9 +1,33 @@
-use color_eyre::eyre::{self, eyre};
+use crate::codemap::Span;
 use mfs16core::{Reg16, Reg32, Reg8};
 
+/// An MFS-16 assembly code token.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Token {
+    /// Token location relative to the rest of the files being processed.
+    pub span: Span,
+    /// The variant of this particular token.
+    pub kind: TokenKind,
+}
+impl Token {
+    /// Create a token from a given [Span] and something which can be turned into a [TokenKind].
+    pub fn new<K: Into<TokenKind>>(span: Span, kind: K) -> Self {
+        let kind = kind.into();
+        Self { span, kind }
+    }
+}
+impl<T> From<T> for Token
+where
+    T: Into<TokenKind>,
+{
+    fn from(value: T) -> Self {
+        Self::new(Span::dummy(), value)
+    }
+}
+
 /// All the valid tokens of MFS-16 ASM.
-#[derive(Debug, Clone, PartialEq)]
-pub enum TokenType {
+#[derive(Clone, Debug, PartialEq)]
+pub enum TokenKind {
     /// A single byte.
     Byte(u8),
     /// A single 16-bit word.
@@ -18,6 +42,8 @@ pub enum TokenType {
     Equals,
     /// #
     Pound,
+    /// &
+    Ampersand,
     /// [
     OpenBracket,
     /// ]
@@ -42,8 +68,6 @@ pub enum TokenType {
     Semicolon,
     /// :
     Colon,
-    /// \n
-    Newline,
     /// A 16-bit register.
     Reg(Reg16),
     /// A 32-bit big register.
@@ -54,7 +78,7 @@ pub enum TokenType {
 
 macro_rules! from_impl {
     ($(($type:ty, $variant:path)),+) => {
-        $(impl From<$type> for TokenType {
+        $(impl From<$type> for TokenKind {
             fn from(value: $type) -> Self {
                 $variant(value)
             }
@@ -71,7 +95,7 @@ from_impl!(
     (Reg32, Self::Breg),
     (Reg8, Self::Vreg)
 );
-impl<'a> From<&'a str> for TokenType {
+impl<'a> From<&'a str> for TokenKind {
     fn from(value: &'a str) -> Self {
         Self::Identifier(value.to_owned())
     }

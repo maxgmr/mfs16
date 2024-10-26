@@ -8,7 +8,7 @@ macro_rules! lexer_test_expect {
         #[test]
         fn $test_name() {
             let val: &str = $val;
-            let expected_token = TokenType::from($expected);
+            let expected_token = TokenKind::from($expected);
             let fun = $fun;
 
             let (result, _) = fun(val).unwrap();
@@ -77,6 +77,7 @@ lexer_test_expect!(
 );
 lexer_test_expect!(test_tokenise_equals, lex_token, "=blah blah blah", Equals);
 lexer_test_expect!(test_tokenise_pound, lex_token, "#", Pound);
+lexer_test_expect!(test_tokenise_ampersand, lex_token, "&", Ampersand);
 lexer_test_expect!(test_tokenise_open_bracket, lex_token, "[", OpenBracket);
 lexer_test_expect!(test_tokenise_close_bracket, lex_token, "]", CloseBracket);
 lexer_test_expect!(test_tokenise_open_paren, lex_token, "(", OpenParen);
@@ -89,7 +90,6 @@ lexer_test_expect!(test_tokenise_backslash, lex_token, r"\", Backslash);
 lexer_test_expect!(test_tokenise_comma, lex_token, ",", Comma);
 lexer_test_expect!(test_tokenise_semicolon, lex_token, ";", Semicolon);
 lexer_test_expect!(test_tokenise_colon, lex_token, ":", Colon);
-lexer_test_expect!(test_tokenise_newline, lex_token, "\n", Newline);
 lexer_test_expect!(
     test_tokenise_vreg_start,
     lex_token,
@@ -128,4 +128,49 @@ fn test_skip_multiline_comment() {
 fn test_skip_not_comment() {
     assert_eq!(skip_comment("hello // don't take this away!"), 0);
     assert_eq!(skip_comment("  // ignore whitespace too!"), 0);
+}
+
+#[test]
+fn test_lex_full_expr() {
+    let expr = "LD(A0, A1);";
+    let expect = vec![
+        (TokenKind::from("LD"), 0, 2),
+        (OpenParen, 2, 3),
+        (Vreg(A0), 3, 5),
+        (Comma, 5, 6),
+        (Vreg(A1), 7, 9),
+        (CloseParen, 9, 10),
+        (Semicolon, 10, 11),
+    ];
+    assert_eq!(lex(expr).unwrap(), expect);
+}
+
+#[test]
+fn test_lex_multiline() {
+    let data =
+        "// Set A to 0x1234.\n\tld\n\t\t(A,\n\t\t0x1200:w + 0x34:w)\n;\n/*\n\tAdd BC to HL.\n*/\nadd(HL,BC);\t\t\t// Preddy cool!";
+    let expect = vec![
+        (TokenKind::from("ld"), 21, 23),
+        (OpenParen, 26, 27),
+        (Reg(A), 27, 28),
+        (Comma, 28, 29),
+        (Word(0x1200), 32, 40),
+        (Plus, 41, 42),
+        (Word(0x0034), 43, 49),
+        (CloseParen, 49, 50),
+        (Semicolon, 51, 52),
+        (TokenKind::from("add"), 74, 77),
+        (OpenParen, 77, 78),
+        (Breg(HL), 78, 80),
+        (Comma, 80, 81),
+        (Breg(BC), 81, 83),
+        (CloseParen, 83, 84),
+        (Semicolon, 84, 85),
+    ];
+    assert_eq!(lex(data).unwrap(), expect);
+}
+
+#[test]
+fn detect_invalid() {
+    let _ = lex("blah blah blah~").unwrap_err();
 }

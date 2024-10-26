@@ -1,10 +1,11 @@
 //! Performs lexical analysis on MFS-16 assembly language.
+
 use color_eyre::eyre::{self, eyre};
 use mfs16core::{Reg16, Reg32, Reg8};
 
-mod token_type;
+mod token;
 
-use token_type::TokenType::{self, *};
+use token::TokenKind::{self, *};
 
 const PREFIX_SIZE: usize = 2;
 const SUFFIX_SIZE: usize = 2;
@@ -18,8 +19,62 @@ const WORD_SUFFIX_CHAR: char = 'w';
 const DWORD_SUFFIX_CHAR: char = 'd';
 const QWORD_SUFFIX_CHAR: char = 'q';
 
+struct Lexer<'a> {
+    index: usize,
+    remaining: &'a str,
+}
+impl<'a> Lexer<'a> {
+    fn new(data: &'a str) -> Self {
+        Self {
+            index: 0,
+            remaining: data,
+        }
+    }
+
+    fn next_token(&mut self) -> eyre::Result<Option<(TokenKind, usize, usize)>> {
+        self.skip_whitespace_comments();
+
+        if self.remaining.is_empty() {
+            Ok(None)
+        } else {
+            let start_index = self.index;
+            let token = self._next_token()?;
+            Ok(Some((token, start_index, self.index)))
+        }
+    }
+
+    fn _next_token(&mut self) -> eyre::Result<TokenKind> {
+        let (token, num_bytes) = lex_token(self.remaining)?;
+        self.consume(num_bytes);
+        Ok(token)
+    }
+
+    fn skip_whitespace_comments(&mut self) {
+        let num_bytes = skip_ws_com(self.remaining);
+        self.consume(num_bytes);
+    }
+
+    fn consume(&mut self, num_bytes: usize) {
+        self.remaining = &self.remaining[num_bytes..];
+        self.index += num_bytes;
+    }
+}
+
+/// Lex a string of valid MFS-16 assembly code into a list of tokens alongside each token's start
+/// and end indicies in the original assembly code.
+pub fn lex(data: &str) -> eyre::Result<Vec<(TokenKind, usize, usize)>> {
+    let mut lexer = Lexer::new(data);
+    let mut tokens = Vec::new();
+
+    while let Some(token) = lexer.next_token()? {
+        tokens.push(token);
+    }
+
+    Ok(tokens)
+}
+
 /// Attempt to lex a single token from the input stream.
-pub fn lex_token(data: &str) -> eyre::Result<(TokenType, usize)> {
+pub fn lex_token(data: &str) -> eyre::Result<(TokenKind, usize)> {
     let next = match data.chars().next() {
         Some(c) => c,
         None => {
@@ -30,6 +85,7 @@ pub fn lex_token(data: &str) -> eyre::Result<(TokenType, usize)> {
     Ok(match next {
         '=' => (Equals, 1),
         '#' => (Pound, 1),
+        '&' => (Ampersand, 1),
         '[' => (OpenBracket, 1),
         ']' => (CloseBracket, 1),
         '(' => (OpenParen, 1),
@@ -42,7 +98,6 @@ pub fn lex_token(data: &str) -> eyre::Result<(TokenType, usize)> {
         ',' => (Comma, 1),
         ';' => (Semicolon, 1),
         ':' => (Colon, 1),
-        '\n' => (Newline, 1),
         c if c.is_ascii_digit() => tokenise_number(data)?,
         c if is_identifier_char(c) => tokenise_identifier(data)?,
         _ => {
@@ -51,7 +106,7 @@ pub fn lex_token(data: &str) -> eyre::Result<(TokenType, usize)> {
     })
 }
 
-fn tokenise_identifier(data: &str) -> eyre::Result<(TokenType, usize)> {
+fn tokenise_identifier(data: &str) -> eyre::Result<(TokenKind, usize)> {
     // Identifiers can't start with a number
     match data.chars().next() {
         None => {
@@ -79,7 +134,7 @@ fn tokenise_identifier(data: &str) -> eyre::Result<(TokenType, usize)> {
     Ok((Identifier(contents.to_owned()), num_bytes))
 }
 
-fn tokenise_number(data: &str) -> eyre::Result<(TokenType, usize)> {
+fn tokenise_number(data: &str) -> eyre::Result<(TokenKind, usize)> {
     let mut is_first_char = true;
     let mut can_be_prefix = false;
     // assume base 10
@@ -201,9 +256,15 @@ fn skip_until<'a>(mut data: &'a str, pattern: &str) -> &'a str {
             .next()
             .expect("The string isn't empty.")
             .len_utf8();
+        println!("{}", data);
         data = &data[next_char_size..];
     }
-    &data[pattern.len()..]
+
+    if data.is_empty() {
+        data
+    } else {
+        &data[pattern.len()..]
+    }
 }
 
 /// Return true iff the given char is a valid identifier char.

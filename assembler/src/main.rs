@@ -5,6 +5,7 @@ use color_eyre::eyre::{self, eyre};
 mod arg_parser;
 mod asm_lexer;
 mod asm_parser;
+mod codemap;
 
 use crate::{arg_parser::Cli, asm_parser::AsmParser};
 
