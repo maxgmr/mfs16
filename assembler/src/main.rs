@@ -23,7 +23,7 @@ fn main() -> eyre::Result<()> {
     for path in args.files {
         let file_contents = read_file(&path)?;
         let tokens = lex(&file_contents, &path)?;
-        dbg!(&tokens);
+        // dbg!(&tokens);
     }
 
     Ok(())

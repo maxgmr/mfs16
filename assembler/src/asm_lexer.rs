@@ -45,6 +45,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    /// Return an error showing where in the file the error occurred.
     fn lexing_error<S: AsRef<str> + Display>(&self, message: S) -> eyre::Result<Option<Token>> {
         let num_consumed_chars = self.original.len() - self.remaining.len();
         let consumed_lines: Vec<&str> = self.original[..num_consumed_chars].split("\n").collect();

@@ -44,5 +44,14 @@ ld L0, 255:b;
 ASL BC,1:b;
 Not L0;
 
+// Set some variables.
+let my_value123 = 0x0123:w;
+let my_value654 = 0x0654:w;
+
+// Do some stuff with these variables.
+ld      A, my_value123;
+ld      B, my_value654;
+add     A, B;
+
 /* A final
 multi-line comment. */
