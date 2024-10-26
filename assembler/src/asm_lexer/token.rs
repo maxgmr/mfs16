@@ -1,19 +1,19 @@
-use crate::codemap::Span;
 use mfs16core::{Reg16, Reg32, Reg8};
 
 /// An MFS-16 assembly code token.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Token {
-    /// Token location relative to the rest of the files being processed.
-    pub span: Span,
+    /// The start and end of this token within its file.
+    pub location: (usize, usize),
     /// The variant of this particular token.
     pub kind: TokenKind,
 }
 impl Token {
-    /// Create a token from a given [Span] and something which can be turned into a [TokenKind].
-    pub fn new<K: Into<TokenKind>>(span: Span, kind: K) -> Self {
+    /// Create a token from a given range and something which can be turned into a [TokenKind].
+    pub fn new<K: Into<TokenKind>>(start: usize, end: usize, kind: K) -> Self {
         let kind = kind.into();
-        Self { span, kind }
+        let location = (start, end);
+        Self { location, kind }
     }
 }
 impl<T> From<T> for Token
@@ -21,7 +21,7 @@ where
     T: Into<TokenKind>,
 {
     fn from(value: T) -> Self {
-        Self::new(Span::dummy(), value)
+        Self::new(0, 0, value)
     }
 }
 

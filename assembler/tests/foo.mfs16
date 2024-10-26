@@ -15,17 +15,34 @@
     pretty cool. */
 
 // Set registers to values.
-ld A, 0x0000;                        // load 0x0000 (0) into A
+ld A, 0x0000:w;                      // load 0x0000 (0) into A
 nop;                                 // do nothin'
-ld B, 0b1010_1010_1010_1010;         // load 0xAAAA (43690) into B
+ld B, 0b1010_1010_1010_1010:w;       // load 0xAAAA (43690) into B
 ld C,B;                              // load B into C
 ld D, C;                             // load C into D
-ld E,  1234;                         // load 0x04D2 (1234) into E
+ld E,  1234:w;                       // load 0x04D2 (1234) into E
 ld                                   // load E into H
     E,  H;
     ld                               // load...
     L,                               // ...into L...
     H                                // ...H.
 ;
+
+// Do some math.
+Add B,E;
+Sbc H,0x0001:w;
+
+// Set some big regs too...
+ld BC, 0o7777:d;
+ld DE, 0x1234_5678:d;
+
+// ...and some little ones.
+ld A1, 0b_1010_0101:b;
+ld L0, 255:b;
+
+// Do some math with these things too.
+ASL BC,1:b;
+Not L0;
+
 /* A final
 multi-line comment. */

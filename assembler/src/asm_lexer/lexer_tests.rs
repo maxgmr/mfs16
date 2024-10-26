@@ -1,3 +1,4 @@
+use camino::Utf8PathBuf;
 use mfs16core::{Reg16::*, Reg32::*, Reg8::*};
 use pretty_assertions::assert_eq;
 
@@ -134,15 +135,15 @@ fn test_skip_not_comment() {
 fn test_lex_full_expr() {
     let expr = "LD(A0, A1);";
     let expect = vec![
-        (TokenKind::from("LD"), 0, 2),
-        (OpenParen, 2, 3),
-        (Vreg(A0), 3, 5),
-        (Comma, 5, 6),
-        (Vreg(A1), 7, 9),
-        (CloseParen, 9, 10),
-        (Semicolon, 10, 11),
+        Token::new(0, 2, TokenKind::from("LD")),
+        Token::new(2, 3, OpenParen),
+        Token::new(3, 5, Vreg(A0)),
+        Token::new(5, 6, Comma),
+        Token::new(7, 9, Vreg(A1)),
+        Token::new(9, 10, CloseParen),
+        Token::new(10, 11, Semicolon),
     ];
-    assert_eq!(lex(expr).unwrap(), expect);
+    assert_eq!(lex(expr, &Utf8PathBuf::from("")).unwrap(), expect);
 }
 
 #[test]
@@ -150,27 +151,27 @@ fn test_lex_multiline() {
     let data =
         "// Set A to 0x1234.\n\tld\n\t\t(A,\n\t\t0x1200:w + 0x34:w)\n;\n/*\n\tAdd BC to HL.\n*/\nadd(HL,BC);\t\t\t// Preddy cool!";
     let expect = vec![
-        (TokenKind::from("ld"), 21, 23),
-        (OpenParen, 26, 27),
-        (Reg(A), 27, 28),
-        (Comma, 28, 29),
-        (Word(0x1200), 32, 40),
-        (Plus, 41, 42),
-        (Word(0x0034), 43, 49),
-        (CloseParen, 49, 50),
-        (Semicolon, 51, 52),
-        (TokenKind::from("add"), 74, 77),
-        (OpenParen, 77, 78),
-        (Breg(HL), 78, 80),
-        (Comma, 80, 81),
-        (Breg(BC), 81, 83),
-        (CloseParen, 83, 84),
-        (Semicolon, 84, 85),
+        Token::new(21, 23, TokenKind::from("ld")),
+        Token::new(26, 27, OpenParen),
+        Token::new(27, 28, Reg(A)),
+        Token::new(28, 29, Comma),
+        Token::new(32, 40, Word(0x1200)),
+        Token::new(41, 42, Plus),
+        Token::new(43, 49, Word(0x0034)),
+        Token::new(49, 50, CloseParen),
+        Token::new(51, 52, Semicolon),
+        Token::new(74, 77, TokenKind::from("add")),
+        Token::new(77, 78, OpenParen),
+        Token::new(78, 80, Breg(HL)),
+        Token::new(80, 81, Comma),
+        Token::new(81, 83, Breg(BC)),
+        Token::new(83, 84, CloseParen),
+        Token::new(84, 85, Semicolon),
     ];
-    assert_eq!(lex(data).unwrap(), expect);
+    assert_eq!(lex(data, &Utf8PathBuf::from("")).unwrap(), expect);
 }
 
 #[test]
 fn detect_invalid() {
-    let _ = lex("blah blah blah~").unwrap_err();
+    let _ = lex("blah blah blah~", &Utf8PathBuf::from("")).unwrap_err();
 }

@@ -1,11 +1,21 @@
 //! Performs lexical analysis on MFS-16 assembly language.
+use std::fmt::Display;
 
-use color_eyre::eyre::{self, eyre};
+use camino::Utf8Path;
+use color_eyre::{
+    eyre::{self, eyre, OptionExt},
+    owo_colors::OwoColorize,
+    Section, SectionExt,
+};
 use mfs16core::{Reg16, Reg32, Reg8};
 
 mod token;
 
-use token::TokenKind::{self, *};
+// Re-exports
+pub use token::{
+    Token,
+    TokenKind::{self, *},
+};
 
 const PREFIX_SIZE: usize = 2;
 const SUFFIX_SIZE: usize = 2;
@@ -21,25 +31,65 @@ const QWORD_SUFFIX_CHAR: char = 'q';
 
 struct Lexer<'a> {
     index: usize,
+    path: &'a Utf8Path,
+    original: &'a str,
     remaining: &'a str,
 }
 impl<'a> Lexer<'a> {
-    fn new(data: &'a str) -> Self {
+    fn new(data: &'a str, path: &'a Utf8Path) -> Self {
         Self {
             index: 0,
+            path,
+            original: data,
             remaining: data,
         }
     }
 
-    fn next_token(&mut self) -> eyre::Result<Option<(TokenKind, usize, usize)>> {
+    fn lexing_error<S: AsRef<str> + Display>(&self, message: S) -> eyre::Result<Option<Token>> {
+        let num_consumed_chars = self.original.len() - self.remaining.len();
+        let consumed_lines: Vec<&str> = self.original[..num_consumed_chars].split("\n").collect();
+        let line_num = consumed_lines.len();
+        let consumed_line = consumed_lines.last().ok_or_eyre("No consumed lines.")?;
+        let col_num = consumed_line.len();
+        let remaining_line: &str = self
+            .remaining
+            .split("\n")
+            .next()
+            .ok_or_eyre("No remaining line.")?;
+
+        Err(eyre!("{}", message))
+            .with_section(|| {
+                format!(
+                    "{}:{}:{}",
+                    self.path.blue(),
+                    line_num.blue(),
+                    (col_num + 1).blue()
+                )
+                .header("Line Info:")
+            })
+            .with_section(|| {
+                format!(
+                    "{}{}\n{}{}",
+                    consumed_line,
+                    remaining_line,
+                    (0..col_num).map(|_| " ").collect::<String>(),
+                    "^ Here".bright_red().bold(),
+                )
+            })
+    }
+
+    fn next_token(&mut self) -> eyre::Result<Option<Token>> {
         self.skip_whitespace_comments();
 
         if self.remaining.is_empty() {
             Ok(None)
         } else {
             let start_index = self.index;
-            let token = self._next_token()?;
-            Ok(Some((token, start_index, self.index)))
+            let token = match self._next_token() {
+                Ok(val) => val,
+                Err(e) => return self.lexing_error(e.to_string()),
+            };
+            Ok(Some(Token::new(start_index, self.index, token)))
         }
     }
 
@@ -62,8 +112,8 @@ impl<'a> Lexer<'a> {
 
 /// Lex a string of valid MFS-16 assembly code into a list of tokens alongside each token's start
 /// and end indicies in the original assembly code.
-pub fn lex(data: &str) -> eyre::Result<Vec<(TokenKind, usize, usize)>> {
-    let mut lexer = Lexer::new(data);
+pub fn lex(data: &str, path: &Utf8Path) -> eyre::Result<Vec<Token>> {
+    let mut lexer = Lexer::new(data, path);
     let mut tokens = Vec::new();
 
     while let Some(token) = lexer.next_token()? {
@@ -256,7 +306,6 @@ fn skip_until<'a>(mut data: &'a str, pattern: &str) -> &'a str {
             .next()
             .expect("The string isn't empty.")
             .len_utf8();
-        println!("{}", data);
         data = &data[next_char_size..];
     }
 
