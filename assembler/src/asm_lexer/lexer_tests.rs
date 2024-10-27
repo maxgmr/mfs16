@@ -42,6 +42,8 @@ lexer_test_expect!(
     "foo_bar",
     Identifier("foo_bar".to_owned())
 );
+lexer_test_expect!(test_tokenise_sp, tokenise_identifier, "SP", StackPointer);
+lexer_test_expect!(test_tokenise_pc, tokenise_identifier, "PC", ProgramCounter);
 lexer_test_expect!(test_tokenise_zh, tokenise_identifier, "很好", "很好");
 lexer_test_expect_fail!(test_tokenise_number_start, tokenise_identifier, "7foo_bar");
 lexer_test_expect_fail!(test_tokenise_poop, tokenise_identifier, "💩");

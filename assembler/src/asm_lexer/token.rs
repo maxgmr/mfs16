@@ -74,6 +74,10 @@ pub enum TokenKind {
     Breg(Reg32),
     /// An 8-bit virtual register.
     Vreg(Reg8),
+    /// The stack pointer.
+    StackPointer,
+    /// The program counter.
+    ProgramCounter,
 }
 
 macro_rules! from_impl {

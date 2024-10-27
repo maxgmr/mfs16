@@ -24,10 +24,13 @@ const HEX_PREFIX_CHAR: char = 'x';
 const OCT_PREFIX_CHAR: char = 'o';
 const BIN_PREFIX_CHAR: char = 'b';
 
-const BYTE_SUFFIX_CHAR: char = 'b';
-const WORD_SUFFIX_CHAR: char = 'w';
-const DWORD_SUFFIX_CHAR: char = 'd';
-const QWORD_SUFFIX_CHAR: char = 'q';
+const BYTE_SUFFIX: &str = ":b";
+const WORD_SUFFIX: &str = ":w";
+const DWORD_SUFFIX: &str = ":d";
+const QWORD_SUFFIX: &str = ":q";
+
+const SP_STRING: &str = "SP";
+const PC_STRING: &str = "PC";
 
 struct Lexer<'a> {
     index: usize,
@@ -182,6 +185,16 @@ fn tokenise_identifier(data: &str) -> eyre::Result<(TokenKind, usize)> {
         return Ok((Vreg(vreg), num_bytes));
     }
 
+    // Check if stack pointer instead of normal identifier
+    if contents == SP_STRING {
+        return Ok((StackPointer, num_bytes));
+    }
+
+    // Check if program counter instead of normal identifier
+    if contents == PC_STRING {
+        return Ok((ProgramCounter, num_bytes));
+    }
+
     Ok((Identifier(contents.to_owned()), num_bytes))
 }
 
@@ -218,10 +231,10 @@ fn tokenise_number(data: &str) -> eyre::Result<(TokenKind, usize)> {
 
     // Parse string as a numerical token
     let token_type = match type_suffix {
-        ":b" => Byte(<u8>::from_str_radix(&clean(contents, has_prefix), radix)?),
-        ":w" => Word(<u16>::from_str_radix(&clean(contents, has_prefix), radix)?),
-        ":d" => DWord(<u32>::from_str_radix(&clean(contents, has_prefix), radix)?),
-        ":q" => QWord(<u64>::from_str_radix(&clean(contents, has_prefix), radix)?),
+        BYTE_SUFFIX => Byte(<u8>::from_str_radix(&clean(contents, has_prefix), radix)?),
+        WORD_SUFFIX => Word(<u16>::from_str_radix(&clean(contents, has_prefix), radix)?),
+        DWORD_SUFFIX => DWord(<u32>::from_str_radix(&clean(contents, has_prefix), radix)?),
+        QWORD_SUFFIX => QWord(<u64>::from_str_radix(&clean(contents, has_prefix), radix)?),
         _ => {
             return Err(eyre!("Expected a type."));
         }
@@ -340,14 +353,6 @@ fn get_prefix_radix(c: char) -> u32 {
 /// Return true iff the given char is a valid numerical char given the radix.
 fn is_number_char(c: char, radix: u32) -> bool {
     c.is_digit(radix) || (c == '_')
-}
-
-/// Return true iff the given char is a valid type suffix char.
-fn is_type_suffix_char(c: char) -> bool {
-    (c == BYTE_SUFFIX_CHAR)
-        || (c == WORD_SUFFIX_CHAR)
-        || (c == DWORD_SUFFIX_CHAR)
-        || (c == QWORD_SUFFIX_CHAR)
 }
 
 /// Clean up a number string slice.
