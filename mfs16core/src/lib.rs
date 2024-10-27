@@ -12,4 +12,5 @@ pub use cpu::{
     AsLargerType, Flag, Flags, HasMax, Instruction, Msb, NMinus1Mask, NumBits, Oneable, Pc, Reg,
     Reg16, Reg32, Reg8, WrappingAdd, WrappingSub, Zeroable,
 };
+pub use helpers::*;
 pub use ram::{Ram, RamReadable, RamWritable};
