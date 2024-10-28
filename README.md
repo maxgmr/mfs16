@@ -11,3 +11,5 @@ A 16-bit virtual computer.
   - MMU manipulation
 
   - (Re)define how interrupts are handled
+
+- Man page for assembler
