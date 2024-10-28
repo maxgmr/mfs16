@@ -72,6 +72,14 @@ parser_test!(FAIL: parsenoclosebr, parse_instr, "add A,[HL;");
 parser_test!(FAIL: parsenoopenbr, parse_instr, "add A,HL];");
 parser_test!(FAIL: parsebadargsderef, parse_instr, "add [HL],A;");
 
+parser_test!(parseimm, parse_instr, "ADC D,0xFE:w;" => Some(vec![0x13, 0x18, 0xFE, 0x00]));
+parser_test!(FAIL: parseimmwrongtype, parse_instr, "ADC A,0xFE:b;");
+
+parser_test!(parse1arg, parse_instr, "INC A;" => Some(vec![0x30, 0x1D]));
+
+parser_test!(parsenotinstr, parse_instr, "my_var = 1234:w;" => Option::None);
+parser_test!(parsenotinstr2, parse_instr, "notinc A;" => Option::None);
+
 // ------- TO BYTES TESTS -------
 macro_rules! to_bytes_test {
     ($test_name:ident, $operation:path, $operand_1:expr, $operand_2:expr, $expect:expr) => {
