@@ -72,7 +72,35 @@ impl FromStr for Operation {
 }
 impl Display for Operation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", dbg!(self))
+        write!(
+            f,
+            "{}",
+            match self {
+                Operation::Nop => "NOP",
+                Operation::Ld => "LD",
+                Operation::Ldi => "LDI",
+                Operation::Ldd => "LDD",
+                Operation::Add => "ADD",
+                Operation::Adc => "ADC",
+                Operation::Sub => "SUB",
+                Operation::Sbb => "SBB",
+                Operation::Tcp => "TCP",
+                Operation::Inc => "INC",
+                Operation::Dec => "DEC",
+                Operation::Pss => "PSS",
+                Operation::And => "AND",
+                Operation::Or => "OR",
+                Operation::Xor => "XOR",
+                Operation::Not => "NOT",
+                Operation::Asr => "ASR",
+                Operation::Asl => "ASL",
+                Operation::Lsr => "LSR",
+                Operation::Rtr => "RTR",
+                Operation::Rtl => "RTL",
+                Operation::Rcr => "RCR",
+                Operation::Rcl => "RCL",
+            }
+        )
     }
 }
 

@@ -1,3 +1,51 @@
+use std::time::Instant;
+
+use camino::Utf8PathBuf;
+use mfs16core::{Reg16::*, Reg32::*, Reg8::*};
+use pretty_assertions::assert_eq;
+
+use super::{
+    instr_to_bytes,
+    Operand::{ProgramCounter as PC, StackPointer as SP, *},
+    Operation::*,
+    Parser,
+};
+use crate::lex;
+
+// ------- PARSING TESTS -------
+macro_rules! parser_test {
+    ($test_name:ident, $method:ident, $data:expr => $expected:expr) => {
+        #[test]
+        fn $test_name() {
+            let start = Instant::now();
+
+            let dummy_path = Utf8PathBuf::from("dummy_path");
+            let tokens = lex($data, &dummy_path).unwrap();
+            let mut parser = Parser::new(tokens, &dummy_path, $data);
+            let result = parser.$method();
+
+            println!("[{}] - {:.2?} elapsed", $data, start.elapsed());
+
+            assert_eq!(result.unwrap(), $expected);
+        }
+    };
+    (FAIL: $test_name:ident, $method:ident, $data:expr) => {
+        #[test]
+        fn $test_name() {
+            let start = Instant::now();
+
+            let dummy_path = Utf8PathBuf::from("dummy_path");
+            let tokens = lex($data, &dummy_path).unwrap();
+            let mut parser = Parser::new(tokens, &dummy_path, $data);
+            let result = parser.$method();
+
+            println!("[{}] - {:.2?} elapsed", $data, start.elapsed());
+
+            assert!(result.is_err(), "Expected error, got {:?}.", result);
+        }
+    };
+}
+
 // TODO
 // add A B; -> fail
 // add A, B -> fail
@@ -8,14 +56,23 @@
 // add A,HL]; -> fail
 // add [HL],A; -> fail
 
-use super::{
-    instr_to_bytes,
-    Operand::{ProgramCounter as PC, StackPointer as SP, *},
-    Operation::*,
-};
-use mfs16core::{Reg16::*, Reg32::*, Reg8::*};
-use pretty_assertions::assert_eq;
+parser_test!(parseadd, parse_instr, "add A,B;" => Some(vec![0x01_u8, 0x10_u8]));
+parser_test!(FAIL: parsenocomma, parse_instr, "add A B;");
+parser_test!(FAIL: parsenosemi, parse_instr, "add A, B");
+parser_test!(FAIL: parse3arg, parse_instr, "add A, B, C;");
+parser_test!(FAIL: parseargsmismatch, parse_instr, "add HL,B;");
+parser_test!(FAIL: parsenotreg, parse_instr, "add, a,b;");
 
+parser_test!(parsenop, parse_instr, "NOP;" => Some(vec![0x00_u8, 0x00_u8]));
+parser_test!(FAIL: parsenosemi2, parse_instr, "nop");
+
+parser_test!(parsederef, parse_instr, "ADD A,\t\t[HL];" => Some(vec![0x02_u8, 0x19_u8]));
+parser_test!(parsederefld, parse_instr, "ld [DE],B;" => Some(vec![0x11_u8, 0x04_u8]));
+parser_test!(FAIL: parsenoclosebr, parse_instr, "add A,[HL;");
+parser_test!(FAIL: parsenoopenbr, parse_instr, "add A,HL];");
+parser_test!(FAIL: parsebadargsderef, parse_instr, "add [HL],A;");
+
+// ------- TO BYTES TESTS -------
 macro_rules! to_bytes_test {
     ($test_name:ident, $operation:path, $operand_1:expr, $operand_2:expr, $expect:expr) => {
         #[test]
