@@ -114,8 +114,6 @@ pub enum Operand {
     Vreg(Reg8),
     /// e.g., `[DE]`
     BregDeref(Reg32),
-    /// e.g., `my_variable`
-    Variable(String),
     /// e.g., `12:b`
     Byte(u8),
     /// e.g., `0x1234:w`
@@ -147,7 +145,6 @@ impl Display for Operand {
                 Self::Breg(breg) => format!("{breg}"),
                 Self::Vreg(vreg) => format!("{vreg}"),
                 Self::BregDeref(breg) => format!("[{breg}]"),
-                Self::Variable(string) => string.clone(),
                 Self::Byte(b) => format!("{b}"),
                 Self::Word(w) => format!("{w}"),
                 Self::DWord(d) => format!("{d}"),
@@ -290,12 +287,7 @@ macro_rules! i2b_imm {
        )+
     };
 }
-i2b_imm!(
-    (u8, i2b_imm8),
-    (u16, i2b_imm16),
-    (u32, i2b_imm32),
-    (u64, i2b_imm64)
-);
+i2b_imm!((u8, i2b_imm8), (u16, i2b_imm16), (u32, i2b_imm32));
 
 fn i2b(instr: Instruction) -> Vec<u8> {
     instr.into_opcode().to_le_bytes().to_vec()

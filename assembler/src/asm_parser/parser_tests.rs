@@ -6,7 +6,7 @@ use pretty_assertions::assert_eq;
 
 use super::{
     instr_to_bytes,
-    Operand::{ProgramCounter as PC, StackPointer as SP, *},
+    Operand::{StackPointer as SP, *},
     Operation::*,
     Parser, Variable,
 };
