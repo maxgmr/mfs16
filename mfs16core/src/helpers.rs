@@ -96,6 +96,11 @@ where
     (val & (<T>::one() << index)) != <T>::zero()
 }
 
+/// Split a 64-bit quad word into two double words.
+pub fn split_qword(val: u64) -> (u32, u32) {
+    (((val >> 32) as u32), ((val & 0x0000_0000_FFFF_FFFF) as u32))
+}
+
 /// Split a 32-bit double word into two words.
 pub fn split_dword(val: u32) -> (u16, u16) {
     (((val >> 16) as u16), ((val & 0x0000_FFFF) as u16))
