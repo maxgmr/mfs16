@@ -8,10 +8,14 @@ use clap::Parser;
 #[command(author)]
 #[command(about = "Assembler for MFS-16 assembly.")]
 pub struct Cli {
+    /// The list of files to assemble.
+    pub files: Vec<Utf8PathBuf>,
+
     /// The debug flag. Set to print debug messages.
     #[clap(short, long)]
     pub debug: bool,
 
-    /// The list of files to assemble.
-    pub files: Vec<Utf8PathBuf>,
+    /// Output machine code to this file path. Leave blank to output to stdout.
+    #[clap(short, long)]
+    pub output: Option<Utf8PathBuf>,
 }

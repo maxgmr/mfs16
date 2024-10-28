@@ -1,5 +1,8 @@
 //! Assembler for mfs16asm.
-use std::{fs::File, io::Read};
+use std::{
+    fs::{File, OpenOptions},
+    io::{self, Read, Write},
+};
 
 use camino::Utf8Path;
 use clap::Parser;
@@ -21,13 +24,37 @@ fn main() -> eyre::Result<()> {
         return Err(eyre!("No input files given."));
     }
 
+    let mut machine_code: Vec<u8> = Vec::new();
+
     for path in args.files {
         let file_contents = read_file(&path)?;
         let tokens = lex(&file_contents, &path)?;
-        let machine_code = parse(tokens, &path, &file_contents, args.debug)?;
-        println!("{machine_code:?}");
+        machine_code.extend(parse(tokens, &path, &file_contents, args.debug)?);
     }
 
+    if let Some(output_path) = &args.output {
+        file_output(output_path, machine_code)?;
+    } else {
+        stdout_output(machine_code)?;
+    }
+
+    Ok(())
+}
+
+fn file_output(path: &Utf8Path, machine_code: Vec<u8>) -> eyre::Result<()> {
+    let mut file = OpenOptions::new().write(true).create_new(true).open(path)?;
+    file.write_all(&machine_code)?;
+    println!(
+        "Compiled to `{}` successfully! ({} bytes)",
+        path,
+        machine_code.len()
+    );
+    Ok(())
+}
+
+fn stdout_output(machine_code: Vec<u8>) -> eyre::Result<()> {
+    let mut stdout = io::stdout().lock();
+    stdout.write_all(&machine_code)?;
     Ok(())
 }
 
