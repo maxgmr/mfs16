@@ -14,8 +14,12 @@
 
     pretty cool. */
 
+// Assign some variables.
+zero_w = 0x0000:w;
+zero_w_2 = zero_w;
+
 // Set registers to values.
-ld A, 0x0000:w;                      // load 0x0000 (0) into A
+ld A, zero_w;                        // load 0x0000 (0) into A
 nop;                                 // do nothin'
 ld B, 0b1010_1010_1010_1010:w;       // load 0xAAAA (43690) into B
 ld C,B;                              // load B into C
@@ -30,7 +34,7 @@ ld                                   // load E into H
 
 // Do some math.
 Add B,E;
-Sbc H,0x0001:w;
+Sbb H,0x0001:w;add B,zero_w_2;
 
 // Set some big regs too...
 ld BC, 0o7777:d;
@@ -45,8 +49,8 @@ ASL BC,1:b;
 Not L0;
 
 // Set some variables.
-let my_value123 = 0x0123:w;
-let my_value654 = 0x0654:w;
+my_value123 = 0x0123:w;
+my_value654 = 0x0654:w;
 
 // Do some stuff with these variables.
 ld      A, my_value123;

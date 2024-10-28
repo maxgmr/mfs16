@@ -11,6 +11,7 @@ mod asm_parser;
 
 use arg_parser::Cli;
 use asm_lexer::lex;
+use asm_parser::parse;
 
 fn main() -> eyre::Result<()> {
     color_eyre::install()?;
@@ -23,7 +24,8 @@ fn main() -> eyre::Result<()> {
     for path in args.files {
         let file_contents = read_file(&path)?;
         let tokens = lex(&file_contents, &path)?;
-        // dbg!(&tokens);
+        let machine_code = parse(tokens, &path, &file_contents, args.debug)?;
+        println!("{machine_code:?}");
     }
 
     Ok(())

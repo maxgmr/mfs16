@@ -1,1 +1,5 @@
-// Hullo there.
+my_two = 2:w;
+my_two_2 = my_two;
+
+my_num = 1:w;
+

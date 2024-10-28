@@ -8,25 +8,57 @@ use super::{
     instr_to_bytes,
     Operand::{ProgramCounter as PC, StackPointer as SP, *},
     Operation::*,
-    Parser,
+    Parser, Variable,
 };
-use crate::lex;
+use crate::{lex, parse};
 
 // ------- PARSING TESTS -------
 macro_rules! parser_test {
-    ($test_name:ident, $method:ident, $data:expr => $expected:expr) => {
+    (FULL: $test_name:ident, $data:literal => $expected:expr) => {
+        #[test]
+        fn $test_name() {
+            let dummy_path = Utf8PathBuf::from("dummy_path");
+            let tokens = lex($data, &dummy_path).unwrap();
+            let machine_code = parse(tokens, &dummy_path, $data, true).unwrap();
+            assert_eq!(machine_code, $expected);
+        }
+    };
+    (FULL FAIL: $test_name:ident, $data:literal) => {
+        #[test]
+        fn $test_name() {
+            let dummy_path = Utf8PathBuf::from("dummy_path");
+            let tokens = lex($data, &dummy_path).unwrap();
+            let _ = parse(tokens, &dummy_path, $data).unwrap_err();
+        }
+    };
+    ($test_name:ident, $data:expr => $expected:expr) => {
         #[test]
         fn $test_name() {
             let start = Instant::now();
 
             let dummy_path = Utf8PathBuf::from("dummy_path");
             let tokens = lex($data, &dummy_path).unwrap();
-            let mut parser = Parser::new(tokens, &dummy_path, $data);
-            let result = parser.$method();
+            let mut parser = Parser::new(tokens, &dummy_path, $data, true);
+            let result = parser.parse_instr();
 
             println!("[{}] - {:.2?} elapsed", $data, start.elapsed());
 
             assert_eq!(result.unwrap(), $expected);
+        }
+    };
+    ($test_name:ident, $data:expr => $var_name:expr, $var_val:expr) => {
+        #[test]
+        fn $test_name() {
+            let start = Instant::now();
+
+            let dummy_path = Utf8PathBuf::from("dummy_path");
+            let tokens = lex($data, &dummy_path).unwrap();
+            let mut parser = Parser::new(tokens, &dummy_path, $data, true);
+            parser.parse_assignment().unwrap();
+
+            println!("[{}] - {:.2?} elapsed", $data, start.elapsed());
+
+            assert_eq!(parser.variables.get($var_name).unwrap(), $var_val);
         }
     };
     (FAIL: $test_name:ident, $method:ident, $data:expr) => {
@@ -36,7 +68,7 @@ macro_rules! parser_test {
 
             let dummy_path = Utf8PathBuf::from("dummy_path");
             let tokens = lex($data, &dummy_path).unwrap();
-            let mut parser = Parser::new(tokens, &dummy_path, $data);
+            let mut parser = Parser::new(tokens, &dummy_path, $data, true);
             let result = parser.$method();
 
             println!("[{}] - {:.2?} elapsed", $data, start.elapsed());
@@ -46,39 +78,47 @@ macro_rules! parser_test {
     };
 }
 
-// TODO
-// add A B; -> fail
-// add A, B -> fail
-// add A, B, C; -> fail
+parser_test!(
+    FULL: assignthenadd,
+    "// 1 + 2\nb1 = 0x01:b;\nb2 = 0x02:b;\nld A1,b1;\nld B1,b2;\nadd A1,B1;\n// done!"
+    =>
+    vec![0x20, 0x03, 0x01, 0x22, 0x03, 0x02, 0x02, 0x11]
+);
+parser_test!(
+    FULL: dblassign,
+    "my_num=0:w;my_num_2=2:w;PSS my_num;my_num=my_num_2;PSS my_num;"
+    =>
+    vec![0xC0, 0x1D, 0x00, 0x00, 0xC0, 0x1D, 0x02, 0x00]
+);
 
-// add A,[HL]; -> pass
-// add A,[HL; -> fail
-// add A,HL]; -> fail
-// add [HL],A; -> fail
+parser_test!(varbyteassign, "my_byte = 0xFE:b;" => "my_byte", &Variable::Byte(0xFE));
+parser_test!(varwordassign, "my_word = 0xFE:w;" => "my_word", &Variable::Word(0x00FE));
+parser_test!(vardwordassign, "my_dword = 0o0123_4567:d;" => "my_dword", &Variable::DWord(0o0123_4567));
+parser_test!(varqwordassign, "my_qword = 0b0:q;" => "my_qword", &Variable::QWord(0b0));
 
-parser_test!(parseadd, parse_instr, "add A,B;" => Some(vec![0x01_u8, 0x10_u8]));
+parser_test!(parseadd, "add A,B;" => Some(vec![0x01_u8, 0x10_u8]));
 parser_test!(FAIL: parsenocomma, parse_instr, "add A B;");
 parser_test!(FAIL: parsenosemi, parse_instr, "add A, B");
 parser_test!(FAIL: parse3arg, parse_instr, "add A, B, C;");
 parser_test!(FAIL: parseargsmismatch, parse_instr, "add HL,B;");
 parser_test!(FAIL: parsenotreg, parse_instr, "add, a,b;");
 
-parser_test!(parsenop, parse_instr, "NOP;" => Some(vec![0x00_u8, 0x00_u8]));
+parser_test!(parsenop, "NOP;" => Some(vec![0x00_u8, 0x00_u8]));
 parser_test!(FAIL: parsenosemi2, parse_instr, "nop");
 
-parser_test!(parsederef, parse_instr, "ADD A,\t\t[HL];" => Some(vec![0x02_u8, 0x19_u8]));
-parser_test!(parsederefld, parse_instr, "ld [DE],B;" => Some(vec![0x11_u8, 0x04_u8]));
+parser_test!(parsederef, "ADD A,\t\t[HL];" => Some(vec![0x02_u8, 0x19_u8]));
+parser_test!(parsederefld, "ld [DE],B;" => Some(vec![0x11_u8, 0x04_u8]));
 parser_test!(FAIL: parsenoclosebr, parse_instr, "add A,[HL;");
 parser_test!(FAIL: parsenoopenbr, parse_instr, "add A,HL];");
 parser_test!(FAIL: parsebadargsderef, parse_instr, "add [HL],A;");
 
-parser_test!(parseimm, parse_instr, "ADC D,0xFE:w;" => Some(vec![0x13, 0x18, 0xFE, 0x00]));
+parser_test!(parseimm, "ADC D,0xFE:w;" => Some(vec![0x13, 0x18, 0xFE, 0x00]));
 parser_test!(FAIL: parseimmwrongtype, parse_instr, "ADC A,0xFE:b;");
 
-parser_test!(parse1arg, parse_instr, "INC A;" => Some(vec![0x30, 0x1D]));
+parser_test!(parse1arg, "INC A;" => Some(vec![0x30, 0x1D]));
 
-parser_test!(parsenotinstr, parse_instr, "my_var = 1234:w;" => Option::None);
-parser_test!(parsenotinstr2, parse_instr, "notinc A;" => Option::None);
+parser_test!(parsenotinstr, "my_var = 1234:w;" => Option::None);
+parser_test!(parsenotinstr2, "notinc A;" => Option::None);
 
 // ------- TO BYTES TESTS -------
 macro_rules! to_bytes_test {

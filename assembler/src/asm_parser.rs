@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{collections::HashMap, fmt::Display};
 
 use camino::Utf8Path;
 use color_eyre::{
@@ -6,7 +6,6 @@ use color_eyre::{
     owo_colors::OwoColorize,
     Section, SectionExt,
 };
-use mfs16core::Instruction;
 
 mod instruction_parser;
 
@@ -16,23 +15,78 @@ use crate::asm_lexer::{
 };
 use instruction_parser::{instr_to_bytes, Operand, Operation};
 
+/// Get the next value when one of a list of [TokenKind] is expected.
+macro_rules! get_next_expected {
+    ($parser: ident, $expected_token_str:literal, $($pattern:pat),+) => {{
+        match $parser.peek() {
+            $(
+                Some(&$pattern)
+            )|+ => {
+            }
+            _ => return Err(eyre!("Expected {}.", $expected_token_str)),
+        };
+        $parser.next_expected()?
+    }};
+}
+
+/// Parse a valid list of MFS-16 assembly [Token]s into machine code for the MFS-16 architecture.
+pub fn parse(
+    tokens: Vec<Token>,
+    path: &Utf8Path,
+    data: &str,
+    debug: bool,
+) -> eyre::Result<Vec<u8>> {
+    let mut parser = Parser::new(tokens, path, data, debug);
+    let mut output_bytes: Vec<u8> = Vec::new();
+
+    while let Some(bytes) = parser.parse_next()? {
+        output_bytes.extend(bytes);
+    }
+
+    Ok(output_bytes)
+}
+
 /// MFS-16 parser. Parses a list of [Token]s into machine code for the MFS-16 architecture.
 pub struct Parser<'a> {
     tokens: Vec<Token>,
     token_index: usize,
+    variables: HashMap<String, Variable>,
     path: &'a Utf8Path,
     original: &'a str,
-    output_bytes: Vec<u8>,
+    debug: bool,
 }
 impl<'a> Parser<'a> {
     /// Create a new [Parser] with the given [Token]s, filepath, and file data.
-    pub fn new(tokens: Vec<Token>, path: &'a Utf8Path, data: &'a str) -> Self {
+    pub fn new(tokens: Vec<Token>, path: &'a Utf8Path, data: &'a str, debug: bool) -> Self {
         Self {
             tokens,
             token_index: 0,
+            variables: HashMap::new(),
             path,
             original: data,
-            output_bytes: Vec::new(),
+            debug,
+        }
+    }
+
+    /// Parse the next statement. Return the bytes parsed from the statement, or [Option::None] if
+    /// the end of the list of [Token]s has been reached.
+    fn parse_next(&mut self) -> eyre::Result<Option<Vec<u8>>> {
+        if self.token_index == self.tokens.len() {
+            return Ok(None);
+        }
+
+        // Prioritise instructions over variable assignments.
+        match self.parse_instr() {
+            Ok(Some(bytes)) => return Ok(Some(bytes)),
+            // Wasn't an instruction but was an identifier. Check to see if something else
+            Ok(None) => {}
+            Err(e) => return self.parsing_error(e.to_string()),
+        };
+
+        // Attempt to do a variable assignment.
+        match self.parse_assignment() {
+            Ok(_) => Ok(Some(Vec::new())),
+            Err(e) => self.parsing_error(e.to_string()),
         }
     }
 
@@ -50,7 +104,10 @@ impl<'a> Parser<'a> {
     fn next(&mut self) -> Option<&Token> {
         let token = self.tokens.get(self.token_index);
 
-        if token.is_some() {
+        if let Some(t) = &token {
+            if self.debug {
+                println!("Consumed `{:?}`.", t);
+            }
             self.token_index += 1;
         }
 
@@ -62,18 +119,12 @@ impl<'a> Parser<'a> {
         Ok(self.next().expect("Unreachable: no next."))
     }
 
-    /// Return an error showing where in the file the error occurred.
-    fn parsing_error<S: AsRef<str> + Display>(&self, message: S) -> eyre::Result<()> {
-        let num_consumed_chars =
-            self.original.len() - self.current_index().ok_or_eyre("Invalid token index.")?;
-        let consumed_lines: Vec<&str> = self.original[..num_consumed_chars].split("\n").collect();
-        let line_num = consumed_lines.len();
-        let consumed_line = consumed_lines.last().ok_or_eyre("No consumed lines.")?;
-        let col_num = consumed_line.len();
-        let remaining_line: &str = self.original[num_consumed_chars..]
-            .split("\n")
-            .next()
-            .ok_or_eyre("No remaining line.")?;
+    /// Return an error, showing where in the file the error occurred.
+    fn parsing_error<S: AsRef<str> + Display>(&self, message: S) -> eyre::Result<Option<Vec<u8>>> {
+        let line_num = self.line_num()?;
+        let col_num = self.col_num()?;
+        let consumed_line = self.consumed_line()?;
+        let remaining_line = self.remaining_line()?;
 
         Err(eyre!("{}", message))
             .with_section(|| {
@@ -96,7 +147,70 @@ impl<'a> Parser<'a> {
             })
     }
 
+    /// Get the number of consumed characters so far.
+    fn num_consumed_chars(&self) -> eyre::Result<usize> {
+        self.current_index().ok_or_eyre("Invalid token index.")
+    }
+
+    /// Get the lines consumed so far.
+    fn consumed_lines(&self) -> eyre::Result<Vec<&str>> {
+        dbg!(self.original[..self.num_consumed_chars()?]
+            .split("\n")
+            .collect::<Vec<&str>>());
+        Ok(self.original[..self.num_consumed_chars()?]
+            .split("\n")
+            .collect())
+    }
+
+    /// Get the current line number.
+    fn line_num(&self) -> eyre::Result<usize> {
+        Ok(self.consumed_lines()?.len())
+    }
+
+    /// Get the already-consumed text of the current line.
+    fn consumed_line(&self) -> eyre::Result<&str> {
+        Ok(self
+            .consumed_lines()?
+            .last()
+            .ok_or_eyre("No consumed lines.")?)
+    }
+
+    /// Get the current column number.
+    fn col_num(&self) -> eyre::Result<usize> {
+        Ok(self.consumed_line()?.len())
+    }
+
+    /// Get the unconsumed text of the current line.
+    fn remaining_line(&self) -> eyre::Result<&str> {
+        self.original[self.num_consumed_chars()?..]
+            .split("\n")
+            .next()
+            .ok_or_eyre("No remaining line.")
+    }
+
     // ------- PARSER FUNCTIONS -------
+
+    /// Parse a variable assignment.
+    fn parse_assignment(&mut self) -> eyre::Result<()> {
+        let assignee_name = match self.peek() {
+            Some(Identifier(string)) => match string.parse::<Operation>() {
+                Ok(op) => return Err(eyre!("Variable name cannot be instruction name `{}`.", op)),
+                Err(_) => string.clone(),
+            },
+            _ => return Err(eyre!("Expected an identifier.")),
+        };
+        self.next_expected()?;
+
+        get_next_expected!(self, "`=`.\nIf this line is intended to be an instruction, then the instruction name is invalid", Equals);
+
+        let value = self.parse_variable_value()?;
+
+        get_next_expected!(self, "`;`", Semicolon);
+
+        self.variables.insert(assignee_name, value);
+
+        Ok(())
+    }
 
     /// Parse an instruction into a vector of bytes.
     fn parse_instr(&mut self) -> eyre::Result<Option<Vec<u8>>> {
@@ -141,42 +255,42 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_operation(&mut self) -> eyre::Result<Option<Operation>> {
-        match self.peek() {
-            Some(&Identifier(_)) => {}
-            _ => return Err(eyre!("Expected instruction keyword.")),
-        };
-
-        let next = self.next_expected()?;
-        match &next.kind {
-            Identifier(string) => match string.parse::<Operation>() {
-                Ok(op) => Ok(Some(op)),
-                Err(_) => Ok(None),
+        let id_string = match self.peek() {
+            Some(Identifier(string)) => match string.parse::<Operation>() {
+                Ok(op) => op,
+                // Not an instruction!
+                Err(_) => return Ok(None),
             },
-            _ => Err(eyre!("Unreachable: bad Token variant.")),
-        }
+            _ => return Err(eyre!("Expected identifier.")),
+        };
+        self.next_expected()?;
+        Ok(Some(id_string))
     }
 
     /// Return `Ok(Some())` if operand, `Ok(None)` if end of instruction, and `Err` if error.
     fn parse_operand(&mut self) -> eyre::Result<Operand> {
+        // Handle non-atomic operand cases separately.
         match self.peek() {
             Some(&OpenBracket) => return self.parse_deref(),
-            Some(&Identifier(_))
-            | Some(&Byte(_))
-            | Some(&Word(_))
-            | Some(&DWord(_))
-            | Some(&QWord(_))
-            | Some(&Reg(_))
-            | Some(&Breg(_))
-            | Some(&Vreg(_))
-            | Some(&ProgramCounter)
-            | Some(&StackPointer)
-            | Some(&Semicolon) => {}
-            _ => return Err(eyre!("Expected an operand or `;`.")),
+            Some(&Identifier(_)) => return Ok(self.parse_variable()?.into_operand()),
+            _ => {}
         };
 
-        let next = self.next_expected()?;
+        let next = get_next_expected!(
+            self,
+            "an operand or `;`.",
+            Byte(_),
+            Word(_),
+            DWord(_),
+            QWord(_),
+            Reg(_),
+            Breg(_),
+            Vreg(_),
+            ProgramCounter,
+            StackPointer,
+            Semicolon
+        );
         match &next.kind {
-            Identifier(id) => Ok(Operand::Variable(id.clone())),
             Byte(b) => Ok(Operand::Byte(*b)),
             Word(w) => Ok(Operand::Word(*w)),
             DWord(d) => Ok(Operand::DWord(*d)),
@@ -191,33 +305,86 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_deref(&mut self) -> eyre::Result<Operand> {
-        match self.peek() {
-            Some(&OpenBracket) => {}
-            _ => return Err(eyre!("Unreachable: should be open bracket.")),
-        }
-        let next = self.next_expected()?;
-        match &next.kind {
-            OpenBracket => {}
-            _ => return Err(eyre!("Unreachable: bad Token variant.")),
+    /// Get the value of a variable.
+    fn parse_variable(&mut self) -> eyre::Result<Variable> {
+        let variable_name = match self.peek() {
+            Some(Identifier(val)) => val.clone(),
+            _ => {
+                return Err(eyre!(
+                    "Unreachable: was already determined to be identifier."
+                ))
+            }
+        };
+        let value = match self.variables.get(&variable_name) {
+            Some(val) => *val,
+            None => return Err(eyre!("Variable `{}` not found.", variable_name)),
+        };
+        self.next_expected()?;
+        Ok(value)
+    }
+
+    /// Get the value being assigned to a variable.
+    fn parse_variable_value(&mut self) -> eyre::Result<Variable> {
+        if let Some(&Identifier(_)) = self.peek() {
+            return self.parse_variable();
         }
 
-        match self.peek() {
-            Some(&Breg(_)) => {}
-            _ => return Err(eyre!("Expected big register.")),
-        }
-        let next = self.next_expected()?;
+        let value = match self.peek() {
+            Some(&Byte(b)) => Variable::Byte(b),
+            Some(&Word(w)) => Variable::Word(w),
+            Some(&DWord(d)) => Variable::DWord(d),
+            Some(&QWord(q)) => Variable::QWord(q),
+            _ => return Err(eyre!("Expected value to assign to variable.")),
+        };
+        self.next_expected()?;
+        Ok(value)
+    }
+
+    fn parse_deref(&mut self) -> eyre::Result<Operand> {
+        get_next_expected!(self, "`[`", OpenBracket);
+
+        let next = get_next_expected!(self, "big register", Breg(_));
         let breg_value = match &next.kind {
             Breg(breg) => *breg,
-            _ => return Err(eyre!("Unreachable: bad Token variant.")),
+            _ => return Err(eyre!("Unreachable: already known to be big register.")),
         };
 
-        match self.peek() {
-            Some(&CloseBracket) => {}
-            _ => return Err(eyre!("Expected `]`.")),
-        }
-        self.next_expected()?;
+        get_next_expected!(self, "`]`", CloseBracket);
+
         Ok(Operand::BregDeref(breg_value))
+    }
+}
+
+/// All the types which can be stored as a variable.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+enum Variable {
+    Byte(u8),
+    Word(u16),
+    DWord(u32),
+    QWord(u64),
+}
+impl Variable {
+    fn into_operand(self) -> Operand {
+        match self {
+            Self::Byte(b) => Operand::Byte(b),
+            Self::Word(w) => Operand::Word(w),
+            Self::DWord(d) => Operand::DWord(d),
+            Self::QWord(q) => Operand::QWord(q),
+        }
+    }
+}
+impl Display for Variable {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Byte(b) => format!("{:#04X}:b", b),
+                Self::Word(w) => format!("{:#06X}:w", w),
+                Self::DWord(d) => format!("{:#010X}:d", d),
+                Self::QWord(q) => format!("{:#018X}:q", q),
+            }
+        )
     }
 }
 
