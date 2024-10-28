@@ -160,6 +160,7 @@ fn pf(c: char, val: bool) -> String {
 
 /// Trait to get the most significant bit of a data type.
 pub trait Msb {
+    /// Get the most significant bit of this value.
     fn msb(&self) -> bool;
 }
 macro_rules! impl_msb {
@@ -175,6 +176,7 @@ impl_msb!(u8, u16, u32, u64, u128);
 
 /// Trait to get 0 in the given data type.
 pub trait Zeroable {
+    /// Get the value 0 in this data type.
     fn zero() -> Self;
 }
 macro_rules! impl_zero {
@@ -190,6 +192,7 @@ impl_zero!(u8, i8, u16, i16, u32, i32, u64, i64, u128, i128);
 
 /// Trait to get 1 in the given data type.
 pub trait Oneable {
+    /// Get the value 1 in this data type.
     fn one() -> Self;
 }
 macro_rules! impl_one {
