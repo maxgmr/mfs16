@@ -122,6 +122,8 @@ pub enum Operand {
     DWord(u32),
     /// e.g., `0x0123_4567_89AB_CDEF`
     QWord(u64),
+    /// e.g., `[0x0012_3456:d]`
+    DWordDeref(u32),
     /// The program counter.
     ProgramCounter,
     /// The stack pointer.
@@ -148,6 +150,7 @@ impl Display for Operand {
                 Self::Byte(b) => format!("{b}"),
                 Self::Word(w) => format!("{w}"),
                 Self::DWord(d) => format!("{d}"),
+                Self::DWordDeref(d) => format!("[{d}]"),
                 Self::QWord(q) => format!("{q}"),
                 Self::ProgramCounter => "PC".to_owned(),
                 Self::StackPointer => "SP".to_owned(),
@@ -168,7 +171,7 @@ pub fn instr_to_bytes(
         (Operation::Ld, Reg(ra), Reg(rb)) => Ok(i2b(LdRaRb(*ra, *rb))),
         (Operation::Ld, Breg(bra), Breg(brb)) => Ok(i2b(LdBraBrb(*bra, *brb))),
         (Operation::Ld, StackPointer, DWord(d)) => Ok(i2b_imm32(LdSpImm32, *d)),
-        (Operation::Ld, DWord(d), StackPointer) => Ok(i2b_imm32(LdImm32Sp, *d)),
+        (Operation::Ld, DWordDeref(d), StackPointer) => Ok(i2b_imm32(LdImm32Sp, *d)),
         (Operation::Ld, StackPointer, Breg(bra)) => Ok(i2b(LdSpBra(*bra))),
         (Operation::Ld, Vreg(vra), Vreg(vrb)) => Ok(i2b(LdVraVrb(*vra, *vrb))),
         (Operation::Ld, Reg(ra), Word(w)) => Ok(i2b_imm16(LdRaImm16(*ra), *w)),

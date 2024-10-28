@@ -343,15 +343,16 @@ impl<'a> Parser<'a> {
     fn parse_deref(&mut self) -> eyre::Result<Operand> {
         get_next_expected!(self, "`[`", OpenBracket);
 
-        let next = get_next_expected!(self, "big register", Breg(_));
-        let breg_value = match &next.kind {
-            Breg(breg) => *breg,
+        let next = get_next_expected!(self, "big register or dword", Breg(_), DWord(_));
+        let operand = match &next.kind {
+            Breg(breg) => Operand::BregDeref(*breg),
+            DWord(d) => Operand::DWordDeref(*d),
             _ => return Err(eyre!("Unreachable: already known to be big register.")),
         };
 
         get_next_expected!(self, "`]`", CloseBracket);
 
-        Ok(Operand::BregDeref(breg_value))
+        Ok(operand)
     }
 }
 

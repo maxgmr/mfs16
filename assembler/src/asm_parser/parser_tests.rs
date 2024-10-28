@@ -108,6 +108,7 @@ parser_test!(FAIL: parsenosemi2, parse_instr, "nop");
 
 parser_test!(parsederef, "ADD A,\t\t[HL];" => Some(vec![0x02_u8, 0x19_u8]));
 parser_test!(parsederefld, "ld [DE],B;" => Some(vec![0x11_u8, 0x04_u8]));
+parser_test!(parseimmderef, "LD [0x0012_3456:d],SP;" => Some(vec![0xA1, 0x01, 0x56, 0x34, 0x12, 0x00]));
 parser_test!(FAIL: parsenoclosebr, parse_instr, "add A,[HL;");
 parser_test!(FAIL: parsenoopenbr, parse_instr, "add A,HL];");
 parser_test!(FAIL: parsebadargsderef, parse_instr, "add [HL],A;");
@@ -155,7 +156,7 @@ to_bytes_test!(
 to_bytes_test!(
     ldimm32sp,
     Ld,
-    DWord(0x0123_4567),
+    DWordDeref(0x0123_4567),
     SP,
     vec![0xA1, 0x01, 0x67, 0x45, 0x23, 0x01]
 );
