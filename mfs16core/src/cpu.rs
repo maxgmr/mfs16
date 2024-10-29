@@ -17,7 +17,9 @@ pub use register::{Reg, Reg16, Reg32, Reg8};
 use crate::ram::Ram;
 use register::Registers;
 
+// TODO replace with something more robust
 const DEBUG: bool = true;
+const BYTES_IN_DWORD: usize = 4;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Cpu {
@@ -153,10 +155,20 @@ impl Cpu {
     }
 
     /// Push a value to the stack.
-    fn push_stack(&mut self, value: u16) {
-        self.sp.wrapping_dec();
-        self.sp.wrapping_dec();
-        // TODO
+    fn push_stack(&mut self, ram: &mut Ram, value: u32) {
+        for _ in 0..BYTES_IN_DWORD {
+            self.sp.wrapping_dec();
+        }
+        ram.write_dword(self.sp.into(), value);
+    }
+
+    /// Pop a value from the stack.
+    fn pop_stack(&mut self, ram: &mut Ram) -> u32 {
+        let popped_val = ram.read_dword(self.sp.into());
+        for _ in 0..BYTES_IN_DWORD {
+            self.sp.wrapping_inc();
+        }
+        popped_val
     }
 }
 impl Default for Cpu {
@@ -166,7 +178,7 @@ impl Default for Cpu {
             regs: Registers::default(),
             flags: Flags::default(),
             pc: Addr::default(),
-            sp: Addr::new(0xFF_FFFF),
+            sp: Addr::default(),
             instr: Instruction::default(),
             step_num: Instruction::default().num_steps(),
             last_byte: 0x00,
@@ -219,5 +231,22 @@ mod tests {
         cpu.read_next_byte(&ram);
         assert_eq!(cpu.last_byte, 0x01);
         assert_eq!(cpu.pc, Addr::new(0x00_0003));
+    }
+
+    #[test]
+    fn test_stack() {
+        let mut cpu = Cpu::default();
+        let mut ram = Ram::default();
+        cpu.sp = Addr::new(0x00_0000);
+
+        cpu.push_stack(&mut ram, 0x1234_5678);
+        assert_eq!(cpu.sp, Addr::new(0xFF_FFFC));
+        assert_eq!(ram.read_byte(0xFF_FFFF), 0x12);
+        assert_eq!(ram.read_byte(0xFF_FFFE), 0x34);
+        assert_eq!(ram.read_byte(0xFF_FFFD), 0x56);
+        assert_eq!(ram.read_byte(0xFF_FFFC), 0x78);
+
+        assert_eq!(cpu.pop_stack(&mut ram), 0x1234_5678);
+        assert_eq!(cpu.sp, Addr::new(0x00_0000));
     }
 }

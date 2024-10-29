@@ -363,14 +363,14 @@ fn test_ld() {
 
     // LD HL,SP
     instr_test!(
-        REGS: [(HL, 0x0000_0000)],
+        REGS: [(HL, 0x1234_5678)],
         RAM: gen_ram![
             LdBraSp(HL).into_opcode()
         ],
         FLAGS: "",
         [
-            (0x00_0002, [(HL, 0x0000_0000)], ""),
-            (0x00_0002, [(HL, 0xFF_FFFF_u32)], "")
+            (0x00_0002, [(HL, 0x1234_5678)], ""),
+            (0x00_0002, [(HL, 0x00_0000)], "")
         ]
     );
 }
