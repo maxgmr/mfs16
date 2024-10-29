@@ -531,8 +531,57 @@ pub enum Instruction {
     /// 0x4D1a - SWP [bra]
     /// Swap the high and low bytes of the value at address bra.
     SwpBra(Reg32),
-    // TODO
-    // Read/write the state of a flag from/to a register.
+    /// 0x4D20 - SZF
+    /// Set the Zero flag.
+    Szf,
+    /// 0x4D21 - RZF
+    /// Reset the Zero flag.
+    Rzf,
+    /// 0x4D22 - TZF
+    /// Toggle the Zero flag.
+    Tzf,
+    /// 0x4D23 - SCF
+    /// Set the Carry flag.
+    Scf,
+    /// 0x4D24 - RCF
+    /// Reset the Carry flag.
+    Rcf,
+    /// 0x4D25 - TCF
+    /// Toggle the Carry flag.
+    Tcf,
+    /// 0x4D26 - SOF
+    /// Set the Overflow flag.
+    Sof,
+    /// 0x4D27 - ROF
+    /// Reset the Overflow flag.
+    Rof,
+    /// 0x4D28 - TOF
+    /// Toggle the Overflow flag.
+    Tof,
+    /// 0x4D29 - SPF
+    /// Set the Parity flag.
+    Spf,
+    /// 0x4D2A - RPF
+    /// Reset the Parity flag.
+    Rpf,
+    /// 0x4D2B - TPF
+    /// Toggle the Parity flag.
+    Tpf,
+    /// 0x4D2C - SNF
+    /// Set the Negative flag.
+    Snf,
+    /// 0x4D2D - RNF
+    /// Reset the Negative flag.
+    Rnf,
+    /// 0x4D2E - TNF
+    /// Toggle the Negative flag.
+    Tnf,
+    /// 0x4D2F - SAF
+    /// Set all flags.
+    Saf,
+    /// 0x4D30 - RAF
+    /// Reset all flags.
+    Raf,
 }
 
 #[cfg(test)]

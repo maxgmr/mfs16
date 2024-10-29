@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
     helpers::{change_bit, combine_u8_le, split_word, test_bit, BitOp},
-    Addr, Flag,
+    Addr, Flag, Flags,
 };
 
 /// Perform the current step of the current CPU instruction.
@@ -134,6 +134,23 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         TgbBraB(bra, b) => bit_op_bra_b(cpu, ram, bra, b, BitOp::Toggle),
         SwpRa(ra) => swp_ra(cpu, ra),
         SwpBra(bra) => swp_bra(cpu, ram, bra),
+        Szf => set_flag(cpu, Flag::Zero),
+        Rzf => reset_flag(cpu, Flag::Zero),
+        Tzf => toggle_flag(cpu, Flag::Zero),
+        Scf => set_flag(cpu, Flag::Carry),
+        Rcf => reset_flag(cpu, Flag::Carry),
+        Tcf => toggle_flag(cpu, Flag::Carry),
+        Sof => set_flag(cpu, Flag::Overflow),
+        Rof => reset_flag(cpu, Flag::Overflow),
+        Tof => toggle_flag(cpu, Flag::Overflow),
+        Spf => set_flag(cpu, Flag::Parity),
+        Rpf => reset_flag(cpu, Flag::Parity),
+        Tpf => toggle_flag(cpu, Flag::Parity),
+        Snf => set_flag(cpu, Flag::Negative),
+        Rnf => reset_flag(cpu, Flag::Negative),
+        Tnf => toggle_flag(cpu, Flag::Negative),
+        Saf => set_all_flags(cpu),
+        Raf => reset_all_flags(cpu),
     }
 }
 
@@ -678,6 +695,41 @@ fn swp_bra(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32) {
             let (msb, lsb) = split_word(cpu.last_word);
             ram.write_word(cpu.breg(bra), combine_u8_le(msb, lsb));
         }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn set_flag(cpu: &mut Cpu, flag: Flag) {
+    match cpu.step_num {
+        1 => cpu.set_flag(flag),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn reset_flag(cpu: &mut Cpu, flag: Flag) {
+    match cpu.step_num {
+        1 => cpu.reset_flag(flag),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn toggle_flag(cpu: &mut Cpu, flag: Flag) {
+    match cpu.step_num {
+        1 => cpu.change_flag(flag, !cpu.flag(flag)),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn set_all_flags(cpu: &mut Cpu) {
+    match cpu.step_num {
+        1 => cpu.flags = Flags::from_string("ZCOPN"),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn reset_all_flags(cpu: &mut Cpu) {
+    match cpu.step_num {
+        1 => cpu.flags = Flags::from_string(""),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
