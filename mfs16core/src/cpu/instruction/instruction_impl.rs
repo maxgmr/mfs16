@@ -164,6 +164,8 @@ impl Instruction {
             (0x4, 0xA, bra, b) => RsbBraB(Reg32::from_nib(bra), b),
             (0x4, 0xB, ra, b) => TgbRaB(Reg16::from_nib(ra), b),
             (0x4, 0xC, bra, b) => TgbBraB(Reg32::from_nib(bra), b),
+            (0x4, 0xD, 0x0, ra) => SwpRa(Reg16::from_nib(ra)),
+            (0x4, 0xD, 0x1, bra) => SwpBra(Reg32::from_nib(bra)),
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
@@ -296,6 +298,8 @@ impl Instruction {
             RsbBraB(bra, b) => opc_2arg(0x4A_u16, bra, b),
             TgbRaB(ra, b) => opc_2arg(0x4B_u16, ra, b),
             TgbBraB(bra, b) => opc_2arg(0x4C_u16, bra, b),
+            SwpRa(ra) => opc_1arg(0x4D0_u16, ra),
+            SwpBra(bra) => opc_1arg(0x4D1_u16, bra),
         }
     }
 
@@ -427,6 +431,8 @@ impl Instruction {
             RsbBraB(..) => 3,
             TgbRaB(..) => 2,
             TgbBraB(..) => 3,
+            SwpRa(..) => 2,
+            SwpBra(..) => 3,
         }
     }
 }
@@ -561,6 +567,8 @@ impl Display for Instruction {
                 RsbBraB(bra, b) => format!("RSB [{bra}],{b}"),
                 TgbRaB(ra, b) => format!("TGB {ra},{b}"),
                 TgbBraB(bra, b) => format!("TGB [{bra}],{b}"),
+                SwpRa(ra) => format!("SWP {ra}"),
+                SwpBra(bra) => format!("SWP [{bra}]"),
             }
         )
     }

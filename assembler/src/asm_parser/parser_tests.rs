@@ -467,3 +467,5 @@ to_bytes_test!(rsbrab, Rsb, Reg(A), Byte(0x00), vec![0x00, 0x49]);
 to_bytes_test!(rsbbrab, Rsb, BregDeref(BC), Byte(0x00), vec![0x00, 0x4A]);
 to_bytes_test!(tgbrab, Tgb, Reg(A), Byte(0x00), vec![0x00, 0x4B]);
 to_bytes_test!(tgbbrab, Tgb, BregDeref(BC), Byte(0x00), vec![0x00, 0x4C]);
+to_bytes_test!(swpra, Swp, Reg(A), None, vec![0x00, 0x4D]);
+to_bytes_test!(swpbra, Swp, BregDeref(BC), None, vec![0x10, 0x4D]);

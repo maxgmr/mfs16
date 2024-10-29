@@ -2437,17 +2437,53 @@ fn test_bit_changes() {
     c.ram.write_word(0x00_0004, TgbBraB(BC, 8).into_opcode());
 
     c.cycle();
+    assert_eq!(c.ram.read_word(0x12_3456), 0xFF00);
     c.cycle();
+    assert_eq!(c.ram.read_word(0x12_3456), 0xFF00);
     c.cycle();
     assert_eq!(c.ram.read_word(0x12_3456), 0xFF01);
 
     c.cycle();
+    assert_eq!(c.ram.read_word(0x12_3456), 0xFF01);
     c.cycle();
+    assert_eq!(c.ram.read_word(0x12_3456), 0xFF01);
     c.cycle();
     assert_eq!(c.ram.read_word(0x12_3456), 0x7F01);
 
     c.cycle();
+    assert_eq!(c.ram.read_word(0x12_3456), 0x7F01);
     c.cycle();
+    assert_eq!(c.ram.read_word(0x12_3456), 0x7F01);
     c.cycle();
     assert_eq!(c.ram.read_word(0x12_3456), 0x7E01);
+}
+
+#[test]
+fn test_swap() {
+    instr_test!(
+        REGS: [
+            (A, 0x0123)
+        ],
+        RAM: gen_ram![
+            SwpRa(A).into_opcode()
+        ],
+        FLAGS: "",
+        [
+            // SWP A
+            (0x00_0002, [(A, 0x0123)], ""),
+            (0x00_0002, [(A, 0x2301)], "")
+        ]
+    );
+
+    let mut c = Computer::default();
+    BC.set(&mut c.cpu, 0x12_3456);
+    c.ram.write_word(0x12_3456, 0x0123);
+    c.ram.write_word(0x00_0000, SwpBra(BC).into_opcode());
+
+    c.cycle();
+    assert_eq!(c.ram.read_word(0x12_3456), 0x0123);
+    c.cycle();
+    assert_eq!(c.ram.read_word(0x12_3456), 0x0123);
+    c.cycle();
+    assert_eq!(c.ram.read_word(0x12_3456), 0x2301);
 }

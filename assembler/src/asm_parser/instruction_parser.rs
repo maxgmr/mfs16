@@ -39,6 +39,7 @@ pub enum Operation {
     Stb,
     Rsb,
     Tgb,
+    Swp,
 }
 impl FromStr for Operation {
     type Err = Report;
@@ -73,6 +74,7 @@ impl FromStr for Operation {
             "stb" => Ok(Operation::Stb),
             "rsb" => Ok(Operation::Rsb),
             "tgb" => Ok(Operation::Tgb),
+            "swp" => Ok(Operation::Swp),
             _ => Err(eyre!(
                 "Input `{}` does not match an instruction operation.",
                 s
@@ -114,6 +116,7 @@ impl Display for Operation {
                 Operation::Stb => "STB",
                 Operation::Rsb => "RSB",
                 Operation::Tgb => "TGB",
+                Operation::Swp => "SWP",
             }
         )
     }
@@ -307,6 +310,8 @@ pub fn instr_to_bytes(
         (Operation::Rsb, BregDeref(bra), Byte(b)) => Ok(i2b(RsbBraB(*bra, *b))),
         (Operation::Tgb, Reg(ra), Byte(b)) => Ok(i2b(TgbRaB(*ra, *b))),
         (Operation::Tgb, BregDeref(bra), Byte(b)) => Ok(i2b(TgbBraB(*bra, *b))),
+        (Operation::Swp, Reg(ra), None) => Ok(i2b(SwpRa(*ra))),
+        (Operation::Swp, BregDeref(bra), None) => Ok(i2b(SwpBra(*bra))),
         _ => Err(eyre!(
             "`{}, {}` are invalid operand(s) for {}.",
             operand_1,

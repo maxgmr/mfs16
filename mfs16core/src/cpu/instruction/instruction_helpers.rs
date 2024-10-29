@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    helpers::{change_bit, test_bit, BitOp},
+    helpers::{change_bit, combine_u8_le, split_word, test_bit, BitOp},
     Flag,
 };
 
@@ -132,6 +132,8 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         RsbBraB(bra, b) => bit_op_bra_b(cpu, ram, bra, b, BitOp::Reset),
         TgbRaB(ra, b) => bit_op_ra_b(cpu, ra, b, BitOp::Toggle),
         TgbBraB(bra, b) => bit_op_bra_b(cpu, ram, bra, b, BitOp::Toggle),
+        SwpRa(ra) => swp_ra(cpu, ra),
+        SwpBra(bra) => swp_bra(cpu, ram, bra),
     }
 }
 
@@ -655,6 +657,27 @@ fn bit_op_bra_b(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, b: u8, bit_op: BitOp) 
     match cpu.step_num {
         1 => cpu.read_word_at_addr(ram, cpu.breg(bra)),
         2 => ram.write_word(cpu.breg(bra), change_bit(cpu.last_word, b, bit_op)),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn swp_ra(cpu: &mut Cpu, ra: Reg16) {
+    match cpu.step_num {
+        1 => {
+            let (msb, lsb) = split_word(cpu.reg(ra));
+            cpu.set_reg(ra, combine_u8_le(msb, lsb));
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn swp_bra(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32) {
+    match cpu.step_num {
+        1 => cpu.read_word_at_addr(ram, cpu.breg(bra)),
+        2 => {
+            let (msb, lsb) = split_word(cpu.last_word);
+            ram.write_word(cpu.breg(bra), combine_u8_le(msb, lsb));
+        }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }

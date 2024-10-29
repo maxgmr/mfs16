@@ -525,6 +525,12 @@ pub enum Instruction {
     /// Toggle bit b of the value at address bra.
     /// [bra][b] = ![bra][b]
     TgbBraB(Reg32, u8),
+    /// 0x4D0a - SWP ra
+    /// Swap the high and low bytes of ra.
+    SwpRa(Reg16),
+    /// 0x4D1a - SWP [bra]
+    /// Swap the high and low bytes of the value at address bra.
+    SwpBra(Reg32),
     // TODO
     // Read/write the state of a flag from/to a register.
 }
