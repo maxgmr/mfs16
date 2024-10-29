@@ -1,4 +1,4 @@
-use crate::{cpu::Cpu, ram::Ram};
+use crate::{cpu::Cpu, ram::Ram, Addr};
 
 /// System clock frequency: 33_554_432 Hz (33.55 MHz)
 pub const CLOCK_FREQ: u32 = 2_u32.pow(25);
@@ -22,5 +22,11 @@ impl Computer {
     pub fn cycle(&mut self) {
         self.cpu.cycle(&mut self.ram);
         self.cycles += 1;
+    }
+
+    /// Load a slice of bytes directly into RAM starting at the given address, overwriting any
+    /// existing data in that range.
+    pub fn direct_write(&mut self, start: Addr, bytes: &[u8]) {
+        self.ram.direct_write(start.into(), bytes);
     }
 }

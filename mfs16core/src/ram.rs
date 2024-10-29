@@ -62,6 +62,12 @@ impl Ram {
         self.write_word(address, low_word);
         self.write_word(address + 2, high_word);
     }
+
+    /// Load a slice of bytes directly into RAM starting at the given address, overwriting any
+    /// existing data in that range.
+    pub fn direct_write(&mut self, start: u32, bytes: &[u8]) {
+        self.memory[(start as usize)..((start as usize) + bytes.len())].copy_from_slice(bytes);
+    }
 }
 impl Default for Ram {
     /// Default: All bytes in memory initialised to 0x00.
