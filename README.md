@@ -13,3 +13,5 @@ A 16-bit virtual computer.
   - (Re)define how interrupts are handled
 
 - Man page for assembler
+
+- Add support for labels to assembler
