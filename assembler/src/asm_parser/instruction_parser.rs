@@ -69,6 +69,7 @@ pub enum Operation {
     Jnp,
     Jpn,
     Jnn,
+    Halt,
 }
 impl FromStr for Operation {
     type Err = Report;
@@ -133,6 +134,7 @@ impl FromStr for Operation {
             "jnp" => Ok(Operation::Jnp),
             "jpn" => Ok(Operation::Jpn),
             "jnn" => Ok(Operation::Jnn),
+            "halt" => Ok(Operation::Halt),
             _ => Err(eyre!(
                 "Input `{}` does not match an instruction operation.",
                 s
@@ -204,6 +206,7 @@ impl Display for Operation {
                 Operation::Jnp => "JRP",
                 Operation::Jpn => "JPN",
                 Operation::Jnn => "JRN",
+                Operation::Halt => "HALT",
             }
         )
     }
@@ -440,6 +443,7 @@ pub fn instr_to_bytes(
         (Operation::Jnp, Breg(bra), None) => Ok(i2b(JnpBra(*bra))),
         (Operation::Jpn, Breg(bra), None) => Ok(i2b(JpnBra(*bra))),
         (Operation::Jnn, Breg(bra), None) => Ok(i2b(JnnBra(*bra))),
+        (Operation::Halt, None, None) => Ok(i2b(Halt)),
         _ => Err(eyre!(
             "`{}, {}` are invalid operand(s) for {}.",
             operand_1,

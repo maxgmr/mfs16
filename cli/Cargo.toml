@@ -6,4 +6,7 @@ authors = ["Max Gilmour"]
 repository = "https://github.com/maxgmr/mfs16"
 
 [dependencies]
+camino = "1"
+clap = { version = "4", features = ["cargo", "derive", "string"] }
+color-eyre = "0"
 mfs16core = { path = "../mfs16core" }

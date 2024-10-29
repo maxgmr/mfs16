@@ -175,6 +175,7 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         JnpBra(bra) => cond_jump_bra(cpu, bra, Flag::Parity, false),
         JpnBra(bra) => cond_jump_bra(cpu, bra, Flag::Negative, true),
         JnnBra(bra) => cond_jump_bra(cpu, bra, Flag::Negative, false),
+        Halt => halt(cpu),
     }
 }
 
@@ -781,7 +782,11 @@ fn cond_jump_imm32(cpu: &mut Cpu, ram: &Ram, flag: Flag, expected: bool) {
         1 => cpu.read_next_word(ram),
         2 => cpu.read_next_word(ram),
         3 => cpu.check_conditional(flag, expected),
-        4 => cpu.jump(get_dword_from_last(cpu)),
+        4 => {
+            if cpu.last_conditional_satisfied {
+                cpu.jump(get_dword_from_last(cpu))
+            }
+        }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
@@ -803,7 +808,18 @@ fn jr_bra(cpu: &mut Cpu, bra: Reg32) {
 fn cond_jump_bra(cpu: &mut Cpu, bra: Reg32, flag: Flag, expected: bool) {
     match cpu.step_num {
         1 => cpu.check_conditional(flag, expected),
-        2 => cpu.jump(cpu.breg(bra)),
+        2 => {
+            if cpu.last_conditional_satisfied {
+                cpu.jump(cpu.breg(bra));
+            }
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn halt(cpu: &mut Cpu) {
+    match cpu.step_num {
+        1 => cpu.is_halted = true,
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }

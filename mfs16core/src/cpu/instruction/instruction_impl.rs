@@ -207,6 +207,7 @@ impl Instruction {
             (0x8, 0x0, 0xA, bra) => JnpBra(Reg32::from_nib(bra)),
             (0x8, 0x0, 0xB, bra) => JpnBra(Reg32::from_nib(bra)),
             (0x8, 0x0, 0xC, bra) => JnnBra(Reg32::from_nib(bra)),
+            (0xF, 0xF, 0xF, 0xF) => Halt,
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
@@ -382,6 +383,7 @@ impl Instruction {
             JnpBra(bra) => opc_1arg(0x80A_u16, bra),
             JpnBra(bra) => opc_1arg(0x80B_u16, bra),
             JnnBra(bra) => opc_1arg(0x80C_u16, bra),
+            Halt => 0xFFFF,
         }
     }
 
@@ -556,6 +558,7 @@ impl Instruction {
             JnpBra(..) => 3,
             JpnBra(..) => 3,
             JnnBra(..) => 3,
+            Halt => 2,
         }
     }
 }
@@ -733,6 +736,7 @@ impl Display for Instruction {
                 JnpBra(bra) => format!("JNP {bra}"),
                 JpnBra(bra) => format!("JPN {bra}"),
                 JnnBra(bra) => format!("JNN {bra}"),
+                Halt => String::from("HALT"),
             }
         )
     }

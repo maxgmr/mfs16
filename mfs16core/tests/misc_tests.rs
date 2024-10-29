@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use mfs16core::{gen_ram, Addr, Computer, Flags, Instruction::*, Ram, RamWritable};
+use mfs16core::{gen_ram, Addr, Computer, Flags, Instruction::*, Ram, RamWritable, Reg, Reg16::*};
 use pretty_assertions::assert_eq;
 
 mod helpers;
@@ -83,6 +83,25 @@ fn test_set_reset_toggle_flags() {
             // RAF
             (0x00_0022, [], "ZCOPN"),
             (0x00_0022, [], "")
+        ]
+    );
+
+    instr_test!(
+        REGS: [],
+        RAM: gen_ram![
+           Halt.into_opcode(),
+           Szf.into_opcode()
+        ],
+        FLAGS: "",
+        [
+            // HALT
+            (0x00_0002, [], ""),
+            (0x00_0002, [], ""),
+            // Flags should not be set, PC should not be advanced
+            (0x00_0002, [], ""),
+            (0x00_0002, [], ""),
+            (0x00_0002, [], ""),
+            (0x00_0002, [], "")
         ]
     );
 }

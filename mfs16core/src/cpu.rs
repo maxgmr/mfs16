@@ -17,8 +17,6 @@ pub use register::{Reg, Reg16, Reg32, Reg8};
 use crate::ram::Ram;
 use register::Registers;
 
-// TODO replace with something more robust
-const DEBUG: bool = true;
 const BYTES_IN_DWORD: usize = 4;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -35,6 +33,10 @@ pub struct Cpu {
     pub instr: Instruction,
     /// Step number within the current instruction.
     pub step_num: u32,
+    /// If true, the CPU is halted and will not do anything until an interrupt.
+    pub is_halted: bool,
+    /// If true, print debug messages to stdout.
+    pub debug: bool,
     /// The byte last read by the CPU.
     last_byte: u8,
     /// The word last read by the CPU.
@@ -46,21 +48,26 @@ pub struct Cpu {
 }
 impl Cpu {
     /// Create a new [Cpu] with the given [Registers] and [Flags] values.
-    pub fn new(regs: Registers, flags: Flags) -> Self {
+    pub fn new(regs: Registers, flags: Flags, debug: bool) -> Self {
         Self {
             regs,
             flags,
+            debug,
             ..Self::default()
         }
     }
 
     /// Perform one clock cycle.
     pub fn cycle(&mut self, ram: &mut Ram) {
+        if self.is_halted {
+            return;
+        }
+
         if self.step_num >= self.instr.num_steps() {
             // Current instruction is done; move on to the next one.
             self.step_num = 0;
             self.read_opcode(ram);
-            if DEBUG {
+            if self.debug {
                 println!("{}", self);
             }
         } else {
@@ -158,18 +165,14 @@ impl Cpu {
 
     /// Push a value to the stack.
     fn push_stack(&mut self, ram: &mut Ram, value: u32) {
-        for _ in 0..BYTES_IN_DWORD {
-            self.sp.wrapping_dec();
-        }
+        self.sp.wrapping_sub(BYTES_IN_DWORD as u32);
         ram.write_dword(self.sp.into(), value);
     }
 
     /// Pop a value from the stack.
     fn pop_stack(&mut self, ram: &mut Ram) -> u32 {
         let popped_val = ram.read_dword(self.sp.into());
-        for _ in 0..BYTES_IN_DWORD {
-            self.sp.wrapping_inc();
-        }
+        self.sp.wrapping_add(BYTES_IN_DWORD as u32);
         popped_val
     }
 
@@ -198,6 +201,8 @@ impl Default for Cpu {
             sp: Addr::default(),
             instr: Instruction::default(),
             step_num: Instruction::default().num_steps(),
+            is_halted: false,
+            debug: true,
             last_byte: 0x00,
             last_word: 0x0000,
             second_last_word: 0x0000,

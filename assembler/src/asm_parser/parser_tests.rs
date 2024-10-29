@@ -582,3 +582,4 @@ to_bytes_test!(jppbra, Jpp, Breg(BC), None, vec![0x90, 0x80]);
 to_bytes_test!(jnpbra, Jnp, Breg(BC), None, vec![0xA0, 0x80]);
 to_bytes_test!(jpnbra, Jpn, Breg(BC), None, vec![0xB0, 0x80]);
 to_bytes_test!(jnnbra, Jnn, Breg(BC), None, vec![0xC0, 0x80]);
+to_bytes_test!(halt, Halt, None, None, vec![0xFF, 0xFF]);

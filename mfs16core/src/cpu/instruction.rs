@@ -655,6 +655,9 @@ pub enum Instruction {
     /// 0x80Ca - JNN bra
     /// Jump to the address stored in bra iff the Negative flag is reset.
     JnnBra(Reg32),
+    /// 0xFFFF - HALT
+    /// Halt the CPU, stopping cycles until an external interrupt is received.
+    Halt,
     // TODO
     // Convert Byte <-> Word <-> DWord
     // Absolute value
