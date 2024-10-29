@@ -28,6 +28,19 @@ pub use instruction_helpers::step;
 // codes for the 32-bit big registers starting at 7.
 const NUM_REGS: u8 = 7;
 
+// ------- ADDING NEW INSTRUCTION CHECKLIST -------
+// - [instruction.rs]           Add Instruction enum entry
+// - [instruction_helpers.rs]   Add match to step fn
+// - [instruction_helpers.rs]   Add step helper fn
+// - [instruction_impl.rs]      Impl from_opcode
+// - [instruction_impl.rs]      Impl into_opcode
+// - [instruction_impl.rs]      Impl num_steps
+// - [instruction_impl.rs]      Impl Display
+// - [tests]                    Add tests
+// - [instruction_parser.rs]    Add to instr_to_bytes
+// - [parser_tests.rs]          Add a to_bytes_test
+// - [parser_tests.rs]          (OPTIONAL) Add a parser_test
+
 /// Enum for accessing the different CPU instructions.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 #[cfg_attr(test, derive(EnumIter))]
