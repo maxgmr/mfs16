@@ -1,4 +1,4 @@
-use mfs16core::{gen_ram, Computer, Flags, Pc, Ram, RamWritable, Reg, Reg8::*};
+use mfs16core::{gen_ram, Addr, Computer, Flags, Ram, RamWritable, Reg, Reg8::*};
 use pretty_assertions::assert_eq;
 
 macro_rules! instr_test {
@@ -24,7 +24,7 @@ macro_rules! instr_test {
             _cycle_num += 1;
             assert_eq!(
                 c.cpu.pc,
-                Pc::new($pc),
+                Addr::new($pc),
                 "[{}] PC FAIL: {}, expected {:#08X}",
                 _cycle_num,
                 c.cpu.pc,

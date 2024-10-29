@@ -1,5 +1,5 @@
 use mfs16core::{
-    gen_ram, Computer, Flag::*, Flags, Instruction::*, Pc, Ram, RamWritable, Reg, Reg16::*,
+    gen_ram, Addr, Computer, Flag::*, Flags, Instruction::*, Ram, RamWritable, Reg, Reg16::*,
     Reg32::*, Reg8::*,
 };
 use pretty_assertions::assert_eq;
@@ -22,14 +22,14 @@ fn test_add() {
 
     // Read instruction
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
     assert_eq!(c.cpu.vreg(A1), 0b1111_0010);
     assert_eq!(c.cpu.vreg(A0), 0b0000_0101);
     assert_eq!(c.cpu.flags, reset_flags);
 
     // Do operation, set flags
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
     assert_eq!(c.cpu.vreg(A1), 0b1111_0111);
     assert_eq!(c.cpu.vreg(A0), 0b0000_0101);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
@@ -43,14 +43,14 @@ fn test_add() {
 
     // Read instruction
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.vreg(B1), 0b1111_1111);
     assert_eq!(c.cpu.vreg(B0), 0b0000_0001);
     assert_eq!(c.cpu.flags, reset_flags);
 
     // Do operation, set flags
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.vreg(B1), 0b0000_0000);
     assert_eq!(c.cpu.vreg(B0), 0b0000_0001);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCoPn"));
@@ -64,14 +64,14 @@ fn test_add() {
 
     // Read instruction
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.vreg(C1), 0b0111_0000);
     assert_eq!(c.cpu.vreg(C0), 0b0010_0000);
     assert_eq!(c.cpu.flags, reset_flags);
 
     // Do operation, set flags
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.vreg(C1), 0b1001_0000);
     assert_eq!(c.cpu.vreg(C0), 0b0010_0000);
     assert_eq!(c.cpu.flags, Flags::from_string("zcOPN"));
@@ -85,14 +85,14 @@ fn test_add() {
 
     // Read instruction
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.vreg(D1), 0b1000_0001);
     assert_eq!(c.cpu.vreg(D0), 0b1000_0001);
     assert_eq!(c.cpu.flags, reset_flags);
 
     // Do operation, set flags
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.vreg(D1), 0b0000_0010);
     assert_eq!(c.cpu.vreg(D0), 0b1000_0001);
     assert_eq!(c.cpu.flags, Flags::from_string("zCOPn"));
@@ -106,14 +106,14 @@ fn test_add() {
 
     // Read instruction
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000A));
     assert_eq!(c.cpu.reg(A), 0b1111_1111_1111_0010);
     assert_eq!(c.cpu.reg(B), 0b0000_0000_0000_0101);
     assert_eq!(c.cpu.flags, reset_flags);
 
     // Do operation, set flags
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000A));
     assert_eq!(c.cpu.reg(A), 0b1111_1111_1111_0111);
     assert_eq!(c.cpu.reg(B), 0b0000_0000_0000_0101);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
@@ -127,14 +127,14 @@ fn test_add() {
 
     // Read instruction
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000C));
     assert_eq!(c.cpu.reg(C), 0b1111_1111_1111_1111);
     assert_eq!(c.cpu.reg(D), 0b0000_0000_0000_0001);
     assert_eq!(c.cpu.flags, reset_flags);
 
     // Do operation, set flags
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000C));
     assert_eq!(c.cpu.reg(C), 0b0000_0000_0000_0000);
     assert_eq!(c.cpu.reg(D), 0b0000_0000_0000_0001);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCoPn"));
@@ -148,14 +148,14 @@ fn test_add() {
 
     // Read instruction
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000E));
     assert_eq!(c.cpu.reg(E), 0b0111_0000_0000_0000);
     assert_eq!(c.cpu.reg(H), 0b0010_0000_0000_0000);
     assert_eq!(c.cpu.flags, reset_flags);
 
     // Do operation, set flags
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000E));
     assert_eq!(c.cpu.reg(E), 0b1001_0000_0000_0000);
     assert_eq!(c.cpu.reg(H), 0b0010_0000_0000_0000);
     assert_eq!(c.cpu.flags, Flags::from_string("zcOPN"));
@@ -168,13 +168,13 @@ fn test_add() {
 
     // Read instruction
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0010));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0010));
     assert_eq!(c.cpu.reg(L), 0b1000_0000_0000_0001);
     assert_eq!(c.cpu.flags, reset_flags);
 
     // Do operation, set flags
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0010));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0010));
     assert_eq!(c.cpu.reg(L), 0b0000_0000_0000_0010);
     assert_eq!(c.cpu.flags, Flags::from_string("zCOPn"));
 
@@ -185,13 +185,13 @@ fn test_add() {
 
     // Read instruction
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0012));
     assert_eq!(c.cpu.breg(BC), 0xFFFE_1DC0);
     assert_eq!(c.cpu.breg(DE), 0x0001_86A0);
 
     // Do operation, set flags
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0012));
     assert_eq!(c.cpu.breg(BC), 0xFFFF_A460);
     assert_eq!(c.cpu.breg(DE), 0x0001_86A0);
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
@@ -204,13 +204,13 @@ fn test_add() {
 
     // Read instruction
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0014));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0014));
     assert_eq!(c.cpu.vreg(A1), 0x01);
     assert_eq!(c.cpu.flags, reset_flags);
 
     // Do operation, set flags
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0014));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0014));
     assert_eq!(c.cpu.vreg(A1), 0x02);
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPn"));
 
@@ -222,12 +222,12 @@ fn test_add() {
 
     // Read instruction
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0016));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0016));
     assert_eq!(c.cpu.reg(L), 0xFFFF);
 
     // Do operation, set flags
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0016));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0016));
     assert_eq!(c.cpu.reg(L), 0x0001);
     assert_eq!(c.cpu.flags, Flags::from_string("zCopn"));
 
@@ -238,12 +238,12 @@ fn test_add() {
 
     // Read instruction
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0018));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0018));
     assert_eq!(c.cpu.breg(DE), 0x1234_5678);
 
     // Do operation, set flags
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0018));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0018));
     assert_eq!(c.cpu.breg(DE), 0x9999_9999);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
 
@@ -289,17 +289,17 @@ fn test_add() {
 
     // Read instruction
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_001E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_001E));
     assert_eq!(c.cpu.vreg(L0), 0x45);
 
     // Read imm8
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_001F));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_001F));
     assert_eq!(c.cpu.vreg(L0), 0x45);
 
     // Do operation, set flags
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_001F));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_001F));
     assert_eq!(c.cpu.vreg(L0), 0x99);
     assert_eq!(c.cpu.flags, Flags::from_string("zcOpN"));
 
@@ -316,7 +316,7 @@ fn test_add() {
 
     // Do operation, set flags
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0022));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0022));
     assert_eq!(c.cpu.vreg(L0), 0x9D);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
 
@@ -333,7 +333,7 @@ fn test_add() {
 
     // Do operation, set flags
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0026));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0026));
     assert_eq!(c.cpu.reg(A), 0x9999);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
 
@@ -350,7 +350,7 @@ fn test_add() {
 
     // Do operation, set flags
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_002A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_002A));
     assert_eq!(c.cpu.reg(A), 0x999A);
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
 
@@ -362,20 +362,20 @@ fn test_add() {
 
     // Read instruction
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_002C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_002C));
     assert_eq!(c.cpu.breg(BC), 0x2345_6789);
 
     // Read imm32
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_002E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_002E));
     assert_eq!(c.cpu.breg(BC), 0x2345_6789);
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0030));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0030));
     assert_eq!(c.cpu.breg(BC), 0x2345_6789);
 
     // Do operation, set flags
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0030));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0030));
     assert_eq!(c.cpu.breg(BC), 0x9999_9999);
     assert_eq!(c.cpu.flags, Flags::from_string("zcOpN"));
 
@@ -387,20 +387,20 @@ fn test_add() {
 
     // Read instruction
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0032));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0032));
     assert_eq!(c.cpu.breg(BC), 0x9999_9999);
 
     // Read imm32
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0034));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0034));
     assert_eq!(c.cpu.breg(BC), 0x9999_9999);
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0036));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0036));
     assert_eq!(c.cpu.breg(BC), 0x9999_9999);
 
     // Do operation, set flags
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0036));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0036));
     assert_eq!(c.cpu.breg(BC), 0x0000_0000);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCoPn"));
 
@@ -412,17 +412,17 @@ fn test_add() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0038));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0038));
     assert_eq!(c.cpu.reg(L), 0xFFFF);
 
     // Read [HL]
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0038));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0038));
     assert_eq!(c.cpu.reg(L), 0xFFFF);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0038));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0038));
     assert_eq!(c.cpu.reg(L), 0x1233);
     assert_eq!(c.cpu.flags, Flags::from_string("zCopn"));
 
@@ -433,17 +433,17 @@ fn test_add() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_003A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_003A));
     assert_eq!(c.cpu.reg(L), 0x1233);
 
     // Read [HL]
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_003A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_003A));
     assert_eq!(c.cpu.reg(L), 0x1233);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_003A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_003A));
     assert_eq!(c.cpu.reg(L), 0x1234);
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPn"));
 }
@@ -494,12 +494,12 @@ fn test_sub() {
 
     // Read instruction
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.reg(A), 0x1234);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.reg(A), 0x0000);
     assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
 
@@ -512,12 +512,12 @@ fn test_sub() {
 
     // Read instruction
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.reg(B), 0x294A);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.reg(B), 0x0123);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 
@@ -528,12 +528,12 @@ fn test_sub() {
 
     // Read instruction
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000A));
     assert_eq!(c.cpu.vreg(D0), 0x0000);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000A));
     assert_eq!(c.cpu.vreg(D0), 0xFF);
     assert_eq!(c.cpu.flags, Flags::from_string("zCopN"));
 
@@ -542,12 +542,12 @@ fn test_sub() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000C));
     assert_eq!(c.cpu.vreg(D0), 0xFF);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000C));
     assert_eq!(c.cpu.vreg(D0), 0xFD);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
 
@@ -558,12 +558,12 @@ fn test_sub() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000E));
     assert_eq!(c.cpu.breg(BC), 0x8000_0000);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000E));
     assert_eq!(c.cpu.breg(BC), 0x7FFF_FFFF);
     assert_eq!(c.cpu.flags, Flags::from_string("zcOpn"));
 
@@ -573,12 +573,12 @@ fn test_sub() {
     // Read instr
     c.cycle();
     assert_eq!(c.cpu.breg(BC), 0x7FFF_FFFF);
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0010));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0010));
 
     // Do operation
     c.cycle();
     assert_eq!(c.cpu.breg(BC), 0x7FFF_FFFE);
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0010));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0010));
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPn"));
 
     // SUB C,0x1234
@@ -589,16 +589,16 @@ fn test_sub() {
     // Read instr
     c.cycle();
     assert_eq!(c.cpu.reg(C), 0x1234);
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0012));
 
     // Read imm16
     c.cycle();
     assert_eq!(c.cpu.reg(C), 0x1234);
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0014));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0014));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0014));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0014));
     assert_eq!(c.cpu.reg(C), 0x0000);
     assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
 
@@ -608,17 +608,17 @@ fn test_sub() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0016));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0016));
     assert_eq!(c.cpu.reg(C), 0x0000);
 
     // Read imm16
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0018));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0018));
     assert_eq!(c.cpu.reg(C), 0x0000);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0018));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0018));
     assert_eq!(c.cpu.reg(C), 0xEEEF);
     assert_eq!(c.cpu.flags, Flags::from_string("zCopN"));
 
@@ -629,17 +629,17 @@ fn test_sub() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_001A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_001A));
     assert_eq!(c.cpu.vreg(A1), 0x82);
 
     // Read imm8
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_001B));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_001B));
     assert_eq!(c.cpu.vreg(A1), 0x82);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_001B));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_001B));
     assert_eq!(c.cpu.vreg(A1), 0x81);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
 
@@ -649,17 +649,17 @@ fn test_sub() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_001D));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_001D));
     assert_eq!(c.cpu.vreg(A1), 0x81);
 
     // Read imm8
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_001E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_001E));
     assert_eq!(c.cpu.vreg(A1), 0x81);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_001E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_001E));
     assert_eq!(c.cpu.vreg(A1), 0x7F);
     assert_eq!(c.cpu.flags, Flags::from_string("zcOpn"));
 
@@ -671,23 +671,23 @@ fn test_sub() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0020));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0020));
     assert_eq!(c.cpu.breg(HL), 0x789A_BCDE);
 
     // Read word 1 of imm32
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0022));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0022));
     assert_eq!(c.cpu.breg(HL), 0x789A_BCDE);
 
     // Read word 0 of imm32
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0024));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0024));
     assert_eq!(c.cpu.breg(HL), 0x789A_BCDE);
 
     // Do operation
     // 六六六六六六六六!
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0024));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0024));
     assert_eq!(c.cpu.breg(HL), 0x6666_6666);
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPn"));
 
@@ -699,22 +699,22 @@ fn test_sub() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0026));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0026));
     assert_eq!(c.cpu.breg(HL), 0x6666_6666);
 
     // Read word 1 of imm32
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0028));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0028));
     assert_eq!(c.cpu.breg(HL), 0x6666_6666);
 
     // Read word 0 of imm32
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_002A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_002A));
     assert_eq!(c.cpu.breg(HL), 0x6666_6666);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_002A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_002A));
     assert_eq!(c.cpu.breg(HL), 0x6666_6665);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 
@@ -727,17 +727,17 @@ fn test_sub() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_002C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_002C));
     assert_eq!(c.cpu.reg(L), 0x8123);
 
     // Read [HL]
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_002C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_002C));
     assert_eq!(c.cpu.reg(L), 0x8123);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_002C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_002C));
     assert_eq!(c.cpu.reg(L), 0x7FFF);
     assert_eq!(c.cpu.flags, Flags::from_string("zcOpn"));
 
@@ -748,17 +748,17 @@ fn test_sub() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_002E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_002E));
     assert_eq!(c.cpu.reg(L), 0x7FFF);
 
     // Read [HL]
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_002E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_002E));
     assert_eq!(c.cpu.reg(L), 0x7FFF);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_002E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_002E));
     assert_eq!(c.cpu.reg(L), 0x7FFF);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 }
@@ -774,12 +774,12 @@ fn test_tcp() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
     assert_eq!(c.cpu.reg(E), 0xFFFF);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
     assert_eq!(c.cpu.reg(E), 0x0001);
     assert_eq!(c.cpu.flags, Flags::from_string("zCopn"));
 
@@ -789,12 +789,12 @@ fn test_tcp() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.breg(BC), 0xEDCB_A988);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.breg(BC), 0x1234_5678);
     assert_eq!(c.cpu.flags, Flags::from_string("zCoPn"));
 
@@ -804,12 +804,12 @@ fn test_tcp() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.vreg(D1), 0x01);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.vreg(D1), 0xFF);
     assert_eq!(c.cpu.flags, Flags::from_string("zCopN"));
 
@@ -820,7 +820,7 @@ fn test_tcp() {
     // Read instr + do operation
     c.cycle();
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.vreg(D0), 0x00);
     assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
 }
@@ -837,12 +837,12 @@ fn test_inc_dec() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
     assert_eq!(c.cpu.reg(A), 0x0000);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
     assert_eq!(c.cpu.reg(A), 0xFFFF);
     assert_eq!(c.cpu.flags, Flags::from_string("zcOpn"));
 
@@ -852,12 +852,12 @@ fn test_inc_dec() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.reg(A), 0xFFFF);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.reg(A), 0x0000);
     assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
 
@@ -868,12 +868,12 @@ fn test_inc_dec() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.breg(HL), 0x7FFF_FFFF);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.breg(HL), 0x8000_0000);
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPn"));
 
@@ -883,12 +883,12 @@ fn test_inc_dec() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.breg(HL), 0x8000_0000);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.breg(HL), 0x7FFF_FFFF);
     assert_eq!(c.cpu.flags, Flags::from_string("zcOpn"));
 
@@ -899,12 +899,12 @@ fn test_inc_dec() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000A));
     assert_eq!(c.cpu.vreg(B1), 0x12);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000A));
     assert_eq!(c.cpu.vreg(B1), 0x13);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 
@@ -913,12 +913,12 @@ fn test_inc_dec() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000C));
     assert_eq!(c.cpu.vreg(B1), 0x13);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000C));
     assert_eq!(c.cpu.vreg(B1), 0x12);
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPn"));
 }
@@ -934,12 +934,12 @@ fn test_pss() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
     assert_eq!(c.cpu.flags, starting_flags);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
     assert_eq!(c.cpu.reg(H), 0x0000);
     assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
 
@@ -953,13 +953,13 @@ fn test_pss() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.breg(BC), 0x1234_6567);
     assert_eq!(c.cpu.flags, Flags::from_string("zCOpn"));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.breg(BC), 0x1234_6567);
     assert_eq!(c.cpu.flags, Flags::from_string("zCOpn"));
 
@@ -971,13 +971,13 @@ fn test_pss() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.vreg(D0), 0x80);
     assert_eq!(c.cpu.flags, Flags::from_string("zcOpn"));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.vreg(D0), 0x80);
     assert_eq!(c.cpu.flags, Flags::from_string("zcOPN"));
 
@@ -988,17 +988,17 @@ fn test_pss() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.flags, starting_flags);
 
     // Read imm16
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000A));
     assert_eq!(c.cpu.flags, starting_flags);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000A));
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
 
     // PSS imm32
@@ -1008,22 +1008,22 @@ fn test_pss() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000C));
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
 
     // Read word 0 of imm32
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000E));
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
 
     // Read word 1 of imm32
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0010));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0010));
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0010));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0010));
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 
     // PSS imm8
@@ -1032,17 +1032,17 @@ fn test_pss() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0012));
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 
     // Read imm8
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0013));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0013));
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0013));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0013));
     assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
 }
 
@@ -1059,13 +1059,13 @@ fn test_and() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
     assert_eq!(c.cpu.reg(A), 0b1010_1010_1010_1010);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCOPN"));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
     assert_eq!(c.cpu.reg(A), 0b1000_1010_0000_0000);
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
 
@@ -1079,13 +1079,13 @@ fn test_and() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.breg(DE), 0b1111_1111_1111_1111_0000_0000_0000_0000);
     assert_eq!(c.cpu.flags, starting_flags);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.breg(DE), 0);
     assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
 
@@ -1097,13 +1097,13 @@ fn test_and() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.vreg(C1), 0b1111_1000);
     assert_eq!(c.cpu.flags, starting_flags);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.vreg(C1), 0b1010_1000);
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
 
@@ -1116,19 +1116,19 @@ fn test_and() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.reg(B), 0b1111_1111_0000_0000);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCOpn"));
 
     // Get [HL]
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.reg(B), 0b1111_1111_0000_0000);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCOpn"));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.reg(B), 0b0101_0101_0000_0000);
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPn"));
 
@@ -1139,17 +1139,17 @@ fn test_and() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000A));
     assert_eq!(c.cpu.reg(D), 0xFFFF);
 
     // Read imm8
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000C));
     assert_eq!(c.cpu.reg(D), 0xFFFF);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000C));
     assert_eq!(c.cpu.reg(D), 0x00FF);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 
@@ -1161,22 +1161,22 @@ fn test_and() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000E));
     assert_eq!(c.cpu.breg(BC), 0xFFFF_FFFF);
 
     // Read word 0 of imm32
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0010));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0010));
     assert_eq!(c.cpu.breg(BC), 0xFFFF_FFFF);
 
     // Read word 1 of imm32
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0012));
     assert_eq!(c.cpu.breg(BC), 0xFFFF_FFFF);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0012));
     assert_eq!(c.cpu.breg(BC), 0x0F0F_F0F0);
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPn"));
 
@@ -1187,17 +1187,17 @@ fn test_and() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0014));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0014));
     assert_eq!(c.cpu.vreg(L0), 0b0000_1111);
 
     // Read imm8
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0015));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0015));
     assert_eq!(c.cpu.vreg(L0), 0b0000_1111);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0015));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0015));
     assert_eq!(c.cpu.vreg(L0), 0b0000_0001);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 }
@@ -1215,13 +1215,13 @@ fn test_or() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
     assert_eq!(c.cpu.reg(B), 0b1100_1111_0000_0101);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCOPN"));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
     assert_eq!(c.cpu.reg(B), 0b1110_1111_1010_1111);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
 
@@ -1235,13 +1235,13 @@ fn test_or() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.breg(DE), 0b1111_1111_1111_1111_0000_0000_0000_0000);
     assert_eq!(c.cpu.flags, starting_flags);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.breg(DE), 0xFFFF_FFFF);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
 
@@ -1253,12 +1253,12 @@ fn test_or() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.flags, starting_flags);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
 
     // OR B,[HL]
@@ -1270,19 +1270,19 @@ fn test_or() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.reg(B), 0b0011_0000_0000_1111);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCOpn"));
 
     // Get [HL]
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.reg(B), 0b0011_0000_0000_1111);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCOpn"));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.reg(B), 0b1011_0100_0000_1111);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
 
@@ -1293,17 +1293,17 @@ fn test_or() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000A));
     assert_eq!(c.cpu.reg(D), 0x0000);
 
     // Read imm8
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000C));
     assert_eq!(c.cpu.reg(D), 0x0000);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000C));
     assert_eq!(c.cpu.reg(D), 0x00FF);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 
@@ -1315,22 +1315,22 @@ fn test_or() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000E));
     assert_eq!(c.cpu.breg(BC), 0x1010_0101);
 
     // Read word 0 of imm32
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0010));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0010));
     assert_eq!(c.cpu.breg(BC), 0x1010_0101);
 
     // Read word 1 of imm32
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0012));
     assert_eq!(c.cpu.breg(BC), 0x1010_0101);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0012));
     assert_eq!(c.cpu.breg(BC), 0x1F1F_F1F1);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 
@@ -1341,17 +1341,17 @@ fn test_or() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0014));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0014));
     assert_eq!(c.cpu.vreg(L0), 0b0000_1111);
 
     // Read imm8
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0015));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0015));
     assert_eq!(c.cpu.vreg(L0), 0b0000_1111);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0015));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0015));
     assert_eq!(c.cpu.vreg(L0), 0b1000_1111);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
 }
@@ -1369,13 +1369,13 @@ fn test_xor() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
     assert_eq!(c.cpu.reg(B), 0b1100_1111_0000_0101);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCOPN"));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
     assert_eq!(c.cpu.reg(B), 0b0110_0101_1010_1111);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 
@@ -1389,13 +1389,13 @@ fn test_xor() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.breg(DE), 0b1111_1111_1111_1111_0000_0000_0000_0000);
     assert_eq!(c.cpu.flags, starting_flags);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.breg(DE), 0xFFFF_FFFF);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopN"));
 
@@ -1407,13 +1407,13 @@ fn test_xor() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.vreg(C1), 0b1010_1010);
     assert_eq!(c.cpu.flags, starting_flags);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.vreg(C1), 0b0000_0000);
     assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
 
@@ -1426,19 +1426,19 @@ fn test_xor() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.reg(B), 0b0011_0000_0000_1111);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCOpn"));
 
     // Get [HL]
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.reg(B), 0b0011_0000_0000_1111);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCOpn"));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.reg(B), 0b1011_0100_0000_1100);
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
 
@@ -1449,17 +1449,17 @@ fn test_xor() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000A));
     assert_eq!(c.cpu.reg(D), 0x0000);
 
     // Read imm8
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000C));
     assert_eq!(c.cpu.reg(D), 0x0000);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000C));
     assert_eq!(c.cpu.reg(D), 0x00FF);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 
@@ -1471,22 +1471,22 @@ fn test_xor() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000E));
     assert_eq!(c.cpu.breg(BC), 0x1010_0101);
 
     // Read word 0 of imm32
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0010));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0010));
     assert_eq!(c.cpu.breg(BC), 0x1010_0101);
 
     // Read word 1 of imm32
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0012));
     assert_eq!(c.cpu.breg(BC), 0x1010_0101);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0012));
     assert_eq!(c.cpu.breg(BC), 0x1F1F_F1F1);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 
@@ -1497,17 +1497,17 @@ fn test_xor() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0014));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0014));
     assert_eq!(c.cpu.vreg(L0), 0b0000_1111);
 
     // Read imm8
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0015));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0015));
     assert_eq!(c.cpu.vreg(L0), 0b0000_1111);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0015));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0015));
     assert_eq!(c.cpu.vreg(L0), 0b1000_1110);
     assert_eq!(c.cpu.flags, Flags::from_string("zcoPN"));
 }
@@ -1523,13 +1523,13 @@ fn test_not() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
     assert_eq!(c.cpu.reg(A), 0b1010_1010_1010_1010);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCOPN"));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
     assert_eq!(c.cpu.reg(A), 0b0101_0101_0101_0101);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 
@@ -1540,13 +1540,13 @@ fn test_not() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.breg(BC), 0xFFFF_FFFF);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.breg(BC), 0x0000_0000);
     assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
 
@@ -1556,12 +1556,12 @@ fn test_not() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.vreg(D1), 0x00);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.vreg(D1), 0xFF);
 }
 
@@ -1576,11 +1576,11 @@ fn test_as() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
     assert_eq!(c.cpu.vreg(A1), 0b1010_1010);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCOPN"));
 
@@ -1589,13 +1589,13 @@ fn test_as() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.vreg(A1), 0b1010_1010);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCOPN"));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.vreg(A1), 0b1101_0101);
     assert_eq!(c.cpu.flags, Flags::from_string("ZcoPN"));
 
@@ -1605,7 +1605,7 @@ fn test_as() {
     // Read instr + do operation
     c.cycle();
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.vreg(A1), 0b1111_1111);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCoPN"));
 
@@ -1617,7 +1617,7 @@ fn test_as() {
     // Read instr + do operation
     c.cycle();
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.vreg(C1), 0b0000_0000);
     assert_eq!(c.cpu.flags, Flags::from_string("ZPN"));
 
@@ -1627,11 +1627,11 @@ fn test_as() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000A));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000A));
     assert_eq!(c.cpu.reg(B), 0x2F05);
 
     // ASR B,1
@@ -1640,12 +1640,12 @@ fn test_as() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000C));
     assert_eq!(c.cpu.reg(B), 0x2F05);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000C));
     assert_eq!(c.cpu.reg(B), 0x1782);
     assert_eq!(c.cpu.flags, Flags::from_string("C"));
 
@@ -1655,7 +1655,7 @@ fn test_as() {
     // Read instr + do operation
     c.cycle();
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000E));
     assert_eq!(c.cpu.reg(B), 0x0178);
     assert_eq!(c.cpu.flags, Flags::from_string(""));
 
@@ -1665,11 +1665,11 @@ fn test_as() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0010));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0010));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0010));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0010));
     assert_eq!(c.cpu.breg(HL), 0x80F1_9696);
     assert_eq!(c.cpu.flags, Flags::from_string(""));
 
@@ -1678,13 +1678,13 @@ fn test_as() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0012));
     assert_eq!(c.cpu.breg(HL), 0x80F1_9696);
     assert_eq!(c.cpu.flags, Flags::from_string(""));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0012));
     assert_eq!(c.cpu.breg(HL), 0xC078_CB4B);
     assert_eq!(c.cpu.flags, Flags::from_string(""));
 
@@ -1695,7 +1695,7 @@ fn test_as() {
     // Read instr + do operation
     c.cycle();
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0014));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0014));
     assert_eq!(c.cpu.breg(DE), 0xFFFF_0000);
     assert_eq!(c.cpu.flags, Flags::from_string(""));
 
@@ -1927,7 +1927,7 @@ fn test_rc() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0002));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0002));
     assert_eq!(c.cpu.flags, Flags::from_string("ZcOPN"));
 
     // Do operation
@@ -1942,7 +1942,7 @@ fn test_rc() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0004));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0004));
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
 
     // Do operation
@@ -1957,13 +1957,13 @@ fn test_rc() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.flags, Flags::from_string("ZCoPn"));
     assert_eq!(c.cpu.vreg(A0), 0b0101_0101);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0006));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0006));
     assert_eq!(c.cpu.flags, Flags::from_string("ZCOPn"));
     assert_eq!(c.cpu.vreg(A0), 0b1010_1010);
 
@@ -1974,7 +1974,7 @@ fn test_rc() {
     // Read + do operation
     c.cycle();
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0008));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0008));
     assert_eq!(c.cpu.flags, Flags::from_string("ZCOPn"));
     assert_eq!(c.cpu.vreg(B1), 0b1100_0101);
 
@@ -1984,7 +1984,7 @@ fn test_rc() {
     // Read + do operation
     c.cycle();
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000A));
     assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
     assert_eq!(c.cpu.vreg(B1), 0b1111_0001);
 
@@ -1995,7 +1995,7 @@ fn test_rc() {
     // Read + do operation
     c.cycle();
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000C));
     assert_eq!(c.cpu.flags, Flags::from_string("ZcoPn"));
     assert_eq!(c.cpu.vreg(B0), 0b0010_1110);
 
@@ -2006,12 +2006,12 @@ fn test_rc() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000E));
 
     // Do operation
     c.cycle();
     assert_eq!(c.cpu.reg(A), 0b1010_1010_1010_1010);
-    assert_eq!(c.cpu.pc, Pc::new(0x00_000E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_000E));
     assert_eq!(c.cpu.flags, Flags::from_string("zCopn"));
 
     // RCR A,1; Carry set
@@ -2034,7 +2034,7 @@ fn test_rc() {
     assert_eq!(c.cpu.reg(B), 0x4000);
     c.cycle();
     assert_eq!(c.cpu.reg(B), 0);
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0012));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0012));
     assert_eq!(c.cpu.flags, Flags::from_string("zCopn"));
 
     // RCR DE,0; Carry set
@@ -2044,7 +2044,7 @@ fn test_rc() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0014));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0014));
 
     // Do operation
     c.cycle();
@@ -2056,13 +2056,13 @@ fn test_rc() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0016));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0016));
     assert_eq!(c.cpu.flags, Flags::from_string("zCOpn"));
     assert_eq!(c.cpu.breg(DE), 0xAAAA_AAAA);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0016));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0016));
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
     assert_eq!(c.cpu.breg(DE), 0xD555_5555);
 
@@ -2084,11 +2084,11 @@ fn test_rc() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_001A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_001A));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_001A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_001A));
     assert_eq!(c.cpu.vreg(A1), 0x88);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCOPN"));
 
@@ -2098,13 +2098,13 @@ fn test_rc() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_001C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_001C));
     assert_eq!(c.cpu.vreg(A1), 0x88);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCoPN"));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_001C));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_001C));
     assert_eq!(c.cpu.vreg(A1), 0x11);
     assert_eq!(c.cpu.flags, Flags::from_string("ZCOPN"));
 
@@ -2114,7 +2114,7 @@ fn test_rc() {
     // Read + do operation
     c.cycle();
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_001E));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_001E));
     assert_eq!(c.cpu.vreg(A1), 0x23);
     assert_eq!(c.cpu.flags, Flags::from_string("ZcoPN"));
 
@@ -2125,11 +2125,11 @@ fn test_rc() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0020));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0020));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0020));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0020));
     assert_eq!(c.cpu.reg(D), 0x9600);
     assert_eq!(c.cpu.flags, Flags::from_string(""));
 
@@ -2138,13 +2138,13 @@ fn test_rc() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0022));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0022));
     assert_eq!(c.cpu.flags, Flags::from_string(""));
     assert_eq!(c.cpu.reg(D), 0x9600);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0022));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0022));
     assert_eq!(c.cpu.flags, Flags::from_string("CO"));
     assert_eq!(c.cpu.reg(D), 0x2C00);
 
@@ -2155,7 +2155,7 @@ fn test_rc() {
     // Read + do operation
     c.cycle();
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0024));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0024));
     assert_eq!(c.cpu.reg(E), 0x4000);
     assert_eq!(c.cpu.flags, Flags::from_string(""));
 
@@ -2165,11 +2165,11 @@ fn test_rc() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0026));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0026));
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0026));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0026));
     assert_eq!(c.cpu.breg(HL), 0xAAAA_00FF);
     assert_eq!(c.cpu.flags, Flags::from_string(""));
 
@@ -2178,13 +2178,13 @@ fn test_rc() {
 
     // Read instr
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0028));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0028));
     assert_eq!(c.cpu.flags, Flags::from_string(""));
     assert_eq!(c.cpu.breg(HL), 0xAAAA_00FF);
 
     // Do operation
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_0028));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_0028));
     assert_eq!(c.cpu.flags, Flags::from_string("CO"));
     assert_eq!(c.cpu.breg(HL), 0x5554_01FE);
 
@@ -2195,7 +2195,7 @@ fn test_rc() {
     // Read instr + do operation
     c.cycle();
     c.cycle();
-    assert_eq!(c.cpu.pc, Pc::new(0x00_002A));
+    assert_eq!(c.cpu.pc, Addr::new(0x00_002A));
     assert_eq!(c.cpu.breg(DE), 0x0000_C000);
     assert_eq!(c.cpu.flags, Flags::from_string(""));
 }

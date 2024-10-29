@@ -9,7 +9,7 @@ mod ram;
 // Re-exports
 pub use computer::{Computer, CLOCK_FREQ, RAM_SIZE};
 pub use cpu::{
-    AsLargerType, Flag, Flags, HasMax, Instruction, Msb, NMinus1Mask, NumBits, Oneable, Pc, Reg,
+    Addr, AsLargerType, Flag, Flags, HasMax, Instruction, Msb, NMinus1Mask, NumBits, Oneable, Reg,
     Reg16, Reg32, Reg8, WrappingAdd, WrappingSub, Zeroable,
 };
 pub use ram::{Ram, RamReadable, RamWritable};

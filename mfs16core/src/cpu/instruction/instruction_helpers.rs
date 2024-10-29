@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
     helpers::{change_bit, combine_u8_le, split_word, test_bit, BitOp},
-    Flag,
+    Addr, Flag,
 };
 
 /// Perform the current step of the current CPU instruction.
@@ -186,7 +186,7 @@ fn ld_sp_imm32(cpu: &mut Cpu, ram: &mut Ram) {
     match cpu.step_num {
         1 => cpu.read_next_word(ram),
         2 => cpu.read_next_word(ram),
-        3 => cpu.sp = get_dword_from_last(cpu),
+        3 => cpu.sp = Addr::new(get_dword_from_last(cpu)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
@@ -195,21 +195,21 @@ fn ld_imm32_sp(cpu: &mut Cpu, ram: &mut Ram) {
     match cpu.step_num {
         1 => cpu.read_next_word(ram),
         2 => cpu.read_next_word(ram),
-        3 => write_dword_to_last(cpu, ram, cpu.sp),
+        3 => write_dword_to_last(cpu, ram, cpu.sp.into()),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
 fn ld_sp_bra(cpu: &mut Cpu, bra: Reg32) {
     match cpu.step_num {
-        1 => cpu.sp = cpu.breg(bra),
+        1 => cpu.sp = Addr::new(cpu.breg(bra)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
 fn ld_bra_sp(cpu: &mut Cpu, bra: Reg32) {
     match cpu.step_num {
-        1 => cpu.set_breg(bra, cpu.sp),
+        1 => cpu.set_breg(bra, cpu.sp.into()),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }

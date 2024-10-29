@@ -1,17 +1,17 @@
 //! The virtual CPU hardware.
 use std::{default::Default, fmt::Display};
 
+mod addr;
 mod flag;
 mod instruction;
-mod pc;
 mod register;
 
 // Re-exports
+pub use addr::Addr;
 pub use flag::{Flag, Flags, Msb, Oneable, Zeroable};
 pub use instruction::{
     step, AsLargerType, HasMax, Instruction, NMinus1Mask, NumBits, WrappingAdd, WrappingSub,
 };
-pub use pc::Pc;
 pub use register::{Reg, Reg16, Reg32, Reg8};
 
 use crate::ram::Ram;
@@ -26,9 +26,9 @@ pub struct Cpu {
     /// The CPU [Flags].
     pub flags: Flags,
     /// The program counter.
-    pub pc: Pc,
+    pub pc: Addr,
     /// The stack pointer.
-    pub sp: u32,
+    pub sp: Addr,
     /// The current instruction.
     pub instr: Instruction,
     /// Step number within the current instruction.
@@ -151,6 +151,13 @@ impl Cpu {
     fn read_word_at_addr(&mut self, ram: &Ram, addr: u32) {
         self.update_last_word(ram.read_word(addr));
     }
+
+    /// Push a value to the stack.
+    fn push_stack(&mut self, value: u16) {
+        self.sp.wrapping_dec();
+        self.sp.wrapping_dec();
+        // TODO
+    }
 }
 impl Default for Cpu {
     /// Default: Stack pointer at top of stack. Everything else initialised to 0/false.
@@ -158,8 +165,8 @@ impl Default for Cpu {
         Self {
             regs: Registers::default(),
             flags: Flags::default(),
-            pc: Pc::default(),
-            sp: 0xFFFF_FFFF,
+            pc: Addr::default(),
+            sp: Addr::new(0xFF_FFFF),
             instr: Instruction::default(),
             step_num: Instruction::default().num_steps(),
             last_byte: 0x00,
@@ -172,7 +179,7 @@ impl Display for Cpu {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{:<10}|PC:{} SP:{:#010X}|{}|{}",
+            "{:<10}|PC:{} SP:{}|{}|{}",
             self.instr, self.pc, self.sp, self.regs, self.flags
         )
     }
@@ -188,7 +195,7 @@ mod tests {
     #[test]
     fn test_read() {
         let mut cpu = Cpu {
-            pc: Pc::new((RAM_SIZE as u32) - 3),
+            pc: Addr::new((RAM_SIZE as u32) - 3),
             ..Cpu::default()
         };
         let mut ram = Ram::default();
@@ -199,18 +206,18 @@ mod tests {
 
         cpu.read_next_byte(&ram);
         assert_eq!(cpu.last_byte, 0xfe);
-        assert_eq!(cpu.pc, Pc::new((RAM_SIZE as u32) - 2));
+        assert_eq!(cpu.pc, Addr::new((RAM_SIZE as u32) - 2));
 
         cpu.read_next_word(&ram);
         assert_eq!(cpu.last_word, 0x2345);
-        assert_eq!(cpu.pc, Pc::new(0x00_0000));
+        assert_eq!(cpu.pc, Addr::new(0x00_0000));
 
         cpu.read_next_word(&ram);
         assert_eq!(cpu.last_word, 0xABCD);
-        assert_eq!(cpu.pc, Pc::new(0x00_0002));
+        assert_eq!(cpu.pc, Addr::new(0x00_0002));
 
         cpu.read_next_byte(&ram);
         assert_eq!(cpu.last_byte, 0x01);
-        assert_eq!(cpu.pc, Pc::new(0x00_0003));
+        assert_eq!(cpu.pc, Addr::new(0x00_0003));
     }
 }
