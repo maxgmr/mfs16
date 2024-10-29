@@ -493,8 +493,15 @@ pub enum Instruction {
     /// 0x44ab - CMP [bra],rb
     /// Subtract rb from the value at address bra, setting flags accordingly. Discard the result.
     CmpBraRb(Reg32, Reg16),
+    /// 0x45ab - BIT ra,b
+    /// Set the Zero flag to bit b of ra.
+    /// Z = ra[b]
+    BitRaB(Reg16, u8),
+    /// 0x46ab - BIT [bra],b
+    /// Set the Zero flag to bit b of the value stored at address bra.
+    /// Z = [bra][b]
+    BitBraB(Reg32, u8),
     // TODO
-    // Read/write the program counter from/to a register.
     // Read/write the state of a flag from/to a register.
 }
 

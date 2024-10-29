@@ -1,4 +1,5 @@
 use super::*;
+use crate::{helpers::test_bit, Flag};
 
 /// Perform the current step of the current CPU instruction.
 pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
@@ -120,6 +121,8 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         CmpImm8Vra(vra) => cmp_imm8_vra(cpu, ram, vra),
         CmpRaBrb(ra, brb) => cmp_ra_brb(cpu, ram, ra, brb),
         CmpBraRb(bra, rb) => cmp_bra_rb(cpu, ram, bra, rb),
+        BitRaB(ra, b) => bit_ra_b(cpu, ra, b),
+        BitBraB(bra, b) => bit_bra_b(cpu, ram, bra, b),
     }
 }
 
@@ -613,6 +616,21 @@ fn cmp_bra_rb(cpu: &mut Cpu, ram: &Ram, bra: Reg32, rb: Reg16) {
             let b = cpu.reg(rb);
             alu::<u16>(cpu, Sub, a, b);
         }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn bit_ra_b(cpu: &mut Cpu, ra: Reg16, b: u8) {
+    match cpu.step_num {
+        1 => cpu.change_flag(Flag::Zero, !test_bit(cpu.reg(ra), b as u16)),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn bit_bra_b(cpu: &mut Cpu, ram: &Ram, bra: Reg32, b: u8) {
+    match cpu.step_num {
+        1 => cpu.read_word_at_addr(ram, cpu.breg(bra)),
+        2 => cpu.change_flag(Flag::Zero, !test_bit(cpu.last_word, b as u16)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }

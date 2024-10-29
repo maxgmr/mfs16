@@ -2324,3 +2324,51 @@ fn test_cmp() {
         ]
     );
 }
+
+#[test]
+fn test_bit() {
+    instr_test!(
+        REGS: [
+            (A, 0xA00A),
+            (BC, 0x00FE_DCBA)
+        ],
+        RAM: gen_ram![
+            LdBraImm16(BC).into_opcode(),
+            0x5005_u16,
+            BitRaB(A,0).into_opcode(),
+            BitRaB(A,1).into_opcode(),
+            BitRaB(A,15).into_opcode(),
+            BitBraB(BC,0).into_opcode(),
+            BitBraB(BC,1).into_opcode(),
+            BitBraB(BC,15).into_opcode()
+        ],
+        FLAGS: "CN",
+        [
+            // LD [BC],0x5005
+            (0x00_0002, [], "CN"),
+            (0x00_0004, [], "CN"),
+            (0x00_0004, [], "CN"),
+            // BIT A,0
+            (0x00_0006, [], "CN"),
+            (0x00_0006, [], "ZCN"),
+            // BIT A,1
+            (0x00_0008, [], "ZCN"),
+            (0x00_0008, [], "CN"),
+            // BIT A,15
+            (0x00_000A, [], "CN"),
+            (0x00_000A, [], "CN"),
+            // BIT [BC],0
+            (0x00_000C, [], "CN"),
+            (0x00_000C, [], "CN"),
+            (0x00_000C, [], "CN"),
+            // BIT [BC],1
+            (0x00_000E, [], "CN"),
+            (0x00_000E, [], "CN"),
+            (0x00_000E, [], "ZCN"),
+            // BIT [BC],15
+            (0x00_0010, [], "ZCN"),
+            (0x00_0010, [], "ZCN"),
+            (0x00_0010, [], "ZCN")
+        ]
+    );
+}

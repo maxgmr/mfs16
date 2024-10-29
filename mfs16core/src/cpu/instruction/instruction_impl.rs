@@ -156,6 +156,8 @@ impl Instruction {
             (0x4, 0x2, 0x5, vra) => CmpImm8Vra(Reg8::from_nib(vra)),
             (0x4, 0x3, ra, brb) => CmpRaBrb(Reg16::from_nib(ra), Reg32::from_nib(brb)),
             (0x4, 0x4, bra, rb) => CmpBraRb(Reg32::from_nib(bra), Reg16::from_nib(rb)),
+            (0x4, 0x5, ra, b) => BitRaB(Reg16::from_nib(ra), b),
+            (0x4, 0x6, bra, b) => BitBraB(Reg32::from_nib(bra), b),
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
@@ -280,6 +282,8 @@ impl Instruction {
             CmpImm8Vra(vra) => opc_1arg(0x425_u16, vra),
             CmpRaBrb(ra, brb) => opc_2arg(0x43_u16, ra, brb),
             CmpBraRb(bra, rb) => opc_2arg(0x44_u16, bra, rb),
+            BitRaB(ra, b) => opc_2arg(0x45_u16, ra, b),
+            BitBraB(bra, b) => opc_2arg(0x46_u16, bra, b),
         }
     }
 
@@ -403,6 +407,8 @@ impl Instruction {
             CmpImm8Vra(..) => 3,
             CmpRaBrb(..) => 3,
             CmpBraRb(..) => 3,
+            BitRaB(..) => 2,
+            BitBraB(..) => 3,
         }
     }
 }
@@ -410,7 +416,7 @@ impl Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{:<10}",
+            "{:<14}",
             match self {
                 Nop => String::from("NOP"),
                 LdRaRb(ra, rb) => format!("LD {ra},{rb}"),
@@ -527,8 +533,10 @@ impl Display for Instruction {
                 CmpImm16Ra(ra) => format!("CMP imm16,{ra}"),
                 CmpImm32Bra(bra) => format!("CMP imm32,{bra}"),
                 CmpImm8Vra(vra) => format!("CMP imm8,{vra}"),
-                CmpRaBrb(ra, brb) => format!("CMP {ra},{brb}"),
-                CmpBraRb(bra, rb) => format!("CMP {bra},{rb}"),
+                CmpRaBrb(ra, brb) => format!("CMP {ra},[{brb}]"),
+                CmpBraRb(bra, rb) => format!("CMP [{bra}],{rb}"),
+                BitRaB(ra, b) => format!("BIT {ra},{b}"),
+                BitBraB(bra, b) => format!("BIT [{bra}],{b}"),
             }
         )
     }

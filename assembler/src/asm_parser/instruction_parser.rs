@@ -35,6 +35,7 @@ pub enum Operation {
     Rcr,
     Rcl,
     Cmp,
+    Bit,
 }
 impl FromStr for Operation {
     type Err = Report;
@@ -65,6 +66,7 @@ impl FromStr for Operation {
             "rcr" => Ok(Operation::Rcr),
             "rcl" => Ok(Operation::Rcl),
             "cmp" => Ok(Operation::Cmp),
+            "bit" => Ok(Operation::Bit),
             _ => Err(eyre!(
                 "Input `{}` does not match an instruction operation.",
                 s
@@ -102,6 +104,7 @@ impl Display for Operation {
                 Operation::Rcr => "RCR",
                 Operation::Rcl => "RCL",
                 Operation::Cmp => "CMP",
+                Operation::Bit => "BIT",
             }
         )
     }
@@ -287,6 +290,8 @@ pub fn instr_to_bytes(
         (Operation::Cmp, Byte(b), Vreg(vra)) => Ok(i2b_imm8(CmpImm8Vra(*vra), *b)),
         (Operation::Cmp, Reg(ra), BregDeref(brb)) => Ok(i2b(CmpRaBrb(*ra, *brb))),
         (Operation::Cmp, BregDeref(bra), Reg(rb)) => Ok(i2b(CmpBraRb(*bra, *rb))),
+        (Operation::Bit, Reg(ra), Byte(b)) => Ok(i2b(BitRaB(*ra, *b))),
+        (Operation::Bit, BregDeref(bra), Byte(b)) => Ok(i2b(BitBraB(*bra, *b))),
         _ => Err(eyre!(
             "`{}, {}` are invalid operand(s) for {}.",
             operand_1,

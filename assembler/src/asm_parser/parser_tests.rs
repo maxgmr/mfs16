@@ -459,3 +459,5 @@ to_bytes_test!(
 );
 to_bytes_test!(cmprabrb, Cmp, Reg(A), BregDeref(BC), vec![0x00, 0x43]);
 to_bytes_test!(cmpbrarb, Cmp, BregDeref(BC), Reg(A), vec![0x00, 0x44]);
+to_bytes_test!(bitrab, Bit, Reg(A), Byte(0x00), vec![0x00, 0x45]);
+to_bytes_test!(bitbrab, Bit, BregDeref(BC), Byte(0x00), vec![0x00, 0x46]);
