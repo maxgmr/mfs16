@@ -2372,3 +2372,82 @@ fn test_bit() {
         ]
     );
 }
+
+#[test]
+fn test_bit_changes() {
+    instr_test!(
+        REGS: [
+            (A, 0x0000),
+            (BC, 0x00FE_DCBA)
+        ],
+        RAM: gen_ram![
+            LdBraImm16(BC).into_opcode(),
+            0x0000_u16,
+            StbRaB(A,0).into_opcode(),
+            StbRaB(A,15).into_opcode(),
+            RsbRaB(A,0).into_opcode(),
+            RsbRaB(A,15).into_opcode(),
+            StbRaB(A,0).into_opcode(),
+            TgbRaB(A,0).into_opcode(),
+            TgbRaB(A,15).into_opcode(),
+            StbRaB(A,15).into_opcode(),
+            RsbRaB(A,0).into_opcode()
+        ],
+        FLAGS: "",
+        [
+            // LD [BC],0x0000
+            (0x00_0002, [], ""),
+            (0x00_0004, [], ""),
+            (0x00_0004, [], ""),
+            // STB A,0
+            (0x00_0006, [(A, 0x0000)], ""),
+            (0x00_0006, [(A, 0x0001)], ""),
+            // STB A,15
+            (0x00_0008, [(A, 0x0001)], ""),
+            (0x00_0008, [(A, 0x8001)], ""),
+            // RSB A,0
+            (0x00_000A, [(A, 0x8001)], ""),
+            (0x00_000A, [(A, 0x8000)], ""),
+            // RSB A,15
+            (0x00_000C, [(A, 0x8000)], ""),
+            (0x00_000C, [(A, 0x0000)], ""),
+            // STB A,0
+            (0x00_000E, [(A, 0x0000)], ""),
+            (0x00_000E, [(A, 0x0001)], ""),
+            // TGB A,0
+            (0x00_0010, [(A, 0x0001)], ""),
+            (0x00_0010, [(A, 0x0000)], ""),
+            // TGB A,15
+            (0x00_0012, [(A, 0x0000)], ""),
+            (0x00_0012, [(A, 0x8000)], ""),
+            // STB A,15
+            (0x00_0014, [(A, 0x8000)], ""),
+            (0x00_0014, [(A, 0x8000)], ""),
+            // RSB A,0
+            (0x00_0016, [(A, 0x8000)], ""),
+            (0x00_0016, [(A, 0x8000)], "")
+        ]
+    );
+
+    let mut c = Computer::default();
+    c.ram.write_word(0x12_3456, 0xFF00);
+    BC.set(&mut c.cpu, 0x12_3456);
+    c.ram.write_word(0x00_0000, StbBraB(BC, 0).into_opcode());
+    c.ram.write_word(0x00_0002, RsbBraB(BC, 15).into_opcode());
+    c.ram.write_word(0x00_0004, TgbBraB(BC, 8).into_opcode());
+
+    c.cycle();
+    c.cycle();
+    c.cycle();
+    assert_eq!(c.ram.read_word(0x12_3456), 0xFF01);
+
+    c.cycle();
+    c.cycle();
+    c.cycle();
+    assert_eq!(c.ram.read_word(0x12_3456), 0x7F01);
+
+    c.cycle();
+    c.cycle();
+    c.cycle();
+    assert_eq!(c.ram.read_word(0x12_3456), 0x7E01);
+}

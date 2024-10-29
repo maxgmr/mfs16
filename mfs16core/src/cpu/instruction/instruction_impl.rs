@@ -158,6 +158,12 @@ impl Instruction {
             (0x4, 0x4, bra, rb) => CmpBraRb(Reg32::from_nib(bra), Reg16::from_nib(rb)),
             (0x4, 0x5, ra, b) => BitRaB(Reg16::from_nib(ra), b),
             (0x4, 0x6, bra, b) => BitBraB(Reg32::from_nib(bra), b),
+            (0x4, 0x7, ra, b) => StbRaB(Reg16::from_nib(ra), b),
+            (0x4, 0x8, bra, b) => StbBraB(Reg32::from_nib(bra), b),
+            (0x4, 0x9, ra, b) => RsbRaB(Reg16::from_nib(ra), b),
+            (0x4, 0xA, bra, b) => RsbBraB(Reg32::from_nib(bra), b),
+            (0x4, 0xB, ra, b) => TgbRaB(Reg16::from_nib(ra), b),
+            (0x4, 0xC, bra, b) => TgbBraB(Reg32::from_nib(bra), b),
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
@@ -284,6 +290,12 @@ impl Instruction {
             CmpBraRb(bra, rb) => opc_2arg(0x44_u16, bra, rb),
             BitRaB(ra, b) => opc_2arg(0x45_u16, ra, b),
             BitBraB(bra, b) => opc_2arg(0x46_u16, bra, b),
+            StbRaB(ra, b) => opc_2arg(0x47_u16, ra, b),
+            StbBraB(bra, b) => opc_2arg(0x48_u16, bra, b),
+            RsbRaB(ra, b) => opc_2arg(0x49_u16, ra, b),
+            RsbBraB(bra, b) => opc_2arg(0x4A_u16, bra, b),
+            TgbRaB(ra, b) => opc_2arg(0x4B_u16, ra, b),
+            TgbBraB(bra, b) => opc_2arg(0x4C_u16, bra, b),
         }
     }
 
@@ -409,6 +421,12 @@ impl Instruction {
             CmpBraRb(..) => 3,
             BitRaB(..) => 2,
             BitBraB(..) => 3,
+            StbRaB(..) => 2,
+            StbBraB(..) => 3,
+            RsbRaB(..) => 2,
+            RsbBraB(..) => 3,
+            TgbRaB(..) => 2,
+            TgbBraB(..) => 3,
         }
     }
 }
@@ -537,6 +555,12 @@ impl Display for Instruction {
                 CmpBraRb(bra, rb) => format!("CMP [{bra}],{rb}"),
                 BitRaB(ra, b) => format!("BIT {ra},{b}"),
                 BitBraB(bra, b) => format!("BIT [{bra}],{b}"),
+                StbRaB(ra, b) => format!("STB {ra},{b}"),
+                StbBraB(bra, b) => format!("STB [{bra}],{b}"),
+                RsbRaB(ra, b) => format!("RSB {ra},{b}"),
+                RsbBraB(bra, b) => format!("RSB [{bra}],{b}"),
+                TgbRaB(ra, b) => format!("TGB {ra},{b}"),
+                TgbBraB(bra, b) => format!("TGB [{bra}],{b}"),
             }
         )
     }

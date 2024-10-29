@@ -36,6 +36,9 @@ pub enum Operation {
     Rcl,
     Cmp,
     Bit,
+    Stb,
+    Rsb,
+    Tgb,
 }
 impl FromStr for Operation {
     type Err = Report;
@@ -67,6 +70,9 @@ impl FromStr for Operation {
             "rcl" => Ok(Operation::Rcl),
             "cmp" => Ok(Operation::Cmp),
             "bit" => Ok(Operation::Bit),
+            "stb" => Ok(Operation::Stb),
+            "rsb" => Ok(Operation::Rsb),
+            "tgb" => Ok(Operation::Tgb),
             _ => Err(eyre!(
                 "Input `{}` does not match an instruction operation.",
                 s
@@ -105,6 +111,9 @@ impl Display for Operation {
                 Operation::Rcl => "RCL",
                 Operation::Cmp => "CMP",
                 Operation::Bit => "BIT",
+                Operation::Stb => "STB",
+                Operation::Rsb => "RSB",
+                Operation::Tgb => "TGB",
             }
         )
     }
@@ -292,6 +301,12 @@ pub fn instr_to_bytes(
         (Operation::Cmp, BregDeref(bra), Reg(rb)) => Ok(i2b(CmpBraRb(*bra, *rb))),
         (Operation::Bit, Reg(ra), Byte(b)) => Ok(i2b(BitRaB(*ra, *b))),
         (Operation::Bit, BregDeref(bra), Byte(b)) => Ok(i2b(BitBraB(*bra, *b))),
+        (Operation::Stb, Reg(ra), Byte(b)) => Ok(i2b(StbRaB(*ra, *b))),
+        (Operation::Stb, BregDeref(bra), Byte(b)) => Ok(i2b(StbBraB(*bra, *b))),
+        (Operation::Rsb, Reg(ra), Byte(b)) => Ok(i2b(RsbRaB(*ra, *b))),
+        (Operation::Rsb, BregDeref(bra), Byte(b)) => Ok(i2b(RsbBraB(*bra, *b))),
+        (Operation::Tgb, Reg(ra), Byte(b)) => Ok(i2b(TgbRaB(*ra, *b))),
+        (Operation::Tgb, BregDeref(bra), Byte(b)) => Ok(i2b(TgbBraB(*bra, *b))),
         _ => Err(eyre!(
             "`{}, {}` are invalid operand(s) for {}.",
             operand_1,

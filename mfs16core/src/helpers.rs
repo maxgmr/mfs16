@@ -96,6 +96,32 @@ where
     (val & (<T>::one() << index)) != <T>::zero()
 }
 
+/// The different single-bit operations.
+pub enum BitOp {
+    /// Set the bit.
+    Set,
+    /// Reset the bit.
+    Reset,
+    /// Toggle the bit.
+    Toggle,
+}
+
+/// Change bit n of the given value.
+pub fn change_bit(val: u16, n: u8, operation: BitOp) -> u16 {
+    let highest_index = <u16>::num_bits() - 1;
+    let bit_n = 0b1
+        << (if (n as u16) > highest_index {
+            highest_index
+        } else {
+            n.into()
+        });
+    match operation {
+        BitOp::Set => val | bit_n,
+        BitOp::Reset => val & (!bit_n),
+        BitOp::Toggle => val ^ bit_n,
+    }
+}
+
 /// Split a 64-bit quad word into two double words.
 pub fn split_qword(val: u64) -> (u32, u32) {
     (((val >> 32) as u32), ((val & 0x0000_0000_FFFF_FFFF) as u32))

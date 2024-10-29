@@ -501,6 +501,30 @@ pub enum Instruction {
     /// Set the Zero flag to bit b of the value stored at address bra.
     /// Z = [bra][b]
     BitBraB(Reg32, u8),
+    /// 0x47ab - STB ra,b
+    /// Set bit b of ra.
+    /// ra[b] = 1
+    StbRaB(Reg16, u8),
+    /// 0x48ab - STB [bra],b
+    /// Set bit b of the value at address bra.
+    /// [bra][b] = 1
+    StbBraB(Reg32, u8),
+    /// 0x49ab - RSB ra,b
+    /// Reset bit b of ra.
+    /// ra[b] = 0
+    RsbRaB(Reg16, u8),
+    /// 0x4Aab - RSB [bra],b
+    /// Reset bit b of the value at address bra.
+    /// [bra][b] = 0
+    RsbBraB(Reg32, u8),
+    /// 0x4Bab - TGB ra,b
+    /// Toggle bit b of ra.
+    /// ra[b] = !ra[b]
+    TgbRaB(Reg16, u8),
+    /// 0x4Cab - TGB [bra],b
+    /// Toggle bit b of the value at address bra.
+    /// [bra][b] = ![bra][b]
+    TgbBraB(Reg32, u8),
     // TODO
     // Read/write the state of a flag from/to a register.
 }
