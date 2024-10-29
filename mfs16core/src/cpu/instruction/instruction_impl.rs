@@ -140,6 +140,22 @@ impl Instruction {
             (0x3, 0xD, ra, b) => RclRaB(Reg16::from_nib(ra), b),
             (0x3, 0xE, bra, b) => RclBraB(Reg32::from_nib(bra), b),
             (0x3, 0xF, vra, b) => RclVraB(Reg8::from_nib(vra), b),
+            (0x4, 0x0, ra, rb) if ra < NUM_REGS && rb < NUM_REGS => {
+                CmpRaRb(Reg16::from_nib(ra), Reg16::from_nib(rb))
+            }
+            (0x4, 0x0, bra, brb) => CmpBraBrb(
+                Reg32::from_nib(bra - NUM_REGS),
+                Reg32::from_nib(brb - NUM_REGS),
+            ),
+            (0x4, 0x1, vra, vrb) => CmpVraVrb(Reg8::from_nib(vra), Reg8::from_nib(vrb)),
+            (0x4, 0x2, 0x0, ra) => CmpRaImm16(Reg16::from_nib(ra)),
+            (0x4, 0x2, 0x1, bra) => CmpBraImm32(Reg32::from_nib(bra)),
+            (0x4, 0x2, 0x2, vra) => CmpVraImm8(Reg8::from_nib(vra)),
+            (0x4, 0x2, 0x3, ra) => CmpImm16Ra(Reg16::from_nib(ra)),
+            (0x4, 0x2, 0x4, bra) => CmpImm32Bra(Reg32::from_nib(bra)),
+            (0x4, 0x2, 0x5, vra) => CmpImm8Vra(Reg8::from_nib(vra)),
+            (0x4, 0x3, ra, brb) => CmpRaBrb(Reg16::from_nib(ra), Reg32::from_nib(brb)),
+            (0x4, 0x4, bra, rb) => CmpBraRb(Reg32::from_nib(bra), Reg16::from_nib(rb)),
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
     }
@@ -253,6 +269,17 @@ impl Instruction {
             RclRaB(ra, b) => opc_2arg(0x3D_u16, ra, b),
             RclBraB(bra, b) => opc_2arg(0x3E_u16, bra, b),
             RclVraB(vra, b) => opc_2arg(0x3F_u16, vra, b),
+            CmpRaRb(ra, rb) => opc_2arg(0x40_u16, ra, rb),
+            CmpBraBrb(bra, brb) => opc_2arg_off(0x40_u16, bra, brb, NUM_REGS as u16),
+            CmpVraVrb(vra, vrb) => opc_2arg(0x41_u16, vra, vrb),
+            CmpRaImm16(ra) => opc_1arg(0x420_u16, ra),
+            CmpBraImm32(bra) => opc_1arg(0x421_u16, bra),
+            CmpVraImm8(vra) => opc_1arg(0x422_u16, vra),
+            CmpImm16Ra(ra) => opc_1arg(0x423_u16, ra),
+            CmpImm32Bra(bra) => opc_1arg(0x424_u16, bra),
+            CmpImm8Vra(vra) => opc_1arg(0x425_u16, vra),
+            CmpRaBrb(ra, brb) => opc_2arg(0x43_u16, ra, brb),
+            CmpBraRb(bra, rb) => opc_2arg(0x44_u16, bra, rb),
         }
     }
 
@@ -365,6 +392,17 @@ impl Instruction {
             RclRaB(..) => 2,
             RclBraB(..) => 2,
             RclVraB(..) => 2,
+            CmpRaRb(..) => 2,
+            CmpBraBrb(..) => 2,
+            CmpVraVrb(..) => 2,
+            CmpRaImm16(..) => 3,
+            CmpBraImm32(..) => 4,
+            CmpVraImm8(..) => 3,
+            CmpImm16Ra(..) => 3,
+            CmpImm32Bra(..) => 4,
+            CmpImm8Vra(..) => 3,
+            CmpRaBrb(..) => 3,
+            CmpBraRb(..) => 3,
         }
     }
 }
@@ -480,6 +518,17 @@ impl Display for Instruction {
                 RclRaB(ra, b) => format!("RCL {ra},{b}"),
                 RclBraB(bra, b) => format!("RCL {bra},{b}"),
                 RclVraB(vra, b) => format!("RCL {vra},{b}"),
+                CmpRaRb(ra, rb) => format!("CMP {ra},{rb}"),
+                CmpBraBrb(bra, brb) => format!("CMP {bra},{brb}"),
+                CmpVraVrb(vra, vrb) => format!("CMP {vra},{vrb}"),
+                CmpRaImm16(ra) => format!("CMP {ra},imm16"),
+                CmpBraImm32(bra) => format!("CMP {bra},imm32"),
+                CmpVraImm8(vra) => format!("CMP {vra},imm8"),
+                CmpImm16Ra(ra) => format!("CMP imm16,{ra}"),
+                CmpImm32Bra(bra) => format!("CMP imm32,{bra}"),
+                CmpImm8Vra(vra) => format!("CMP imm8,{vra}"),
+                CmpRaBrb(ra, brb) => format!("CMP {ra},{brb}"),
+                CmpBraRb(bra, rb) => format!("CMP {bra},{rb}"),
             }
         )
     }

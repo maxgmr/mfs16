@@ -412,3 +412,50 @@ to_bytes_test!(rcrvrab, Rcr, Vreg(D1), Byte(0x07), vec![0x67, 0x3C]);
 to_bytes_test!(rclrab, Rcl, Reg(B), Byte(0x0F), vec![0x1F, 0x3D]);
 to_bytes_test!(rclbrab, Rcl, Breg(HL), Byte(0x0E), vec![0x2E, 0x3E]);
 to_bytes_test!(rclvrab, Rcl, Vreg(D1), Byte(0x07), vec![0x67, 0x3F]);
+to_bytes_test!(cmprarb, Cmp, Reg(A), Reg(A), vec![0x00, 0x40]);
+to_bytes_test!(cmpbrabrb, Cmp, Breg(BC), Breg(DE), vec![0x78, 0x40]);
+to_bytes_test!(cmpvravrb, Cmp, Vreg(H1), Vreg(H0), vec![0xAB, 0x41]);
+to_bytes_test!(
+    cmpraimm16,
+    Cmp,
+    Reg(A),
+    Word(0xFEDC),
+    vec![0x00, 0x42, 0xDC, 0xFE]
+);
+to_bytes_test!(
+    cmpbraimm32,
+    Cmp,
+    Breg(BC),
+    DWord(0xFEDC_BA98),
+    vec![0x10, 0x42, 0x98, 0xBA, 0xDC, 0xFE]
+);
+to_bytes_test!(
+    cmpvraimm8,
+    Cmp,
+    Vreg(H0),
+    Byte(0xFE),
+    vec![0x2B, 0x42, 0xFE]
+);
+to_bytes_test!(
+    cmpimm16ra,
+    Cmp,
+    Word(0xFEDC),
+    Reg(A),
+    vec![0x30, 0x42, 0xDC, 0xFE]
+);
+to_bytes_test!(
+    cmpimm32bra,
+    Cmp,
+    DWord(0xFEDC_BA98),
+    Breg(BC),
+    vec![0x40, 0x42, 0x98, 0xBA, 0xDC, 0xFE]
+);
+to_bytes_test!(
+    cmpimm8vra,
+    Cmp,
+    Byte(0xFE),
+    Vreg(H0),
+    vec![0x5B, 0x42, 0xFE]
+);
+to_bytes_test!(cmprabrb, Cmp, Reg(A), BregDeref(BC), vec![0x00, 0x43]);
+to_bytes_test!(cmpbrarb, Cmp, BregDeref(BC), Reg(A), vec![0x00, 0x44]);

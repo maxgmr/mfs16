@@ -34,6 +34,7 @@ pub enum Operation {
     Rtl,
     Rcr,
     Rcl,
+    Cmp,
 }
 impl FromStr for Operation {
     type Err = Report;
@@ -63,6 +64,7 @@ impl FromStr for Operation {
             "rtl" => Ok(Operation::Rtl),
             "rcr" => Ok(Operation::Rcr),
             "rcl" => Ok(Operation::Rcl),
+            "cmp" => Ok(Operation::Cmp),
             _ => Err(eyre!(
                 "Input `{}` does not match an instruction operation.",
                 s
@@ -99,6 +101,7 @@ impl Display for Operation {
                 Operation::Rtl => "RTL",
                 Operation::Rcr => "RCR",
                 Operation::Rcl => "RCL",
+                Operation::Cmp => "CMP",
             }
         )
     }
@@ -273,6 +276,17 @@ pub fn instr_to_bytes(
         (Operation::Rcl, Reg(ra), Byte(b)) => Ok(i2b(RclRaB(*ra, *b))),
         (Operation::Rcl, Breg(bra), Byte(b)) => Ok(i2b(RclBraB(*bra, *b))),
         (Operation::Rcl, Vreg(vra), Byte(b)) => Ok(i2b(RclVraB(*vra, *b))),
+        (Operation::Cmp, Reg(ra), Reg(rb)) => Ok(i2b(CmpRaRb(*ra, *rb))),
+        (Operation::Cmp, Breg(bra), Breg(brb)) => Ok(i2b(CmpBraBrb(*bra, *brb))),
+        (Operation::Cmp, Vreg(vra), Vreg(vrb)) => Ok(i2b(CmpVraVrb(*vra, *vrb))),
+        (Operation::Cmp, Reg(ra), Word(w)) => Ok(i2b_imm16(CmpRaImm16(*ra), *w)),
+        (Operation::Cmp, Breg(bra), DWord(d)) => Ok(i2b_imm32(CmpBraImm32(*bra), *d)),
+        (Operation::Cmp, Vreg(vra), Byte(b)) => Ok(i2b_imm8(CmpVraImm8(*vra), *b)),
+        (Operation::Cmp, Word(w), Reg(ra)) => Ok(i2b_imm16(CmpImm16Ra(*ra), *w)),
+        (Operation::Cmp, DWord(d), Breg(bra)) => Ok(i2b_imm32(CmpImm32Bra(*bra), *d)),
+        (Operation::Cmp, Byte(b), Vreg(vra)) => Ok(i2b_imm8(CmpImm8Vra(*vra), *b)),
+        (Operation::Cmp, Reg(ra), BregDeref(brb)) => Ok(i2b(CmpRaBrb(*ra, *brb))),
+        (Operation::Cmp, BregDeref(bra), Reg(rb)) => Ok(i2b(CmpBraRb(*bra, *rb))),
         _ => Err(eyre!(
             "`{}, {}` are invalid operand(s) for {}.",
             operand_1,

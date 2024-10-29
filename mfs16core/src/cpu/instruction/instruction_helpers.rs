@@ -109,6 +109,17 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         RclRaB(ra, b) => alu_ra_b(cpu, ra, b, Rcl),
         RclBraB(bra, b) => alu_bra_b(cpu, bra, b, Rcl),
         RclVraB(vra, b) => alu_vra_b(cpu, vra, b, Rcl),
+        CmpRaRb(ra, rb) => cmp_ra_rb(cpu, ra, rb),
+        CmpBraBrb(bra, brb) => cmp_bra_brb(cpu, bra, brb),
+        CmpVraVrb(vra, vrb) => cmp_vra_vrb(cpu, vra, vrb),
+        CmpRaImm16(ra) => cmp_ra_imm16(cpu, ram, ra),
+        CmpBraImm32(bra) => cmp_bra_imm32(cpu, ram, bra),
+        CmpVraImm8(vra) => cmp_vra_imm8(cpu, ram, vra),
+        CmpImm16Ra(ra) => cmp_imm16_ra(cpu, ram, ra),
+        CmpImm32Bra(bra) => cmp_imm32_bra(cpu, ram, bra),
+        CmpImm8Vra(vra) => cmp_imm8_vra(cpu, ram, vra),
+        CmpRaBrb(ra, brb) => cmp_ra_brb(cpu, ram, ra, brb),
+        CmpBraRb(bra, rb) => cmp_bra_rb(cpu, ram, bra, rb),
     }
 }
 
@@ -470,6 +481,137 @@ fn alu_vra_b<T: Into<u8>>(cpu: &mut Cpu, vra: Reg8, b: T, operation: AluOp) {
             let a = cpu.vreg(vra);
             let result = alu(cpu, operation, a, b.into());
             cpu.set_vreg(vra, result);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn cmp_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.reg(ra);
+            let b = cpu.reg(rb);
+            alu::<u16>(cpu, Sub, a, b);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn cmp_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.breg(bra);
+            let b = cpu.breg(brb);
+            alu::<u32>(cpu, Sub, a, b);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn cmp_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
+    match cpu.step_num {
+        1 => {
+            let a = cpu.vreg(vra);
+            let b = cpu.vreg(vrb);
+            alu::<u8>(cpu, Sub, a, b);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn cmp_ra_imm16(cpu: &mut Cpu, ram: &Ram, ra: Reg16) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => {
+            let a = cpu.reg(ra);
+            let b = cpu.last_word;
+            alu::<u16>(cpu, Sub, a, b);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn cmp_bra_imm32(cpu: &mut Cpu, ram: &Ram, bra: Reg32) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => cpu.read_next_word(ram),
+        3 => {
+            let a = cpu.breg(bra);
+            let b = get_dword_from_last(cpu);
+            alu::<u32>(cpu, Sub, a, b);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn cmp_vra_imm8(cpu: &mut Cpu, ram: &Ram, vra: Reg8) {
+    match cpu.step_num {
+        1 => cpu.read_next_byte(ram),
+        2 => {
+            let a = cpu.vreg(vra);
+            let b = cpu.last_byte;
+            alu::<u8>(cpu, Sub, a, b);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn cmp_imm16_ra(cpu: &mut Cpu, ram: &Ram, ra: Reg16) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => {
+            let a = cpu.last_word;
+            let b = cpu.reg(ra);
+            alu::<u16>(cpu, Sub, a, b);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn cmp_imm32_bra(cpu: &mut Cpu, ram: &Ram, bra: Reg32) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => cpu.read_next_word(ram),
+        3 => {
+            let a = get_dword_from_last(cpu);
+            let b = cpu.breg(bra);
+            alu::<u32>(cpu, Sub, a, b);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn cmp_imm8_vra(cpu: &mut Cpu, ram: &Ram, vra: Reg8) {
+    match cpu.step_num {
+        1 => cpu.read_next_byte(ram),
+        2 => {
+            let a = cpu.last_byte;
+            let b = cpu.vreg(vra);
+            alu::<u8>(cpu, Sub, a, b);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn cmp_ra_brb(cpu: &mut Cpu, ram: &Ram, ra: Reg16, brb: Reg32) {
+    match cpu.step_num {
+        1 => cpu.read_word_at_addr(ram, cpu.breg(brb)),
+        2 => {
+            let a = cpu.reg(ra);
+            let b = cpu.last_word;
+            alu::<u16>(cpu, Sub, a, b);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn cmp_bra_rb(cpu: &mut Cpu, ram: &Ram, bra: Reg32, rb: Reg16) {
+    match cpu.step_num {
+        1 => cpu.read_word_at_addr(ram, cpu.breg(bra)),
+        2 => {
+            let a = cpu.last_word;
+            let b = cpu.reg(rb);
+            alu::<u16>(cpu, Sub, a, b);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }

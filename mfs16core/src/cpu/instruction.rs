@@ -37,6 +37,7 @@ const NUM_REGS: u8 = 7;
 // - [instruction_impl.rs]      Impl num_steps
 // - [instruction_impl.rs]      Impl Display
 // - [tests]                    Add tests
+// - [instruction_parser.rs]    Add Operation if new operation name
 // - [instruction_parser.rs]    Add to instr_to_bytes
 // - [parser_tests.rs]          Add a to_bytes_test
 // - [parser_tests.rs]          (OPTIONAL) Add a parser_test
@@ -453,18 +454,45 @@ pub enum Instruction {
     /// 0x3Fab - RCL vra,b
     /// Rotate carry. Rotate vra left b bits through the carry flag.
     RclVraB(Reg8, u8),
-    // /// 0x40ab - CMP ra,rb
-    // /// Subtract ra from rb, setting flags accordingly. Discard the result.
-    // /// ra - rb
-    // CmpRaRb(Reg16, Reg16),
-    // /// 0x40(a+7)(b+7) - CMP bra,brb
-    // /// Subtract bra from brb, setting flags accordingly. Discard the result.
-    // /// bra - brb
-    // CmpBraBrb(Reg32, Reg32),
-    // /// 0x41ab - CMP vra,vrb
-    // /// Subtract vra from vrb, setting flags accordingly. Discard the result.
-    // /// vra - vrb
-    // CmpVraVrb(Reg8, Reg8),
+    /// 0x40ab - CMP ra,rb
+    /// Subtract rb from ra, setting flags accordingly. Discard the result.
+    /// ra - rb
+    CmpRaRb(Reg16, Reg16),
+    /// 0x40(a+7)(b+7) - CMP bra,brb
+    /// Subtract brb from bra, setting flags accordingly. Discard the result.
+    /// bra - brb
+    CmpBraBrb(Reg32, Reg32),
+    /// 0x41ab - CMP vra,vrb
+    /// Subtract vrb from vra, setting flags accordingly. Discard the result.
+    /// vra - vrb
+    CmpVraVrb(Reg8, Reg8),
+    /// 0x420a - CMP ra,imm16
+    /// Subtract imm16 from ra, setting flags accordingly. Discard the result.
+    /// ra - imm16
+    CmpRaImm16(Reg16),
+    /// 0x421a - CMP bra,imm32
+    /// Subtract imm32 from bra, setting flags accordingly. Discard the result.
+    /// bra - imm32
+    CmpBraImm32(Reg32),
+    /// 0x422a - CMP vra,imm8
+    /// Subtract imm8 from vra, setting flags accordingly. Discard the result.
+    CmpVraImm8(Reg8),
+    /// 0x423a - CMP imm16,ra
+    /// Subtract ra from imm16, setting flags accordingly. Discard the result.
+    /// imm16 - ra
+    CmpImm16Ra(Reg16),
+    /// 0x424a - CMP imm32,bra
+    /// Subtract bra from imm32, setting flags accordingly. Discard the result.
+    CmpImm32Bra(Reg32),
+    /// 0x425a - CMP imm8,vra
+    /// Subtract vra from imm8, setting flags accordingly. Discard the result.
+    CmpImm8Vra(Reg8),
+    /// 0x43ab - CMP ra,[brb]
+    /// Subtract the value at address brb from ra, setting flags accordingly. Discard the result.
+    CmpRaBrb(Reg16, Reg32),
+    /// 0x44ab - CMP [bra],rb
+    /// Subtract rb from the value at address bra, setting flags accordingly. Discard the result.
+    CmpBraRb(Reg32, Reg16),
     // TODO
     // Read/write the program counter from/to a register.
     // Read/write the state of a flag from/to a register.

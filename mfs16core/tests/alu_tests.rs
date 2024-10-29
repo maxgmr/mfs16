@@ -2199,3 +2199,128 @@ fn test_rc() {
     assert_eq!(c.cpu.breg(DE), 0x0000_C000);
     assert_eq!(c.cpu.flags, Flags::from_string(""));
 }
+
+#[test]
+fn test_cmp() {
+    instr_test!(
+        REGS: [
+            (A, 0x0001),
+            (BC, 0x0000_0001),
+            (DE, 0x0000_0000),
+            (H1, 0x01),
+            (H0, 0x00)
+        ],
+        RAM: gen_ram![
+            CmpRaRb(B, A).into_opcode(),
+            CmpBraBrb(DE, BC).into_opcode(),
+            CmpVraVrb(H0, H1).into_opcode(),
+            CmpRaImm16(A).into_opcode(),
+            0xFFFF_u16,
+            CmpBraImm32(BC).into_opcode(),
+            0xFFFF_FFFF_u32,
+            CmpVraImm8(H1).into_opcode(),
+            0xFF_u8,
+            CmpImm16Ra(A).into_opcode(),
+            0x8000_u16,
+            CmpImm32Bra(BC).into_opcode(),
+            0x8000_0000_u32,
+            CmpImm8Vra(H1).into_opcode(),
+            0x80_u8
+        ],
+        FLAGS: "ZOP",
+        [
+            // CMP B,A
+            (0x00_0002, [(A, 0x0001), (B, 0x0000)], "ZOP"),
+            (0x00_0002, [(A, 0x0001), (B, 0x0000)], "CN"),
+            // CMP DE,BC
+            (0x00_0004, [(DE, 0), (BC, 1)], "CN"),
+            (0x00_0004, [(DE, 0), (BC, 1)], "CN"),
+            // CMP H0,H1
+            (0x00_0006, [(H0, 0), (H1, 1)], "CN"),
+            (0x00_0006, [(H0, 0), (H1, 1)], "CN"),
+            // CMP A,0xFFFF
+            (0x00_0008, [], "CN"),
+            (0x00_000A, [], "CN"),
+            (0x00_000A, [], "CP"),
+            // CMP BC,0xFFFF_FFFF
+            (0x00_000C, [], "CP"),
+            (0x00_000E, [], "CP"),
+            (0x00_0010, [], "CP"),
+            (0x00_0010, [], "CP"),
+            // CMP H1,0xFF
+            (0x00_0012, [], "CP"),
+            (0x00_0013, [], "CP"),
+            (0x00_0013, [], "CP"),
+            // CMP 0x8000,A
+            (0x00_0015, [], "CP"),
+            (0x00_0017, [], "CP"),
+            (0x00_0017, [], "O"),
+            // CMP 0x8000_0000,BC
+            (0x00_0019, [], "O"),
+            (0x00_001B, [], "O"),
+            (0x00_001D, [], "O"),
+            (0x00_001D, [], "O"),
+            // CMP 0x80,H1
+            (0x00_001F, [], "O"),
+            (0x00_0020, [], "O"),
+            (0x00_0020, [], "O")
+        ]
+    );
+
+    instr_test!(
+        REGS: [
+            (A, 0xFEDC),
+            (B, 0xFEDC),
+            (DE, 0x1234_5678),
+            (HL, 0x1234_5678),
+            (C1, 0x01),
+            (C0, 0x01)
+        ],
+        RAM: gen_ram![
+            CmpRaRb(B, A).into_opcode(),
+            CmpBraBrb(DE, HL).into_opcode(),
+            CmpVraVrb(C0, C1).into_opcode()
+        ],
+        FLAGS: "",
+        [
+            // CMP B,A
+            (0x00_0002, [], ""),
+            (0x00_0002, [], "ZP"),
+            // CMP DE,HL
+            (0x00_0004, [], "ZP"),
+            (0x00_0004, [], "ZP"),
+            // CMP C0,C1
+            (0x00_0006, [], "ZP"),
+            (0x00_0006, [], "ZP")
+        ]
+    );
+
+    instr_test!(
+        REGS: [
+            (HL, 0x0012_3456),
+            (A, 0x8000),
+            (B, 0x0002)
+        ],
+        RAM: gen_ram![
+            LdBraImm16(HL).into_opcode(),
+            0x0001_u16,
+            CmpRaBrb(A, HL).into_opcode(),
+            CmpBraRb(HL, B).into_opcode()
+        ],
+        FLAGS: "",
+        [
+            // LD [HL],0x0001
+            (0x00_0002, [], ""),
+            (0x00_0004, [], ""),
+            (0x00_0004, [], ""),
+            // CMP A,[HL]
+            (0x00_0006, [], ""),
+            (0x00_0006, [], ""),
+            (0x00_0006, [], "O"),
+            // CMP [HL],B
+            (0x00_0008, [], "O"),
+            (0x00_0008, [], "O"),
+            (0x00_0008, [], "CN")
+        ]
+    );
+}
