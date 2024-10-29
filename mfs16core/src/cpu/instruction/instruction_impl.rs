@@ -13,6 +13,7 @@ impl Instruction {
             (0x0, 0x1, 0xA, 0x0) => LdSpImm32,
             (0x0, 0x1, 0xA, 0x1) => LdImm32Sp,
             (0x0, 0x1, 0xB, bra) => LdSpBra(Reg32::from_nib(bra)),
+            (0x0, 0x1, 0xC, bra) => LdBraSp(Reg32::from_nib(bra)),
             (0x0, 0x1, ra, rb) if ra < NUM_REGS && rb < NUM_REGS => {
                 LdRaRb(Reg16::from_nib(ra), Reg16::from_nib(rb))
             }
@@ -152,6 +153,7 @@ impl Instruction {
             LdSpImm32 => 0x01A0,
             LdImm32Sp => 0x01A1,
             LdSpBra(bra) => opc_1arg(0x01B_u16, bra),
+            LdBraSp(bra) => opc_1arg(0x01C_u16, bra),
             LdVraVrb(vra, vrb) => opc_2arg(0x02_u16, vra, vrb),
             LdRaImm16(ra) => opc_1arg(0x030_u16, ra),
             LdBraImm32(bra) => opc_1arg(0x031_u16, bra),
@@ -263,6 +265,7 @@ impl Instruction {
             LdSpImm32 => 4,
             LdImm32Sp => 4,
             LdSpBra(..) => 2,
+            LdBraSp(..) => 2,
             LdVraVrb(..) => 2,
             LdRaImm16(..) => 3,
             LdBraImm32(..) => 4,
@@ -377,6 +380,7 @@ impl Display for Instruction {
                 LdSpImm32 => String::from("LD SP,imm32"),
                 LdImm32Sp => String::from("LD [imm32],SP"),
                 LdSpBra(bra) => format!("LD SP,{bra}"),
+                LdBraSp(bra) => format!("LD {bra},SP"),
                 LdVraVrb(vra, vrb) => format!("LD {vra},{vrb}"),
                 LdRaImm16(ra) => format!("LD {ra},imm16"),
                 LdBraImm32(bra) => format!("LD {bra},imm32"),

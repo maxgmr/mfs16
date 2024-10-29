@@ -1,7 +1,14 @@
 #![cfg(test)]
 
-use mfs16core::{Computer, Pc, Reg16::*, Reg32::*, Reg8::*};
+use mfs16core::{
+    gen_ram, Computer, Flags, Instruction::*, Pc, Ram, RamWritable, Reg, Reg16::*, Reg32::*,
+    Reg8::*,
+};
 use pretty_assertions::assert_eq;
+
+mod helpers;
+
+use helpers::instr_test;
 
 #[test]
 fn test_ld() {
@@ -353,4 +360,17 @@ fn test_ld() {
     c.cycle();
     assert_eq!(c.cpu.pc, Pc::new(0x00_0031));
     assert_eq!(c.cpu.sp, 0xF0E1_D2C3);
+
+    // LD HL,SP
+    instr_test!(
+        REGS: [(HL, 0x0000_0000)],
+        RAM: gen_ram![
+            LdBraSp(HL).into_opcode()
+        ],
+        FLAGS: "",
+        [
+            (0x00_0002, [(HL, 0x0000_0000)], ""),
+            (0x00_0002, [(HL, 0xFFFF_FFFF_u32)], "")
+        ]
+    );
 }

@@ -173,6 +173,7 @@ pub fn instr_to_bytes(
         (Operation::Ld, StackPointer, DWord(d)) => Ok(i2b_imm32(LdSpImm32, *d)),
         (Operation::Ld, DWordDeref(d), StackPointer) => Ok(i2b_imm32(LdImm32Sp, *d)),
         (Operation::Ld, StackPointer, Breg(bra)) => Ok(i2b(LdSpBra(*bra))),
+        (Operation::Ld, Breg(bra), StackPointer) => Ok(i2b(LdBraSp(*bra))),
         (Operation::Ld, Vreg(vra), Vreg(vrb)) => Ok(i2b(LdVraVrb(*vra, *vrb))),
         (Operation::Ld, Reg(ra), Word(w)) => Ok(i2b_imm16(LdRaImm16(*ra), *w)),
         (Operation::Ld, Breg(bra), DWord(d)) => Ok(i2b_imm32(LdBraImm32(*bra), *d)),

@@ -97,6 +97,7 @@ parser_test!(vardwordassign, "my_dword = 0o0123_4567:d;" => "my_dword", &Variabl
 parser_test!(varqwordassign, "my_qword = 0b0:q;" => "my_qword", &Variable::QWord(0b0));
 
 parser_test!(parseadd, "add A,B;" => Some(vec![0x01_u8, 0x10_u8]));
+parser_test!(parseld, "ld HL,SP;" => Some(vec![0xC2_u8, 0x01_u8]));
 parser_test!(FAIL: parsenocomma, parse_instr, "add A B;");
 parser_test!(FAIL: parsenosemi, parse_instr, "add A, B");
 parser_test!(FAIL: parse3arg, parse_instr, "add A, B, C;");
@@ -161,6 +162,7 @@ to_bytes_test!(
     vec![0xA1, 0x01, 0x67, 0x45, 0x23, 0x01]
 );
 to_bytes_test!(ldspbra, Ld, SP, Breg(HL), vec![0xB2, 0x01]);
+to_bytes_test!(ldbrasp, Ld, Breg(HL), SP, vec![0xC2, 0x01]);
 to_bytes_test!(ldvravrb, Ld, Vreg(A0), Vreg(A1), vec![0x10, 0x02]);
 to_bytes_test!(
     ldraimm16,

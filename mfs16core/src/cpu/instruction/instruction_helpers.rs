@@ -9,6 +9,7 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         LdSpImm32 => ld_sp_imm32(cpu, ram),
         LdImm32Sp => ld_imm32_sp(cpu, ram),
         LdSpBra(bra) => ld_sp_bra(cpu, bra),
+        LdBraSp(bra) => ld_bra_sp(cpu, bra),
         LdVraVrb(vra, vrb) => ld_vra_vrb(cpu, vra, vrb),
         LdRaImm16(ra) => ld_ra_imm16(cpu, ram, ra),
         LdBraImm32(bra) => ld_bra_imm32(cpu, ram, bra),
@@ -177,6 +178,13 @@ fn ld_imm32_sp(cpu: &mut Cpu, ram: &mut Ram) {
 fn ld_sp_bra(cpu: &mut Cpu, bra: Reg32) {
     match cpu.step_num {
         1 => cpu.sp = cpu.breg(bra),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn ld_bra_sp(cpu: &mut Cpu, bra: Reg32) {
+    match cpu.step_num {
+        1 => cpu.set_breg(bra, cpu.sp),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }

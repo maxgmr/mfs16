@@ -32,9 +32,9 @@ const NUM_REGS: u8 = 7;
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 #[cfg_attr(test, derive(EnumIter))]
 pub enum Instruction {
-    #[default]
     /// 0x0000 - NOP
     /// Do nothing for 4 cycles.
+    #[default]
     Nop,
     /// 0x01ab - LD ra,rb
     /// 16-bit register-register load.
@@ -56,6 +56,10 @@ pub enum Instruction {
     /// Load register bra into stack pointer.
     /// SP = bra
     LdSpBra(Reg32),
+    /// 0x01Ca - LD bra,SP
+    /// Load stack pointer into bra.
+    /// bra = SP
+    LdBraSp(Reg32),
     /// 0x02ab - LD vra,vrb
     /// 8-bit register-register load.
     /// vra = vrb
@@ -436,6 +440,18 @@ pub enum Instruction {
     /// 0x3Fab - RCL vra,b
     /// Rotate carry. Rotate vra left b bits through the carry flag.
     RclVraB(Reg8, u8),
+    // /// 0x40ab - CMP ra,rb
+    // /// Subtract ra from rb, setting flags accordingly. Discard the result.
+    // /// ra - rb
+    // CmpRaRb(Reg16, Reg16),
+    // /// 0x40(a+7)(b+7) - CMP bra,brb
+    // /// Subtract bra from brb, setting flags accordingly. Discard the result.
+    // /// bra - brb
+    // CmpBraBrb(Reg32, Reg32),
+    // /// 0x41ab - CMP vra,vrb
+    // /// Subtract vra from vrb, setting flags accordingly. Discard the result.
+    // /// vra - vrb
+    // CmpVraVrb(Reg8, Reg8),
     // TODO
     // Read/write the program counter from/to a register.
     // Read/write the state of a flag from/to a register.
