@@ -1,8 +1,9 @@
 //! The CPU instruction set.
-//! rn = register n
-//! vrn = 8-bit virtual half-register n
-//! brn = 32-bit big register n
+//! rn = [Reg16] n
+//! vrn = 8-bit virtual [Reg8] n
+//! brn = 32-bit big [Reg32] n
 //! imm{n} = n-bit immediate value
+//! cn = [ConditionKind] n
 use std::fmt::Display;
 
 #[cfg(test)]
@@ -582,6 +583,84 @@ pub enum Instruction {
     /// 0x4D30 - RAF
     /// Reset all flags.
     Raf,
+    /// 0x8000 - JP imm32
+    /// Jump to the address stored in the immediate 32-bit value.
+    JpImm32,
+    /// 0x8001 - JR imm32
+    /// Relative jump imm32 (interpreted as a signed integer) bytes forwards/backwards.
+    JrImm32,
+    /// 0x8002 - JPZ imm32
+    /// Jump to the address stored in imm32 iff the Zero flag is set.
+    JpzImm32,
+    /// 0x8003 - JNZ imm32
+    /// Jump to the address stored in imm32 iff the Zero flag is reset.
+    JnzImm32,
+    /// 0x8004 - JPC imm32
+    /// Jump to the address stored in imm32 iff the Carry flag is set.
+    JpcImm32,
+    /// 0x8005 - JNC imm32
+    /// Jump to the address stored in imm32 iff the Carry flag is reset.
+    JncImm32,
+    /// 0x8006 - JPO imm32
+    /// Jump to the address stored in imm32 iff the Overflow flag is set.
+    JpoImm32,
+    /// 0x8007 - JNO imm32
+    /// Jump to the address stored in imm32 iff the Overflow flag is reset.
+    JnoImm32,
+    /// 0x8008 - JPP imm32
+    /// Jump to the address stored in imm32 iff the Parity flag is set.
+    JppImm32,
+    /// 0x8009 - JNP imm32
+    /// Jump to the address stored in imm32 iff the Parity flag is reset.
+    JnpImm32,
+    /// 0x800A - JPN imm32
+    /// Jump to the address stored in imm32 iff the Negative flag is set.
+    JpnImm32,
+    /// 0x800B - JNN imm32
+    /// Jump to the address stored in imm32 iff the Negative flag is reset.
+    JnnImm32,
+    /// 0x801a - JP bra
+    /// Jump to the address stored in bra.
+    JpBra(Reg32),
+    /// 0x802a - JR bra
+    /// Relative jump bra (interpreted as a signed integer) bytes forwards/backwards.
+    JrBra(Reg32),
+    /// 0x803a - JPZ bra
+    /// Jump to the address stored in bra iff the Zero flag is set.
+    JpzBra(Reg32),
+    /// 0x804a - JNZ bra
+    /// Jump to the address stored in bra iff the Zero flag is reset.
+    JnzBra(Reg32),
+    /// 0x805a - JPC bra
+    /// Jump to the address stored in bra iff the Carry flag is set.
+    JpcBra(Reg32),
+    /// 0x806a - JNC bra
+    /// Jump to the address stored in bra iff the Carry flag is reset.
+    JncBra(Reg32),
+    /// 0x807a - JPO bra
+    /// Jump to the address stored in bra iff the Overflow flag is set.
+    JpoBra(Reg32),
+    /// 0x808a - JNO bra
+    /// Jump to the address stored in bra iff the Overflow flag is reset.
+    JnoBra(Reg32),
+    /// 0x809a - JPP bra
+    /// Jump to the address stored in bra iff the Parity flag is set.
+    JppBra(Reg32),
+    /// 0x80Aa - JNP bra
+    /// Jump to the address stored in bra iff the Parity flag is reset.
+    JnpBra(Reg32),
+    /// 0x80Ba - JPN bra
+    /// Jump to the address stored in bra iff the Negative flag is set.
+    JpnBra(Reg32),
+    /// 0x80Ca - JNN bra
+    /// Jump to the address stored in bra iff the Negative flag is reset.
+    JnnBra(Reg32),
+    // TODO
+    // Convert Byte <-> Word <-> DWord
+    // Absolute value
+    // Min/Max
+    // Random number generator
+    // Get clock count
 }
 
 #[cfg(test)]

@@ -151,6 +151,30 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         Tnf => toggle_flag(cpu, Flag::Negative),
         Saf => set_all_flags(cpu),
         Raf => reset_all_flags(cpu),
+        JpImm32 => jp_imm32(cpu, ram),
+        JrImm32 => jr_imm32(cpu, ram),
+        JpzImm32 => cond_jump_imm32(cpu, ram, Flag::Zero, true),
+        JnzImm32 => cond_jump_imm32(cpu, ram, Flag::Zero, false),
+        JpcImm32 => cond_jump_imm32(cpu, ram, Flag::Carry, true),
+        JncImm32 => cond_jump_imm32(cpu, ram, Flag::Carry, false),
+        JpoImm32 => cond_jump_imm32(cpu, ram, Flag::Overflow, true),
+        JnoImm32 => cond_jump_imm32(cpu, ram, Flag::Overflow, false),
+        JppImm32 => cond_jump_imm32(cpu, ram, Flag::Parity, true),
+        JnpImm32 => cond_jump_imm32(cpu, ram, Flag::Parity, false),
+        JpnImm32 => cond_jump_imm32(cpu, ram, Flag::Negative, true),
+        JnnImm32 => cond_jump_imm32(cpu, ram, Flag::Negative, false),
+        JpBra(bra) => jp_bra(cpu, bra),
+        JrBra(bra) => jr_bra(cpu, bra),
+        JpzBra(bra) => cond_jump_bra(cpu, bra, Flag::Zero, true),
+        JnzBra(bra) => cond_jump_bra(cpu, bra, Flag::Zero, false),
+        JpcBra(bra) => cond_jump_bra(cpu, bra, Flag::Carry, true),
+        JncBra(bra) => cond_jump_bra(cpu, bra, Flag::Carry, false),
+        JpoBra(bra) => cond_jump_bra(cpu, bra, Flag::Overflow, true),
+        JnoBra(bra) => cond_jump_bra(cpu, bra, Flag::Overflow, false),
+        JppBra(bra) => cond_jump_bra(cpu, bra, Flag::Parity, true),
+        JnpBra(bra) => cond_jump_bra(cpu, bra, Flag::Parity, false),
+        JpnBra(bra) => cond_jump_bra(cpu, bra, Flag::Negative, true),
+        JnnBra(bra) => cond_jump_bra(cpu, bra, Flag::Negative, false),
     }
 }
 
@@ -730,6 +754,56 @@ fn set_all_flags(cpu: &mut Cpu) {
 fn reset_all_flags(cpu: &mut Cpu) {
     match cpu.step_num {
         1 => cpu.flags = Flags::from_string(""),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn jp_imm32(cpu: &mut Cpu, ram: &Ram) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => cpu.read_next_word(ram),
+        3 => cpu.jump(get_dword_from_last(cpu)),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn jr_imm32(cpu: &mut Cpu, ram: &Ram) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => cpu.read_next_word(ram),
+        3 => cpu.relative_jump(get_dword_from_last(cpu)),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn cond_jump_imm32(cpu: &mut Cpu, ram: &Ram, flag: Flag, expected: bool) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => cpu.read_next_word(ram),
+        3 => cpu.check_conditional(flag, expected),
+        4 => cpu.jump(get_dword_from_last(cpu)),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn jp_bra(cpu: &mut Cpu, bra: Reg32) {
+    match cpu.step_num {
+        1 => cpu.jump(cpu.breg(bra)),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn jr_bra(cpu: &mut Cpu, bra: Reg32) {
+    match cpu.step_num {
+        1 => cpu.relative_jump(cpu.breg(bra)),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn cond_jump_bra(cpu: &mut Cpu, bra: Reg32, flag: Flag, expected: bool) {
+    match cpu.step_num {
+        1 => cpu.check_conditional(flag, expected),
+        2 => cpu.jump(cpu.breg(bra)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }

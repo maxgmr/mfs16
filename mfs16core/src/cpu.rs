@@ -41,6 +41,8 @@ pub struct Cpu {
     last_word: u16,
     /// The second-last word read by the CPU.
     second_last_word: u16,
+    /// Whether the most recently-checked conditional was satisfied or not.
+    last_conditional_satisfied: bool,
 }
 impl Cpu {
     /// Create a new [Cpu] with the given [Registers] and [Flags] values.
@@ -170,6 +172,21 @@ impl Cpu {
         }
         popped_val
     }
+
+    /// Jump the program counter to the given address.
+    fn jump(&mut self, address: u32) {
+        self.pc = Addr::new_wrapped(address)
+    }
+
+    /// Relative jump the program counter based on the given offset, interpreted as a signed value.
+    fn relative_jump(&mut self, offset: u32) {
+        self.pc.wrapping_add(offset);
+    }
+
+    /// Check the conditional against one of the [Flags].
+    fn check_conditional(&mut self, flag: Flag, expected: bool) {
+        self.last_conditional_satisfied = self.flag(flag) == expected;
+    }
 }
 impl Default for Cpu {
     /// Default: Stack pointer at top of stack. Everything else initialised to 0/false.
@@ -184,6 +201,7 @@ impl Default for Cpu {
             last_byte: 0x00,
             last_word: 0x0000,
             second_last_word: 0x0000,
+            last_conditional_satisfied: false,
         }
     }
 }
