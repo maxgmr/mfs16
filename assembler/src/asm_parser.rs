@@ -246,6 +246,13 @@ impl<'a> Parser<'a> {
             },
             _ => return Err(eyre!("Expected an identifier.")),
         };
+        if self.variables.contains_key(&label_name) {
+            return Err(eyre!(
+                "Label `{}` has already been defined and cannot be defined more than once.",
+                label_name
+            ));
+        }
+
         match self.dbl_peek() {
             Some(Colon) => {}
             _ => return Ok(None),
