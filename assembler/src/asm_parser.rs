@@ -34,9 +34,10 @@ pub fn parse(
     tokens: Vec<Token>,
     path: &Utf8Path,
     data: &str,
+    bytes_offset: usize,
     debug: bool,
 ) -> eyre::Result<Vec<u8>> {
-    let mut parser = Parser::new(tokens, path, data, debug);
+    let mut parser = Parser::new(tokens, path, data, bytes_offset, debug);
     let mut output_bytes: Vec<u8> = Vec::new();
 
     while let Some(bytes) = parser.parse_next()? {
@@ -53,11 +54,18 @@ pub struct Parser<'a> {
     variables: HashMap<String, Variable>,
     path: &'a Utf8Path,
     original: &'a str,
+    bytes_parsed: usize,
     debug: bool,
 }
 impl<'a> Parser<'a> {
     /// Create a new [Parser] with the given [Token]s, filepath, and file data.
-    pub fn new(tokens: Vec<Token>, path: &'a Utf8Path, data: &'a str, debug: bool) -> Self {
+    pub fn new(
+        tokens: Vec<Token>,
+        path: &'a Utf8Path,
+        data: &'a str,
+        bytes_offset: usize,
+        debug: bool,
+    ) -> Self {
         Self {
             tokens,
             token_index: 0,
@@ -65,6 +73,7 @@ impl<'a> Parser<'a> {
             path,
             original: data,
             debug,
+            bytes_parsed: bytes_offset,
         }
     }
 
@@ -77,13 +86,24 @@ impl<'a> Parser<'a> {
 
         // Prioritise instructions over variable assignments.
         match self.parse_instr() {
-            Ok(Some(bytes)) => return Ok(Some(bytes)),
-            // Wasn't an instruction but was an identifier. Check to see if something else
+            Ok(Some(bytes)) => {
+                self.bytes_parsed += bytes.len();
+                return Ok(Some(bytes));
+            }
+            // Wasn't an instruction but was an identifier. Check to see if something else.
             Ok(None) => {}
             Err(e) => return self.parsing_error(e.to_string()),
         };
 
-        // Attempt to do a variable assignment.
+        // Attempt to parse a label.
+        match self.parse_label() {
+            Ok(Some(_)) => return Ok(Some(Vec::new())),
+            // Wasn't a label but was an identifier. Check to see if something else.
+            Ok(None) => {}
+            Err(e) => return self.parsing_error(e.to_string()),
+        };
+
+        // Attempt to parse a variable assignment.
         match self.parse_assignment() {
             Ok(_) => Ok(Some(Vec::new())),
             Err(e) => self.parsing_error(e.to_string()),
@@ -98,6 +118,11 @@ impl<'a> Parser<'a> {
     /// Peek at the current [Token].
     fn peek(&self) -> Option<&TokenKind> {
         self.tokens.get(self.token_index).map(|t| &t.kind)
+    }
+
+    /// Peek two [Token]s ahead.
+    fn dbl_peek(&self) -> Option<&TokenKind> {
+        self.tokens.get(self.token_index + 1).map(|t| &t.kind)
     }
 
     /// Get the current [Token], advancing the token index.
@@ -210,6 +235,28 @@ impl<'a> Parser<'a> {
         self.variables.insert(assignee_name, value);
 
         Ok(())
+    }
+
+    /// Parse a label, returning the memory address of said label.
+    fn parse_label(&mut self) -> eyre::Result<Option<usize>> {
+        let label_name = match self.peek() {
+            Some(Identifier(string)) => match string.parse::<Operation>() {
+                Ok(op) => return Err(eyre!("Variable name cannot be instruction name `{}`.", op)),
+                Err(_) => string.clone(),
+            },
+            _ => return Err(eyre!("Expected an identifier.")),
+        };
+        match self.dbl_peek() {
+            Some(Colon) => {}
+            _ => return Ok(None),
+        };
+        get_next_expected!(self, "identifier", Identifier(_));
+        get_next_expected!(self, "`;`", Colon);
+
+        self.variables
+            .insert(label_name, Variable::DWord(self.bytes_parsed.try_into()?));
+
+        Ok(Some(self.bytes_parsed))
     }
 
     /// Parse an instruction into a vector of bytes.

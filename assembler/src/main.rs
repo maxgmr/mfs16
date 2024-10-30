@@ -29,7 +29,13 @@ fn main() -> eyre::Result<()> {
     for path in args.files {
         let file_contents = read_file(&path)?;
         let tokens = lex(&file_contents, &path)?;
-        machine_code.extend(parse(tokens, &path, &file_contents, args.debug)?);
+        machine_code.extend(parse(
+            tokens,
+            &path,
+            &file_contents,
+            machine_code.len(),
+            args.debug,
+        )?);
     }
 
     if let Some(output_path) = &args.output {

@@ -19,7 +19,7 @@ macro_rules! parser_test {
         fn $test_name() {
             let dummy_path = Utf8PathBuf::from("dummy_path");
             let tokens = lex($data, &dummy_path).unwrap();
-            let machine_code = parse(tokens, &dummy_path, $data, true).unwrap();
+            let machine_code = parse(tokens, &dummy_path, $data, 0, true).unwrap();
             assert_eq!(machine_code, $expected);
         }
     };
@@ -38,7 +38,7 @@ macro_rules! parser_test {
 
             let dummy_path = Utf8PathBuf::from("dummy_path");
             let tokens = lex($data, &dummy_path).unwrap();
-            let mut parser = Parser::new(tokens, &dummy_path, $data, true);
+            let mut parser = Parser::new(tokens, &dummy_path, $data, 0, true);
             let result = parser.parse_instr();
 
             println!("[{}] - {:.2?} elapsed", $data, start.elapsed());
@@ -53,7 +53,7 @@ macro_rules! parser_test {
 
             let dummy_path = Utf8PathBuf::from("dummy_path");
             let tokens = lex($data, &dummy_path).unwrap();
-            let mut parser = Parser::new(tokens, &dummy_path, $data, true);
+            let mut parser = Parser::new(tokens, &dummy_path, $data, 0, true);
             parser.parse_assignment().unwrap();
 
             println!("[{}] - {:.2?} elapsed", $data, start.elapsed());
@@ -68,7 +68,7 @@ macro_rules! parser_test {
 
             let dummy_path = Utf8PathBuf::from("dummy_path");
             let tokens = lex($data, &dummy_path).unwrap();
-            let mut parser = Parser::new(tokens, &dummy_path, $data, true);
+            let mut parser = Parser::new(tokens, &dummy_path, $data, 0, true);
             let result = parser.$method();
 
             println!("[{}] - {:.2?} elapsed", $data, start.elapsed());
@@ -78,6 +78,12 @@ macro_rules! parser_test {
     };
 }
 
+parser_test!(
+    FULL: label,
+    "// looping label test.\nld A1,0x00:b;\n\nloop:\n\tinc A1;\n\tjnz loop;\n\nhalt;"
+    =>
+    vec![0x20, 0x03, 0x00, 0x50, 0x1D, 0x03, 0x80, 0x03, 0x00, 0x00, 0x00, 0xFF, 0xFF]
+);
 parser_test!(
     FULL: assignthenadd,
     "// 1 + 2\nb1 = 0x01:b;\nb2 = 0x02:b;\nld A1,b1;\nld B1,b2;\nadd A1,B1;\n// done!"
