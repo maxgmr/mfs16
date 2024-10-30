@@ -16,8 +16,26 @@ pub struct Computer {
     pub ram: Ram,
     /// The cycle counter.
     pub cycles: u128,
+    /// Will print debug messages to stdout when true.
+    pub debug: bool,
 }
 impl Computer {
+    /// Create a new [Computer] with empty [Ram].
+    pub fn new(debug: bool) -> Self {
+        let mut cpu = Cpu::default();
+        cpu.debug = debug;
+        Self {
+            cpu,
+            debug,
+            ..Self::default()
+        }
+    }
+    /// The system clock frequency in Hz.
+    pub const CLOCK_FREQ: u32 = CLOCK_FREQ;
+
+    /// The system RAM size in bytes.
+    pub const RAM_SIZE: usize = RAM_SIZE;
+
     /// Perform one clock cycle.
     pub fn cycle(&mut self) {
         self.cpu.cycle(&mut self.ram);

@@ -9,4 +9,4 @@ loop:
     add B1,my_num;
     jnz loop;
 
-halt
+halt;

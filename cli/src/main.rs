@@ -13,12 +13,14 @@ fn main() -> eyre::Result<()> {
     color_eyre::install()?;
     let args = Cli::parse();
 
-    let bytes: Vec<u8> = load_binary(&args.bin)?;
+    let mut computer = Computer::new(args.debug);
 
-    let mut computer = Computer::default();
+    let bytes: Vec<u8> = load_binary(&args.bin)?;
     computer.direct_write(Addr::new(0x00_0000), &bytes);
 
-    Ok(())
+    loop {
+        computer.cycle();
+    }
 }
 
 fn load_binary(file_path: &Utf8Path) -> eyre::Result<Vec<u8>> {
