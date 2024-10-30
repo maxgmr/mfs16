@@ -21,6 +21,7 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         LdBraImm16(bra) => ld_bra_imm16(cpu, ram, bra),
         LdBraRb(bra, rb) => ld_bra_rb(cpu, ram, bra, rb),
         LdRaBrb(ra, brb) => ld_ra_brb(cpu, ram, ra, brb),
+        LdrRaImm32(ra) => ldr_ra_imm32(cpu, ram, ra),
         LdiBraRb(bra, rb) => ldi_bra_rb(cpu, ram, bra, rb),
         LddBraRb(bra, rb) => ldd_bra_rb(cpu, ram, bra, rb),
         LdiRaBrb(ra, brb) => ldi_ra_brb(cpu, ram, ra, brb),
@@ -308,6 +309,20 @@ fn ld_ra_brb(cpu: &mut Cpu, ram: &mut Ram, ra: Reg16, brb: Reg32) {
     match cpu.step_num {
         1 => cpu.read_word_at_addr(ram, cpu.breg(brb)),
         2 => cpu.set_reg(ra, cpu.last_word),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn ldr_ra_imm32(cpu: &mut Cpu, ram: &Ram, ra: Reg16) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => cpu.read_next_word(ram),
+        3 => {
+            let mut addr = Addr::new(get_dword_from_last(cpu));
+            addr.wrapping_add(cpu.breg(Reg32::HL));
+            cpu.read_word_at_addr(ram, addr.into());
+        }
+        4 => cpu.set_reg(ra, cpu.last_word),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }

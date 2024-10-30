@@ -2,7 +2,7 @@ use std::default::Default;
 
 use crate::{
     helpers::{combine_u16_le, combine_u8_le, split_dword, split_word},
-    RAM_SIZE,
+    Instruction, RAM_SIZE,
 };
 
 /// Random-access memory for direct interfacing with the CPU.
@@ -109,6 +109,17 @@ impl_ram!(
     (u16, read_word, write_word, 2),
     (u32, read_dword, write_dword, 4)
 );
+impl RamReadable for Instruction {
+    fn ram_read(ram: &Ram, address: u32) -> Self {
+        Instruction::from_opcode(ram.read_word(address))
+    }
+}
+impl RamWritable for Instruction {
+    fn ram_write(&self, ram: &mut Ram, address: u32) -> u32 {
+        ram.write_word(address, self.into_opcode());
+        address + 2
+    }
+}
 
 /// Generate a [Ram] from a list of values implementing [RamWritable].
 #[macro_export]

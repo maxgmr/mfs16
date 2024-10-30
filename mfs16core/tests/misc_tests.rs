@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use mfs16core::{gen_ram, Addr, Computer, Flags, Instruction::*, Ram, RamWritable, Reg, Reg16::*};
+use mfs16core::{gen_ram, Addr, Computer, Flags, Instruction::*, Ram, RamWritable};
 use pretty_assertions::assert_eq;
 
 mod helpers;

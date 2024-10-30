@@ -194,6 +194,13 @@ to_bytes_test!(
 );
 to_bytes_test!(ldbrarb, Ld, BregDeref(BC), Reg(L), vec![0x06, 0x04]);
 to_bytes_test!(ldrabrb, Ld, Reg(H), BregDeref(DE), vec![0x51, 0x05]);
+to_bytes_test!(
+    ldrraimm32,
+    Ldr,
+    Reg(A),
+    DWordDeref(0x0012_3456),
+    vec![0x70, 0x05, 0x56, 0x34, 0x12, 0x00]
+);
 to_bytes_test!(ldibrarb, Ldi, BregDeref(BC), Reg(A), vec![0x00, 0x06]);
 to_bytes_test!(lddbrarb, Ldd, BregDeref(BC), Reg(A), vec![0x00, 0x07]);
 to_bytes_test!(ldirabrb, Ldi, Reg(A), BregDeref(BC), vec![0x00, 0x08]);

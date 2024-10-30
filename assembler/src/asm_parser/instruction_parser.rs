@@ -13,6 +13,7 @@ use Operand::*;
 pub enum Operation {
     Nop,
     Ld,
+    Ldr,
     Ldi,
     Ldd,
     Add,
@@ -78,6 +79,7 @@ impl FromStr for Operation {
         match &s.to_lowercase()[..] {
             "nop" => Ok(Operation::Nop),
             "ld" => Ok(Operation::Ld),
+            "ldr" => Ok(Operation::Ldr),
             "ldi" => Ok(Operation::Ldi),
             "ldd" => Ok(Operation::Ldd),
             "add" => Ok(Operation::Add),
@@ -150,6 +152,7 @@ impl Display for Operation {
             match self {
                 Operation::Nop => "NOP",
                 Operation::Ld => "LD",
+                Operation::Ldr => "LDR",
                 Operation::Ldi => "LDI",
                 Operation::Ldd => "LDD",
                 Operation::Add => "ADD",
@@ -289,6 +292,7 @@ pub fn instr_to_bytes(
         (Operation::Ld, BregDeref(bra), Word(w)) => Ok(i2b_imm16(LdBraImm16(*bra), *w)),
         (Operation::Ld, BregDeref(bra), Reg(rb)) => Ok(i2b(LdBraRb(*bra, *rb))),
         (Operation::Ld, Reg(ra), BregDeref(brb)) => Ok(i2b(LdRaBrb(*ra, *brb))),
+        (Operation::Ldr, Reg(ra), DWordDeref(d)) => Ok(i2b_imm32(LdrRaImm32(*ra), *d)),
         (Operation::Ldi, BregDeref(bra), Reg(rb)) => Ok(i2b(LdiBraRb(*bra, *rb))),
         (Operation::Ldd, BregDeref(bra), Reg(rb)) => Ok(i2b(LddBraRb(*bra, *rb))),
         (Operation::Ldi, Reg(ra), BregDeref(brb)) => Ok(i2b(LdiRaBrb(*ra, *brb))),

@@ -102,6 +102,11 @@ pub enum Instruction {
     /// Load the word pointed to by brb in register ra.
     /// ra = [brb]
     LdRaBrb(Reg16, Reg32),
+    /// 0x057a - LDR ra,imm32
+    /// Relative load - load the word pointed to by HL + (imm32 interpreted as a signed integer)
+    /// into ra.
+    /// ra = [HL + imm32]
+    LdrRaImm32(Reg16),
     /// 0x06ab - LDI [bra],rb
     /// Load rb into [bra], then increment bra by two.
     /// [bra] = rb; bra += 2
