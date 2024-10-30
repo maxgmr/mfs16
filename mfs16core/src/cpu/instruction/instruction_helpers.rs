@@ -176,6 +176,43 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         JnpBra(bra) => cond_jump_bra(cpu, bra, Flag::Parity, false),
         JpnBra(bra) => cond_jump_bra(cpu, bra, Flag::Negative, true),
         JnnBra(bra) => cond_jump_bra(cpu, bra, Flag::Negative, false),
+        CallImm32 => call_imm32(cpu, ram),
+        ClzImm32 => cond_call_imm32(cpu, ram, Flag::Zero, true),
+        CnzImm32 => cond_call_imm32(cpu, ram, Flag::Zero, false),
+        ClcImm32 => cond_call_imm32(cpu, ram, Flag::Carry, true),
+        CncImm32 => cond_call_imm32(cpu, ram, Flag::Carry, false),
+        CloImm32 => cond_call_imm32(cpu, ram, Flag::Overflow, true),
+        CnoImm32 => cond_call_imm32(cpu, ram, Flag::Overflow, false),
+        ClpImm32 => cond_call_imm32(cpu, ram, Flag::Parity, true),
+        CnpImm32 => cond_call_imm32(cpu, ram, Flag::Parity, false),
+        ClnImm32 => cond_call_imm32(cpu, ram, Flag::Negative, true),
+        CnnImm32 => cond_call_imm32(cpu, ram, Flag::Negative, false),
+        CallBra(bra) => call_bra(cpu, ram, bra),
+        Ret => ret(cpu, ram),
+        Rtz => cond_ret(cpu, ram, Flag::Zero, true),
+        Rnz => cond_ret(cpu, ram, Flag::Zero, false),
+        Rtc => cond_ret(cpu, ram, Flag::Carry, true),
+        Rnc => cond_ret(cpu, ram, Flag::Carry, false),
+        Rto => cond_ret(cpu, ram, Flag::Overflow, true),
+        Rno => cond_ret(cpu, ram, Flag::Overflow, false),
+        Rtp => cond_ret(cpu, ram, Flag::Parity, true),
+        Rnp => cond_ret(cpu, ram, Flag::Parity, false),
+        Rtn => cond_ret(cpu, ram, Flag::Negative, true),
+        Rnn => cond_ret(cpu, ram, Flag::Negative, false),
+        ClzBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Zero, true),
+        CnzBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Zero, false),
+        ClcBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Carry, true),
+        CncBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Carry, false),
+        CloBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Overflow, true),
+        CnoBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Overflow, false),
+        ClpBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Parity, true),
+        CnpBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Parity, false),
+        ClnBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Negative, true),
+        CnnBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Negative, false),
+        PushBra(bra) => push_bra(cpu, ram, bra),
+        PopBra(bra) => pop_bra(cpu, ram, bra),
+        PeekBra(bra) => peek_bra(cpu, ram, bra),
+        PushImm32 => push_imm32(cpu, ram),
         Halt => halt(cpu),
     }
 }
@@ -195,12 +232,17 @@ pub fn opc_1arg<T: Into<u16>, U: Into<u16>>(instr: T, a: U) -> u16 {
     (instr.into() << 4) | a.into()
 }
 
+/// Assemble an instruction and its argument, offset by a given value, into an opcode.
+pub fn opc_1arg_off<T: Into<u16>, U: Into<u16>>(instr: T, a: U, offset: u16) -> u16 {
+    opc_1arg(instr, a.into() + offset)
+}
+
 /// Assemble an instruction and its two arguments into an opcode.
 pub fn opc_2arg<T: Into<u16>, U: Into<u16>, V: Into<u16>>(instr: T, a: U, b: V) -> u16 {
     (instr.into() << 8) | (a.into() << 4) | b.into()
 }
 
-/// Assemble an instruction and its two arguments, offset by a certain value, into an opcode.
+/// Assemble an instruction and its two arguments, offset by a given value, into an opcode.
 pub fn opc_2arg_off<T: Into<u16>, U: Into<u16>, V: Into<u16>>(
     instr: T,
     a: U,
@@ -828,6 +870,112 @@ fn cond_jump_bra(cpu: &mut Cpu, bra: Reg32, flag: Flag, expected: bool) {
                 cpu.jump(cpu.breg(bra));
             }
         }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn call_imm32(cpu: &mut Cpu, ram: &mut Ram) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => cpu.read_next_word(ram),
+        3 => cpu.push_stack(ram, cpu.pc.into()),
+        4 => cpu.jump(get_dword_from_last(cpu)),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn cond_call_imm32(cpu: &mut Cpu, ram: &mut Ram, flag: Flag, expected: bool) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => cpu.read_next_word(ram),
+        3 => cpu.check_conditional(flag, expected),
+        4 => {
+            if cpu.last_conditional_satisfied {
+                cpu.push_stack(ram, cpu.pc.into());
+            }
+        }
+        5 => {
+            if cpu.last_conditional_satisfied {
+                cpu.jump(get_dword_from_last(cpu));
+            }
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn call_bra(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32) {
+    match cpu.step_num {
+        1 => cpu.push_stack(ram, cpu.pc.into()),
+        2 => cpu.jump(cpu.breg(bra)),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn ret(cpu: &mut Cpu, ram: &mut Ram) {
+    match cpu.step_num {
+        1 => cpu.pc = Addr::new(cpu.pop_stack(ram)),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn cond_ret(cpu: &mut Cpu, ram: &mut Ram, flag: Flag, expected: bool) {
+    match cpu.step_num {
+        1 => cpu.check_conditional(flag, expected),
+        2 => {
+            if cpu.last_conditional_satisfied {
+                cpu.pc = Addr::new(cpu.pop_stack(ram));
+            }
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn cond_call_bra(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, flag: Flag, expected: bool) {
+    match cpu.step_num {
+        1 => cpu.check_conditional(flag, expected),
+        2 => {
+            if cpu.last_conditional_satisfied {
+                cpu.push_stack(ram, cpu.pc.into());
+            }
+        }
+        3 => {
+            if cpu.last_conditional_satisfied {
+                cpu.jump(cpu.breg(bra));
+            }
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn push_bra(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32) {
+    match cpu.step_num {
+        1 => cpu.push_stack(ram, cpu.breg(bra)),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn pop_bra(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32) {
+    match cpu.step_num {
+        1 => {
+            let popped_val = cpu.pop_stack(ram);
+            cpu.set_breg(bra, popped_val);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn peek_bra(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32) {
+    match cpu.step_num {
+        1 => cpu.set_breg(bra, ram.read_dword(cpu.sp.into())),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn push_imm32(cpu: &mut Cpu, ram: &mut Ram) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(ram),
+        2 => cpu.read_next_word(ram),
+        3 => cpu.push_stack(ram, get_dword_from_last(cpu)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }

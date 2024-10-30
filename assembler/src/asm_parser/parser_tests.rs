@@ -606,3 +606,112 @@ to_bytes_test!(jnpbra, Jnp, Breg(BC), None, vec![0xA0, 0x80]);
 to_bytes_test!(jpnbra, Jpn, Breg(BC), None, vec![0xB0, 0x80]);
 to_bytes_test!(jnnbra, Jnn, Breg(BC), None, vec![0xC0, 0x80]);
 to_bytes_test!(halt, Halt, None, None, vec![0xFF, 0xFF]);
+to_bytes_test!(
+    callimm32,
+    Call,
+    DWord(0x0012_3456),
+    None,
+    vec![0x00, 0x81, 0x56, 0x34, 0x12, 0x00]
+);
+to_bytes_test!(
+    clzimm32,
+    Clz,
+    DWord(0x0012_3456),
+    None,
+    vec![0x01, 0x81, 0x56, 0x34, 0x12, 0x00]
+);
+to_bytes_test!(
+    cnzimm32,
+    Cnz,
+    DWord(0x0012_3456),
+    None,
+    vec![0x02, 0x81, 0x56, 0x34, 0x12, 0x00]
+);
+to_bytes_test!(
+    clcimm32,
+    Clc,
+    DWord(0x0012_3456),
+    None,
+    vec![0x03, 0x81, 0x56, 0x34, 0x12, 0x00]
+);
+to_bytes_test!(
+    cncimm32,
+    Cnc,
+    DWord(0x0012_3456),
+    None,
+    vec![0x04, 0x81, 0x56, 0x34, 0x12, 0x00]
+);
+to_bytes_test!(
+    cloimm32,
+    Clo,
+    DWord(0x0012_3456),
+    None,
+    vec![0x05, 0x81, 0x56, 0x34, 0x12, 0x00]
+);
+to_bytes_test!(
+    cnoimm32,
+    Cno,
+    DWord(0x0012_3456),
+    None,
+    vec![0x06, 0x81, 0x56, 0x34, 0x12, 0x00]
+);
+to_bytes_test!(
+    clpimm32,
+    Clp,
+    DWord(0x0012_3456),
+    None,
+    vec![0x07, 0x81, 0x56, 0x34, 0x12, 0x00]
+);
+to_bytes_test!(
+    cnpimm32,
+    Cnp,
+    DWord(0x0012_3456),
+    None,
+    vec![0x08, 0x81, 0x56, 0x34, 0x12, 0x00]
+);
+to_bytes_test!(
+    clnimm32,
+    Cln,
+    DWord(0x0012_3456),
+    None,
+    vec![0x09, 0x81, 0x56, 0x34, 0x12, 0x00]
+);
+to_bytes_test!(
+    cnnimm32,
+    Cnn,
+    DWord(0x0012_3456),
+    None,
+    vec![0x0A, 0x81, 0x56, 0x34, 0x12, 0x00]
+);
+to_bytes_test!(callbra, Call, Breg(BC), None, vec![0x10, 0x81]);
+to_bytes_test!(ret, Ret, None, None, vec![0x13, 0x81]);
+to_bytes_test!(rtz, Rtz, None, None, vec![0x14, 0x81]);
+to_bytes_test!(rnz, Rnz, None, None, vec![0x15, 0x81]);
+to_bytes_test!(rtc, Rtc, None, None, vec![0x16, 0x81]);
+to_bytes_test!(rnc, Rnc, None, None, vec![0x17, 0x81]);
+to_bytes_test!(rto, Rto, None, None, vec![0x18, 0x81]);
+to_bytes_test!(rno, Rno, None, None, vec![0x19, 0x81]);
+to_bytes_test!(rtp, Rtp, None, None, vec![0x1A, 0x81]);
+to_bytes_test!(rnp, Rnp, None, None, vec![0x1B, 0x81]);
+to_bytes_test!(rtn, Rtn, None, None, vec![0x1C, 0x81]);
+to_bytes_test!(rnn, Rnn, None, None, vec![0x1D, 0x81]);
+to_bytes_test!(clzbra, Clz, Breg(BC), None, vec![0x20, 0x81]);
+to_bytes_test!(cnzbra, Cnz, Breg(BC), None, vec![0x30, 0x81]);
+to_bytes_test!(clcbra, Clc, Breg(BC), None, vec![0x40, 0x81]);
+to_bytes_test!(cncbra, Cnc, Breg(BC), None, vec![0x50, 0x81]);
+to_bytes_test!(clobra, Clo, Breg(BC), None, vec![0x60, 0x81]);
+to_bytes_test!(cnobra, Cno, Breg(BC), None, vec![0x70, 0x81]);
+to_bytes_test!(clpbra, Clp, Breg(BC), None, vec![0x80, 0x81]);
+to_bytes_test!(cnpbra, Cnp, Breg(BC), None, vec![0x90, 0x81]);
+to_bytes_test!(clnbra, Cln, Breg(BC), None, vec![0xA0, 0x81]);
+to_bytes_test!(cnnbra, Cnn, Breg(BC), None, vec![0xB0, 0x81]);
+to_bytes_test!(pushbra, Push, Breg(BC), None, vec![0x00, 0x82]);
+to_bytes_test!(popbra, Pop, Breg(BC), None, vec![0x03, 0x82]);
+to_bytes_test!(peekbra, Peek, Breg(BC), None, vec![0x06, 0x82]);
+to_bytes_test!(
+    pushimm32,
+    Push,
+    DWord(0x12_3456),
+    None,
+    vec![0x09, 0x82, 0x56, 0x34, 0x12, 0x00]
+);

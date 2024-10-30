@@ -25,9 +25,12 @@ use Instruction::*;
 pub use alu::{AsLargerType, HasMax, NMinus1Mask, NumBits, WrappingAdd, WrappingSub};
 pub use instruction_helpers::step;
 
-// The last nibble of some instructions reserve numbers 0-6 for the 16-bit registers, with
+// The last nibble of some instructions reserves numbers 0-6 for the 16-bit registers, with
 // codes for the 32-bit big registers starting at 7.
 const NUM_REGS: u8 = 7;
+// The last nibble of some instructions reserves numbers 0-2 for the 32-bit registers, with
+// codes for other instructions starting at 3.
+const NUM_BREGS: u8 = 3;
 
 // ------- ADDING NEW INSTRUCTION CHECKLIST -------
 // - [instruction.rs]           Add Instruction enum entry
@@ -660,6 +663,117 @@ pub enum Instruction {
     /// 0x80Ca - JNN bra
     /// Jump to the address stored in bra iff the Negative flag is reset.
     JnnBra(Reg32),
+    /// 0x8100 - CALL imm32
+    /// Push the address of the instruction after the CALL into the stack, then jump to imm32.
+    CallImm32,
+    /// 0x8101 - CLZ imm32
+    /// Call imm32 iff the Zero flag is set.
+    ClzImm32,
+    /// 0x8102 - CNZ imm32
+    /// Call imm32 iff the Zero flag is reset.
+    CnzImm32,
+    /// 0x8103 - CLC imm32
+    /// Call imm32 iff the Carry flag is set.
+    ClcImm32,
+    /// 0x8104 - CNC imm32
+    /// Call imm32 iff the Carry flag is reset.
+    CncImm32,
+    /// 0x8105 - CLO imm32
+    /// Call imm32 iff the Overflow flag is set.
+    CloImm32,
+    /// 0x8106 - CNO imm32
+    /// Call imm32 iff the Overflow flag is reset.
+    CnoImm32,
+    /// 0x8107 - CLP imm32
+    /// Call imm32 iff the Parity flag is set.
+    ClpImm32,
+    /// 0x8108 - CNP imm32
+    /// Call imm32 iff the Parity flag is reset.
+    CnpImm32,
+    /// 0x8109 - CLN imm32
+    /// Call imm32 iff the Negative flag is set.
+    ClnImm32,
+    /// 0x810A - CNN imm32
+    /// Call imm32 iff the Negative flag is reset.
+    CnnImm32,
+    /// 0x811a - CALL bra
+    /// Push the address of the instruction after the CALL into the stack, then jump to bra.
+    CallBra(Reg32),
+    /// 0x8113 - RET
+    /// Return from subroutine, setting the program counter to the value popped off the stack.
+    Ret,
+    /// 0x8114 - RTZ
+    /// Return iff the Zero flag is set.
+    Rtz,
+    /// 0x8115 - RNZ
+    /// Return iff the Zero flag is reset.
+    Rnz,
+    /// 0x8116 - RTC
+    /// Return iff the Carry flag is set.
+    Rtc,
+    /// 0x8117 - RNC
+    /// Return iff the Carry flag is reset.
+    Rnc,
+    /// 0x8118 - RTO
+    /// Return iff the Overflow flag is set.
+    Rto,
+    /// 0x8119 - RNO
+    /// Return iff the Overflow flag is reset.
+    Rno,
+    /// 0x811A - RTP
+    /// Return iff the Parity flag is set.
+    Rtp,
+    /// 0x811B - RNP
+    /// Return iff the Parity flag is reset.
+    Rnp,
+    /// 0x811C - RTN
+    /// Return iff the Negative flag is set.
+    Rtn,
+    /// 0x811D - RNN
+    /// Return iff the Negative flag is reset.
+    Rnn,
+    /// 0x812a - CLZ bra
+    /// Call bra iff the Zero flag is set.
+    ClzBra(Reg32),
+    /// 0x813a - CNZ bra
+    /// Call bra iff the Zero flag is reset.
+    CnzBra(Reg32),
+    /// 0x814a - CLC bra
+    /// Call bra iff the Carry flag is set.
+    ClcBra(Reg32),
+    /// 0x815a - CNC bra
+    /// Call bra iff the Carry flag is reset.
+    CncBra(Reg32),
+    /// 0x816a - CLO bra
+    /// Call bra iff the Overflow flag is set.
+    CloBra(Reg32),
+    /// 0x817a - CNO bra
+    /// Call bra iff the Overflow flag is reset.
+    CnoBra(Reg32),
+    /// 0x818a - CLP bra
+    /// Call bra iff the Parity flag is set.
+    ClpBra(Reg32),
+    /// 0x819a - CNP bra
+    /// Call bra iff the Parity flag is reset.
+    CnpBra(Reg32),
+    /// 0x81Aa - CLN bra
+    /// Call bra iff the Negative flag is set.
+    ClnBra(Reg32),
+    /// 0x81Ba - CNN bra
+    /// Call bra iff the Negative flag is reset.
+    CnnBra(Reg32),
+    /// 0x820a - PUSH bra
+    /// Push bra to the stack.
+    PushBra(Reg32),
+    /// 0x820(a+3) - POP bra
+    /// Pop the top of the stack into bra.
+    PopBra(Reg32),
+    /// 0x820(a+6) - PEEK bra
+    /// Peek the top value of the stack into bra.
+    PeekBra(Reg32),
+    /// 0x8209 - PUSH imm32
+    /// Push imm32 to the stack.
+    PushImm32,
     /// 0xFFFF - HALT
     /// Halt the CPU, stopping cycles until an external interrupt is received.
     Halt,
@@ -669,6 +783,8 @@ pub enum Instruction {
     // Min/Max
     // Random number generator
     // Get clock count
+    // Disable interrupts
+    // Enable interrupts
 }
 
 #[cfg(test)]
