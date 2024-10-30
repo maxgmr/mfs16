@@ -3,10 +3,17 @@ my_two_2 = my_two;
 
 my_num = 1:b;
 
+should_skip = 0:b;
+ld L0,should_skip;
+
+pss L0;
+jnz skip;
+
 // Loop 256 times
 loop:
     add A1,my_two_2;
     add B1,my_num;
     jnz loop;
 
-halt;
+skip:
+    halt;

@@ -15,6 +15,16 @@ impl Token {
         let location = (start, end);
         Self { location, kind }
     }
+
+    /// Get the start of this token.
+    pub fn start(&self) -> usize {
+        self.location.0
+    }
+
+    /// Get the end of this token.
+    pub fn end(&self) -> usize {
+        self.location.1
+    }
 }
 impl<T> From<T> for Token
 where

@@ -37,13 +37,23 @@ pub fn parse(
     bytes_offset: usize,
     debug: bool,
 ) -> eyre::Result<Vec<u8>> {
-    let mut parser = Parser::new(tokens, path, data, bytes_offset, debug);
-    let mut output_bytes: Vec<u8> = Vec::new();
+    let mut parser = Parser::new(tokens, path, data, bytes_offset, true, debug);
+    // First pass to get labels
+    while parser.parse_next()?.is_some() {}
 
+    if debug {
+        println!("-------BEGIN SECOND PASS-------");
+    }
+
+    // Second pass to compile code now that labels have been determined
+    parser.reset();
+    parser.ignore_missing_vars = false;
+    parser.substitute_labels();
+
+    let mut output_bytes: Vec<u8> = Vec::new();
     while let Some(bytes) = parser.parse_next()? {
         output_bytes.extend(bytes);
     }
-
     Ok(output_bytes)
 }
 
@@ -52,9 +62,13 @@ pub struct Parser<'a> {
     tokens: Vec<Token>,
     token_index: usize,
     variables: HashMap<String, Variable>,
+    labels: HashMap<String, Option<u32>>,
+    label_assignment_indicies: Vec<usize>,
     path: &'a Utf8Path,
     original: &'a str,
+    bytes_offset: usize,
     bytes_parsed: usize,
+    ignore_missing_vars: bool,
     debug: bool,
 }
 impl<'a> Parser<'a> {
@@ -64,16 +78,41 @@ impl<'a> Parser<'a> {
         path: &'a Utf8Path,
         data: &'a str,
         bytes_offset: usize,
+        ignore_missing_vars: bool,
         debug: bool,
     ) -> Self {
         Self {
             tokens,
             token_index: 0,
             variables: HashMap::new(),
+            labels: HashMap::new(),
+            label_assignment_indicies: Vec::new(),
             path,
             original: data,
-            debug,
+            bytes_offset,
             bytes_parsed: bytes_offset,
+            ignore_missing_vars,
+            debug,
+        }
+    }
+
+    /// Reset the progress of this [Parser], keeping the found [Label]s.
+    fn reset(&mut self) {
+        self.token_index = 0;
+        self.variables = HashMap::new();
+        self.bytes_offset = 0;
+    }
+
+    /// Swap all the variable [Token]s of this parser with their corresponding [Label] values.
+    fn substitute_labels(&mut self) {
+        for (token_index, token) in self.tokens.iter_mut().enumerate() {
+            if let Identifier(string) = &token.kind {
+                if let Some(Some(label)) = self.labels.get(string) {
+                    if !self.label_assignment_indicies.contains(&token_index) {
+                        *token = Token::new(token.start(), token.end(), DWord(*label));
+                    }
+                }
+            }
         }
     }
 
@@ -95,13 +134,21 @@ impl<'a> Parser<'a> {
             Err(e) => return self.parsing_error(e.to_string()),
         };
 
-        // Attempt to parse a label.
+        if self.debug {
+            println!("\tNot an instruction...");
+        }
+
+        // Attempt to parse a label assignment.
         match self.parse_label() {
             Ok(Some(_)) => return Ok(Some(Vec::new())),
             // Wasn't a label but was an identifier. Check to see if something else.
             Ok(None) => {}
             Err(e) => return self.parsing_error(e.to_string()),
         };
+
+        if self.debug {
+            println!("\tNot a label assignment...");
+        }
 
         // Attempt to parse a variable assignment.
         match self.parse_assignment() {
@@ -131,7 +178,7 @@ impl<'a> Parser<'a> {
 
         if let Some(t) = &token {
             if self.debug {
-                println!("Consumed `{:?}`.", t);
+                println!("\tConsumed `{:?}`.", t);
             }
             self.token_index += 1;
         }
@@ -179,9 +226,6 @@ impl<'a> Parser<'a> {
 
     /// Get the lines consumed so far.
     fn consumed_lines(&self) -> eyre::Result<Vec<&str>> {
-        dbg!(self.original[..self.num_consumed_chars()?]
-            .split("\n")
-            .collect::<Vec<&str>>());
         Ok(self.original[..self.num_consumed_chars()?]
             .split("\n")
             .collect())
@@ -232,6 +276,13 @@ impl<'a> Parser<'a> {
 
         get_next_expected!(self, "`;`", Semicolon);
 
+        if self.debug {
+            println!(
+                "Parsed variable assignment `{} = {}`.",
+                assignee_name, value
+            );
+        }
+
         self.variables.insert(assignee_name, value);
 
         Ok(())
@@ -246,22 +297,38 @@ impl<'a> Parser<'a> {
             },
             _ => return Err(eyre!("Expected an identifier.")),
         };
-        if self.variables.contains_key(&label_name) {
-            return Err(eyre!(
-                "Label `{}` has already been defined and cannot be defined more than once.",
-                label_name
-            ));
+        if let Some(Some(_)) = self.labels.get(&label_name) {
+            if self.ignore_missing_vars {
+                return Err(eyre!(
+                    "Label `{}` has already been defined and cannot be defined more than once.",
+                    label_name
+                ));
+            }
         }
 
         match self.dbl_peek() {
             Some(Colon) => {}
             _ => return Ok(None),
         };
+
+        self.label_assignment_indicies.push(self.token_index);
+
         get_next_expected!(self, "identifier", Identifier(_));
         get_next_expected!(self, "`;`", Colon);
 
-        self.variables
-            .insert(label_name, Variable::DWord(self.bytes_parsed.try_into()?));
+        if self.debug {
+            println!(
+                "Parsed label assignment `{}` = {:#06X}.",
+                label_name, self.bytes_parsed
+            );
+        }
+
+        if let Some(label) = self.labels.get_mut(&label_name) {
+            *label = Some(self.bytes_parsed.try_into()?);
+        } else {
+            self.labels
+                .insert(label_name, Some(self.bytes_parsed.try_into()?));
+        }
 
         Ok(Some(self.bytes_parsed))
     }
@@ -300,6 +367,13 @@ impl<'a> Parser<'a> {
             } else {
                 return Err(eyre!("Expected `;`."));
             }
+        }
+
+        if self.debug {
+            println!(
+                "Parsed instruction `{} {},{};`.",
+                operation, first_operand, second_operand
+            );
         }
 
         match instr_to_bytes(&operation, &first_operand, &second_operand) {
@@ -371,7 +445,13 @@ impl<'a> Parser<'a> {
         };
         let value = match self.variables.get(&variable_name) {
             Some(val) => *val,
-            None => return Err(eyre!("Variable `{}` not found.", variable_name)),
+            None => {
+                if self.ignore_missing_vars {
+                    Variable::DWord(0)
+                } else {
+                    return Err(eyre!("Variable `{}` not found.", variable_name));
+                }
+            }
         };
         self.next_expected()?;
         Ok(value)

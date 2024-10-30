@@ -200,15 +200,15 @@ impl Display for Operation {
                 Operation::Jp => "JP",
                 Operation::Jr => "JR",
                 Operation::Jpz => "JPZ",
-                Operation::Jnz => "JRZ",
+                Operation::Jnz => "JNZ",
                 Operation::Jpc => "JPC",
-                Operation::Jnc => "JRC",
+                Operation::Jnc => "JNC",
                 Operation::Jpo => "JPO",
-                Operation::Jno => "JRO",
+                Operation::Jno => "JNO",
                 Operation::Jpp => "JPP",
-                Operation::Jnp => "JRP",
+                Operation::Jnp => "JNP",
                 Operation::Jpn => "JPN",
-                Operation::Jnn => "JRN",
+                Operation::Jnn => "JNN",
                 Operation::Halt => "HALT",
             }
         )
@@ -216,6 +216,7 @@ impl Display for Operation {
 }
 
 /// All the possible [Instruction] operand types.
+#[derive(Debug, Clone, PartialEq)]
 pub enum Operand {
     /// e.g., `A`
     Reg(Reg16),

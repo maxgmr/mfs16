@@ -28,7 +28,7 @@ macro_rules! parser_test {
         fn $test_name() {
             let dummy_path = Utf8PathBuf::from("dummy_path");
             let tokens = lex($data, &dummy_path).unwrap();
-            let _ = parse(tokens, &dummy_path, $data).unwrap_err();
+            let _ = parse(tokens, &dummy_path, $data, 0, true).unwrap_err();
         }
     };
     ($test_name:ident, $data:expr => $expected:expr) => {
@@ -38,7 +38,7 @@ macro_rules! parser_test {
 
             let dummy_path = Utf8PathBuf::from("dummy_path");
             let tokens = lex($data, &dummy_path).unwrap();
-            let mut parser = Parser::new(tokens, &dummy_path, $data, 0, true);
+            let mut parser = Parser::new(tokens, &dummy_path, $data, 0, false, true);
             let result = parser.parse_instr();
 
             println!("[{}] - {:.2?} elapsed", $data, start.elapsed());
@@ -53,7 +53,7 @@ macro_rules! parser_test {
 
             let dummy_path = Utf8PathBuf::from("dummy_path");
             let tokens = lex($data, &dummy_path).unwrap();
-            let mut parser = Parser::new(tokens, &dummy_path, $data, 0, true);
+            let mut parser = Parser::new(tokens, &dummy_path, $data, 0, false, true);
             parser.parse_assignment().unwrap();
 
             println!("[{}] - {:.2?} elapsed", $data, start.elapsed());
@@ -68,7 +68,7 @@ macro_rules! parser_test {
 
             let dummy_path = Utf8PathBuf::from("dummy_path");
             let tokens = lex($data, &dummy_path).unwrap();
-            let mut parser = Parser::new(tokens, &dummy_path, $data, 0, true);
+            let mut parser = Parser::new(tokens, &dummy_path, $data, 0, false, true);
             let result = parser.$method();
 
             println!("[{}] - {:.2?} elapsed", $data, start.elapsed());
@@ -95,6 +95,16 @@ parser_test!(
     "my_num=0:w;my_num_2=2:w;PSS my_num;my_num=my_num_2;PSS my_num;"
     =>
     vec![0xC0, 0x1D, 0x00, 0x00, 0xC0, 0x1D, 0x02, 0x00]
+);
+parser_test!(
+    FULL: assignlabelafter,
+    "loop:\npss L0;\njpz is_zero;\n// is not zero\ndec L0;\njp loop;\n\nis_zero:\nhalt;"
+    =>
+    vec![0xBD, 0x1D, 0x02, 0x80, 0x10, 0x00, 0x00, 0x00, 0x8D, 0x1D, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF]
+);
+parser_test!(
+    FULL FAIL: unassignedlabel,
+    "jnz loop;"
 );
 
 parser_test!(varbyteassign, "my_byte = 0xFE:b;" => "my_byte", &Variable::Byte(0xFE));
