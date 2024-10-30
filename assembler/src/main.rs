@@ -39,7 +39,7 @@ fn main() -> eyre::Result<()> {
     }
 
     if let Some(output_path) = &args.output {
-        file_output(output_path, machine_code)?;
+        file_output(output_path, machine_code, args.replace)?;
     } else {
         stdout_output(machine_code)?;
     }
@@ -47,8 +47,12 @@ fn main() -> eyre::Result<()> {
     Ok(())
 }
 
-fn file_output(path: &Utf8Path, machine_code: Vec<u8>) -> eyre::Result<()> {
-    let mut file = OpenOptions::new().write(true).create_new(true).open(path)?;
+fn file_output(path: &Utf8Path, machine_code: Vec<u8>, replace: bool) -> eyre::Result<()> {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(replace)
+        .create_new(!replace)
+        .open(path)?;
     file.write_all(&machine_code)?;
     println!(
         "Compiled to `{}` successfully! ({} bytes)",

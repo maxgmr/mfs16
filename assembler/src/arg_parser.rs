@@ -15,6 +15,10 @@ pub struct Cli {
     #[clap(short, long)]
     pub debug: bool,
 
+    /// The replace flag. Set to overwrite any existing files with the output.
+    #[clap(short, long)]
+    pub replace: bool,
+
     /// Output machine code to this file path. Leave blank to output to stdout.
     #[clap(short, long)]
     pub output: Option<Utf8PathBuf>,
