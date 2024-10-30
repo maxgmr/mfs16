@@ -61,6 +61,7 @@ fn file_output(path: &Utf8Path, machine_code: Vec<u8>) -> eyre::Result<()> {
 fn stdout_output(machine_code: Vec<u8>) -> eyre::Result<()> {
     let mut stdout = io::stdout().lock();
     stdout.write_all(&machine_code)?;
+    println!();
     Ok(())
 }
 
