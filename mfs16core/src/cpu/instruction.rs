@@ -10,6 +10,7 @@ use std::fmt::Display;
 use strum_macros::EnumIter;
 
 mod alu;
+mod fpu;
 mod helpers;
 mod instruction_helpers;
 mod instruction_impl;
