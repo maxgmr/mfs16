@@ -26,8 +26,10 @@ fn main() -> eyre::Result<()> {
     let config = UserConfig::new(&config_dir)?;
     dbg!(&config);
 
+    // Create new MFS-16 computer
     let mut computer = Computer::new(args.debug);
 
+    // Load the binary into RAM
     let bytes: Vec<u8> = load_binary(&args.bin)?;
     computer.direct_write(Addr::new(0x00_0000), &bytes);
 
