@@ -2,5 +2,16 @@
 name = "desktop"
 version = "0.1.0"
 edition = "2021"
+authors = ["Max Gilmour"]
+repository = "https://github.com/maxgmr/mfs16"
+build = "build.rs"
 
 [dependencies]
+camino = "1"
+clap = { version = "4", features = ["cargo", "derive", "string"] }
+color-eyre = "0"
+mfs16core = { path = "../mfs16core" }
+sdl2 = "0"
+
+[build-dependencies]
+vergen = { version = "9", features = ["build", "si"] }
