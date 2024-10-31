@@ -6,15 +6,24 @@ use color_eyre::eyre;
 use mfs16core::{Addr, Computer};
 
 mod arg_parser;
+mod config;
+mod scancodes;
 mod utils;
 
 use arg_parser::Cli;
+use config::UserConfig;
 
 fn main() -> eyre::Result<()> {
     color_eyre::install()?;
 
     // Parse CLI args
     let args = Cli::parse();
+
+    // Set up directories
+    let config_dir = utils::config_dir_setup()?;
+
+    // Load config
+    let config = UserConfig::new(&config_dir)?;
 
     let mut computer = Computer::new(args.debug);
 

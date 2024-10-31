@@ -10,8 +10,12 @@ build = "build.rs"
 camino = "1"
 clap = { version = "4", features = ["cargo", "derive", "string"] }
 color-eyre = "0"
+config = "0"
+directories = "5"
 mfs16core = { path = "../mfs16core" }
 sdl2 = "0"
+serde = { version = "1", features = ["derive"] }
+shellexpand = "3.1"
 
 [build-dependencies]
 vergen = { version = "9", features = ["build", "si"] }
