@@ -14,7 +14,7 @@ pub use instruction::{
 };
 pub use register::{Reg, Reg16, Reg32, Reg8};
 
-use crate::ram::Ram;
+use crate::{gpu::Gpu, ram::Ram};
 use register::Registers;
 
 const BYTES_IN_DWORD: usize = 4;
@@ -58,7 +58,9 @@ impl Cpu {
     }
 
     /// Perform one clock cycle.
-    pub fn cycle(&mut self, ram: &mut Ram) {
+    pub fn cycle(&mut self, gpu: &mut Gpu, ram: &mut Ram) {
+        // TODO check for interrupts
+
         if self.is_halted {
             return;
         }
