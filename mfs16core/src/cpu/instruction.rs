@@ -779,7 +779,6 @@ pub enum Instruction {
     /// Halt the CPU, stopping cycles until an external interrupt is received.
     Halt,
     // TODO
-    // Convert Byte <-> Word <-> DWord
     // Absolute value
     // Min/Max
     // Random number generator

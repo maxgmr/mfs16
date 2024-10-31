@@ -1,85 +1,80 @@
-// //! All the floating-point arithmetic instructions.
-// //! Represents a physical FPU (floating-point unit).
-// //!
-// //! The FPU can perform operations on 32-bit IEEE 754 floating-point representations.
-// use crate::helpers::{get_bit, test_bit};
-//
-// /// All the operations the FPU can perform.
-// pub enum FpuOp {
-//     Add,
-//     Sub,
-//     Mul,
-//     Div,
-// }
-//
-// /// Implementors of this trait can access various methods that are useful for floating-point
-// /// arithmetic.
-// trait Ieee754 {
-//     /// The bit width of the exponent component.
-//     const EXPONENT_WIDTH: usize;
-//
-//     /// The bit width of the significand component.
-//     const SIGNIFICAND_WIDTH: usize;
-//
-//     /// Get the sign bit of this number as a 1 or a 0.
-//     fn sign(&self) -> Self;
-//
-//     /// Get the sign bit of this number as a boolean.
-//     fn is_negative(&self) -> bool;
-//
-//     /// Get the exponent of this number.
-//     fn exponent(&self) -> Self;
-//
-//     /// Get the significand of this number.
-//     fn significand(&self) -> Self;
-//
-//     /// Get the significand of this number with the implicit leading bit.
-//     fn actual_significand(&self) -> Self;
-// }
-// impl Ieee754 for u32 {
-//     const EXPONENT_WIDTH: usize = 8;
-//     const SIGNIFICAND_WIDTH: usize = 23;
-//
-//     fn sign(&self) -> Self {
-//         get_bit(*self, <Self>::BITS - 1)
-//     }
-//
-//     fn is_negative(&self) -> bool {
-//         test_bit(*self, <Self>::BITS - 1)
-//     }
-//
-//     fn exponent(&self) -> Self {
-//         (*self << 1) >> (<Self>::EXPONENT_WIDTH + 1)
-//     }
-//
-//     fn significand(&self) -> Self {
-//         (*self << (<Self>::EXPONENT_WIDTH + 1)) >> (<Self>::EXPONENT_WIDTH + 1)
-//     }
-//
-//     fn actual_significand(&self) -> Self {
-//         (1 << <Self>::SIGNIFICAND_WIDTH) | self.significand()
-//     }
-// }
-//
-// #[cfg(test)]
-// mod tests {
-//     use pretty_assertions::assert_eq;
-//
-//     use super::*;
-//
-//     #[test]
-//     fn test_sign_u32() {
-//         assert_eq!(0x8000_0000.sign(), 1);
-//         assert!(0x8000_0000.is_negative());
-//         assert_eq!(0x7FFF_FFFF.sign(), 0);
-//         assert!(!0x7FFF_FFFF.is_negative());
-//     }
-//
-//     #[test]
-//     fn test_from_bits() {
-//         assert_eq!(
-//             f32::from_bits(0b0011_1110_0010_0000_0000_0000_0000_0000),
-//             0.15625_f32
-//         );
-//     }
-// }
+//! All the floating-point arithmetic instructions.
+//! Represents a physical FPU (floating-point unit).
+//!
+//! The FPU can perform operations on 32-bit IEEE 754 floating-point representations.
+//!
+//! As of right now, the FPU is just a wrapper around the Rust standard library floating-point
+//! operations.
+use super::Cpu;
+use crate::Flag::*;
+
+use FpuOp::*;
+
+/// All the operations the FPU can perform.
+pub enum FpuOp {
+    Add,
+    Sub,
+    Mul,
+    Div,
+}
+
+/// FPU function. Take two operands and the operation as input. Return the result.
+///
+/// Argument 'b' is ignored for single-operand operations.
+///
+/// Set Zero flag iff the result is zero.
+/// Set Carry flag iff the result is infinite.
+/// Set Overflow flag iff the result is NaN.
+/// Set Parity flag iff the result is subnormal.
+/// Set Negative flag iff the result is negative.
+pub fn fpu<T>(cpu: &mut Cpu, operation: FpuOp, a: T, b: T) -> T
+where
+    T: BitsAsFloat<FloatType = f32>,
+{
+    match operation {
+        Add => fpu_operation(cpu, a, b, |x, y| x + y),
+        Sub => fpu_operation(cpu, a, b, |x, y| x - y),
+        Mul => fpu_operation(cpu, a, b, |x, y| x * y),
+        Div => fpu_operation(cpu, a, b, |x, y| x / y),
+    }
+}
+
+fn fpu_operation<T, F>(cpu: &mut Cpu, a: T, b: T, mut op: F) -> T
+where
+    T: BitsAsFloat<FloatType = f32>,
+    F: FnMut(f32, f32) -> f32,
+{
+    let float_result = op(a.bits_to_float(), b.bits_to_float());
+    handle_fpu_flags(cpu, float_result);
+    T::from_float_bits(float_result)
+}
+
+fn handle_fpu_flags(cpu: &mut Cpu, result: f32) {
+    cpu.change_flag(Zero, result == 0.0);
+    cpu.change_flag(Carry, result.is_infinite());
+    cpu.change_flag(Overflow, result.is_nan());
+    cpu.change_flag(Parity, result.is_subnormal());
+    cpu.change_flag(Negative, result.is_sign_negative());
+}
+
+/// Implementors of this trait can be bitwise interpreted as a floating-point data type.
+pub trait BitsAsFloat {
+    type FloatType;
+
+    /// Convert the bits of this type to its corresponding floating-point type.
+    fn bits_to_float(self) -> Self::FloatType;
+
+    /// Convert the bits of a floating-point type to this type.
+    fn from_float_bits(float: Self::FloatType) -> Self;
+}
+impl BitsAsFloat for u32 {
+    type FloatType = f32;
+
+    fn bits_to_float(self) -> Self::FloatType {
+        <Self::FloatType>::from_bits(self)
+    }
+
+    fn from_float_bits(float: Self::FloatType) -> Self {
+        <Self>::from_le_bytes(float.to_le_bytes())
+    }
+}
