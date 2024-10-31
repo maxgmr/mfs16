@@ -1,5 +1,5 @@
 [package]
-name = "desktop"
+name = "mfs16desktop"
 version = "0.1.0"
 edition = "2021"
 authors = ["Max Gilmour"]
@@ -15,7 +15,8 @@ directories = "5"
 mfs16core = { path = "../mfs16core" }
 sdl2 = "0"
 serde = { version = "1", features = ["derive"] }
-shellexpand = "3.1"
+shellexpand = "3"
+toml = "0"
 
 [build-dependencies]
 vergen = { version = "9", features = ["build", "si"] }

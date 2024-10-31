@@ -24,6 +24,7 @@ fn main() -> eyre::Result<()> {
 
     // Load config
     let config = UserConfig::new(&config_dir)?;
+    dbg!(&config);
 
     let mut computer = Computer::new(args.debug);
 

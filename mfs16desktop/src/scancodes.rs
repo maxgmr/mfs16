@@ -1,7 +1,7 @@
 use sdl2::keyboard::Scancode;
 use serde::{
     de::{self, Visitor},
-    Deserializer,
+    Deserializer, Serializer,
 };
 
 pub struct ScancodeVisitor;
@@ -19,6 +19,13 @@ impl<'de> Visitor<'de> for ScancodeVisitor {
             v
         )))
     }
+}
+
+pub fn serialize<S>(scancode: &Scancode, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_str(&scancode.to_string())
 }
 
 pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Scancode, D::Error> {
