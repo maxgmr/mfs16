@@ -8,14 +8,15 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Gpu {
-    /// Video RAM responsible for storing the pixel data of the computer.
+    /// Video RAM responsible for storing the pixel data of the computer. Each pixel takes up one
+    /// nibble of space.
     pub vram: [u8; Self::VRAM_SIZE],
     /// Frame interrupt flag. Is collected by the CPU during the next cycle.
     pub frame_interrupt: bool,
 }
 impl Gpu {
     /// This GPU's VRAM size.
-    pub const VRAM_SIZE: usize = 3 * DISPLAY_WIDTH * DISPLAY_HEIGHT;
+    pub const VRAM_SIZE: usize = DISPLAY_WIDTH * DISPLAY_HEIGHT / 2;
 
     /// Consume the frame interrupt flag.
     pub fn consume_frame_interrupt(&mut self) -> bool {
