@@ -13,3 +13,9 @@ A 16-bit virtual computer.
   - (Re)define how interrupts are handled
 
 - Man page for assembler
+
+- MFS-16 program header standard
+
+- Give notice if the old default config is different than the new one
+
+- Boot program, hard-coded to be loaded at the start of memory, sets up everything else then frees up the space it took up.
