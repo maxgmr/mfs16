@@ -5,12 +5,16 @@ mod computer;
 mod cpu;
 mod gpu;
 pub mod helpers;
-mod ram;
+mod memory;
+mod mmu;
 
 // Re-exports
-pub use computer::{Computer, CLOCK_FREQ, DISPLAY_HEIGHT, DISPLAY_WIDTH, RAM_SIZE};
+pub use computer::{
+    Computer, CLOCK_FREQ, DISPLAY_HEIGHT, DISPLAY_WIDTH, RAM_OFFSET, RAM_SIZE, ROM_OFFSET, ROM_SIZE,
+};
 pub use cpu::{
     Addr, AsLargerType, Flag, Flags, HasMax, Instruction, Msb, NMinus1Mask, NumBits, Oneable, Reg,
     Reg16, Reg32, Reg8, WrappingAdd, WrappingSub, Zeroable,
 };
-pub use ram::{Ram, RamReadable, RamWritable};
+pub use memory::{MemReadable, MemWritable, Memory};
+pub use mmu::Mmu;

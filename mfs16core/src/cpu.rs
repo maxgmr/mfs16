@@ -14,7 +14,7 @@ pub use instruction::{
 };
 pub use register::{Reg, Reg16, Reg32, Reg8};
 
-use crate::{gpu::Gpu, ram::Ram};
+use crate::{mmu::Mmu, RAM_OFFSET, RAM_SIZE};
 use register::Registers;
 
 const BYTES_IN_DWORD: usize = 4;
@@ -58,7 +58,7 @@ impl Cpu {
     }
 
     /// Perform one clock cycle.
-    pub fn cycle(&mut self, gpu: &mut Gpu, ram: &mut Ram) {
+    pub fn cycle(&mut self, mmu: &mut Mmu) {
         // TODO check for interrupts
 
         if self.is_halted {
@@ -68,13 +68,13 @@ impl Cpu {
         if self.step_num >= self.instr.num_steps() {
             // Current instruction is done; move on to the next one.
             self.step_num = 0;
-            self.read_opcode(ram);
+            self.read_opcode(mmu);
             if self.debug {
                 println!("{}", self);
             }
         } else {
             // Current instruction is in progress; perform the appropriate instruction step.
-            step(self, ram);
+            step(self, mmu);
         }
         self.step_num += 1;
     }
@@ -140,47 +140,47 @@ impl Cpu {
     }
 
     /// Set the current instruction.
-    fn read_opcode(&mut self, ram: &mut Ram) {
-        self.read_next_word(ram);
+    fn read_opcode(&mut self, mmu: &mut Mmu) {
+        self.read_next_word(mmu);
         self.instr = Instruction::from_opcode(self.last_word);
     }
 
-    /// Read a single byte from RAM at the program counter, advancing the program counter
+    /// Read a single byte from MMU at the program counter, advancing the program counter
     /// accordingly.
-    fn read_next_byte(&mut self, ram: &Ram) {
-        self.last_byte = ram.read_byte(self.pc.into());
+    fn read_next_byte(&mut self, mmu: &Mmu) {
+        self.last_byte = mmu.read_byte(self.pc.address());
         self.pc.wrapping_inc();
     }
 
-    /// Read a single word from RAM at the program counter, advancing the program counter
+    /// Read a single word from MMU at the program counter, advancing the program counter
     /// accordingly.
-    fn read_next_word(&mut self, ram: &Ram) {
-        self.update_last_word(ram.read_word(self.pc.into()));
+    fn read_next_word(&mut self, mmu: &Mmu) {
+        self.update_last_word(mmu.read_word(self.pc.address()));
         self.pc.wrapping_inc();
         self.pc.wrapping_inc();
     }
 
-    /// Read a single word from RAM pointed to by the provided address.
-    fn read_word_at_addr(&mut self, ram: &Ram, addr: u32) {
-        self.update_last_word(ram.read_word(addr));
+    /// Read a single word from MMU pointed to by the provided address.
+    fn read_word_at_addr(&mut self, mmu: &Mmu, addr: u32) {
+        self.update_last_word(mmu.read_word(addr));
     }
 
     /// Push a value to the stack.
-    fn push_stack(&mut self, ram: &mut Ram, value: u32) {
+    fn push_stack(&mut self, mmu: &mut Mmu, value: u32) {
         self.sp.wrapping_sub(BYTES_IN_DWORD as u32);
-        ram.write_dword(self.sp.into(), value);
+        mmu.write_dword(self.sp.address(), value);
     }
 
     /// Pop a value from the stack.
-    fn pop_stack(&mut self, ram: &mut Ram) -> u32 {
-        let popped_val = ram.read_dword(self.sp.into());
+    fn pop_stack(&mut self, mmu: &mut Mmu) -> u32 {
+        let popped_val = mmu.read_dword(self.sp.address());
         self.sp.wrapping_add(BYTES_IN_DWORD as u32);
         popped_val
     }
 
     /// Jump the program counter to the given address.
     fn jump(&mut self, address: u32) {
-        self.pc = Addr::new_wrapped(address)
+        self.pc = Addr::new_wrapped(0, <u32>::MAX as usize, address)
     }
 
     /// Relative jump the program counter based on the given offset, interpreted as a signed value.
@@ -200,7 +200,7 @@ impl Default for Cpu {
             regs: Registers::default(),
             flags: Flags::default(),
             pc: Addr::default(),
-            sp: Addr::default(),
+            sp: Addr::new(RAM_OFFSET, RAM_SIZE - 1, RAM_OFFSET as u32),
             instr: Instruction::default(),
             step_num: Instruction::default().num_steps(),
             is_halted: false,
@@ -227,51 +227,21 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use super::*;
-    use crate::RAM_SIZE;
-
-    #[test]
-    fn test_read() {
-        let mut cpu = Cpu {
-            pc: Addr::new((RAM_SIZE as u32) - 3),
-            ..Cpu::default()
-        };
-        let mut ram = Ram::default();
-        ram.write_word(0x00_0000, 0xABCD);
-        ram.write_byte(0x00_0002, 0x01);
-        ram.write_word((RAM_SIZE as u32) - 2, 0x2345);
-        ram.write_byte((RAM_SIZE as u32) - 3, 0xFE);
-
-        cpu.read_next_byte(&ram);
-        assert_eq!(cpu.last_byte, 0xfe);
-        assert_eq!(cpu.pc, Addr::new((RAM_SIZE as u32) - 2));
-
-        cpu.read_next_word(&ram);
-        assert_eq!(cpu.last_word, 0x2345);
-        assert_eq!(cpu.pc, Addr::new(0x00_0000));
-
-        cpu.read_next_word(&ram);
-        assert_eq!(cpu.last_word, 0xABCD);
-        assert_eq!(cpu.pc, Addr::new(0x00_0002));
-
-        cpu.read_next_byte(&ram);
-        assert_eq!(cpu.last_byte, 0x01);
-        assert_eq!(cpu.pc, Addr::new(0x00_0003));
-    }
 
     #[test]
     fn test_stack() {
         let mut cpu = Cpu::default();
-        let mut ram = Ram::default();
-        cpu.sp = Addr::new(0x00_0000);
+        let mut mmu = Mmu::default();
 
-        cpu.push_stack(&mut ram, 0x1234_5678);
-        assert_eq!(cpu.sp, Addr::new(0xFF_FFFC));
-        assert_eq!(ram.read_byte(0xFF_FFFF), 0x12);
-        assert_eq!(ram.read_byte(0xFF_FFFE), 0x34);
-        assert_eq!(ram.read_byte(0xFF_FFFD), 0x56);
-        assert_eq!(ram.read_byte(0xFF_FFFC), 0x78);
+        cpu.push_stack(&mut mmu, 0x1234_5678);
+        assert_eq!(cpu.sp.address(), ((RAM_OFFSET + RAM_SIZE) as u32) - 4);
+        assert_eq!(mmu.read_byte(((RAM_OFFSET + RAM_SIZE) as u32) - 1), 0x12);
+        assert_eq!(mmu.read_byte(((RAM_OFFSET + RAM_SIZE) as u32) - 2), 0x34);
+        assert_eq!(mmu.read_byte(((RAM_OFFSET + RAM_SIZE) as u32) - 3), 0x56);
+        assert_eq!(mmu.read_byte(((RAM_OFFSET + RAM_SIZE) as u32) - 4), 0x78);
 
-        assert_eq!(cpu.pop_stack(&mut ram), 0x1234_5678);
-        assert_eq!(cpu.sp, Addr::new(0x00_0000));
+        assert_eq!(cpu.pop_stack(&mut mmu), 0x1234_5678);
+        assert_eq!(cpu.sp.address(), RAM_OFFSET as u32);
+        assert_eq!(cpu.sp.relative_address(), 0);
     }
 }

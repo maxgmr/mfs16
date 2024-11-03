@@ -5,27 +5,27 @@ use crate::{
 };
 
 /// Perform the current step of the current CPU instruction.
-pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
+pub fn step(cpu: &mut Cpu, mmu: &mut Mmu) {
     match cpu.instr {
         Nop => {}
         LdRaRb(ra, rb) => ld_ra_rb(cpu, ra, rb),
         LdBraBrb(bra, brb) => ld_bra_brb(cpu, bra, brb),
-        LdSpImm32 => ld_sp_imm32(cpu, ram),
-        LdImm32Sp => ld_imm32_sp(cpu, ram),
+        LdSpImm32 => ld_sp_imm32(cpu, mmu),
+        LdImm32Sp => ld_imm32_sp(cpu, mmu),
         LdSpBra(bra) => ld_sp_bra(cpu, bra),
         LdBraSp(bra) => ld_bra_sp(cpu, bra),
         LdVraVrb(vra, vrb) => ld_vra_vrb(cpu, vra, vrb),
-        LdRaImm16(ra) => ld_ra_imm16(cpu, ram, ra),
-        LdBraImm32(bra) => ld_bra_imm32(cpu, ram, bra),
-        LdVraImm8(vra) => ld_vra_imm8(cpu, ram, vra),
-        LdBraImm16(bra) => ld_bra_imm16(cpu, ram, bra),
-        LdBraRb(bra, rb) => ld_bra_rb(cpu, ram, bra, rb),
-        LdRaBrb(ra, brb) => ld_ra_brb(cpu, ram, ra, brb),
-        LdrRaImm32(ra) => ldr_ra_imm32(cpu, ram, ra),
-        LdiBraRb(bra, rb) => ldi_bra_rb(cpu, ram, bra, rb),
-        LddBraRb(bra, rb) => ldd_bra_rb(cpu, ram, bra, rb),
-        LdiRaBrb(ra, brb) => ldi_ra_brb(cpu, ram, ra, brb),
-        LddRaBrb(ra, brb) => ldd_ra_brb(cpu, ram, ra, brb),
+        LdRaImm16(ra) => ld_ra_imm16(cpu, mmu, ra),
+        LdBraImm32(bra) => ld_bra_imm32(cpu, mmu, bra),
+        LdVraImm8(vra) => ld_vra_imm8(cpu, mmu, vra),
+        LdBraImm16(bra) => ld_bra_imm16(cpu, mmu, bra),
+        LdBraRb(bra, rb) => ld_bra_rb(cpu, mmu, bra, rb),
+        LdRaBrb(ra, brb) => ld_ra_brb(cpu, mmu, ra, brb),
+        LdrRaImm32(ra) => ldr_ra_imm32(cpu, mmu, ra),
+        LdiBraRb(bra, rb) => ldi_bra_rb(cpu, mmu, bra, rb),
+        LddBraRb(bra, rb) => ldd_bra_rb(cpu, mmu, bra, rb),
+        LdiRaBrb(ra, brb) => ldi_ra_brb(cpu, mmu, ra, brb),
+        LddRaBrb(ra, brb) => ldd_ra_brb(cpu, mmu, ra, brb),
         AddRaRb(ra, rb) => alu_ra_rb(cpu, ra, rb, Add),
         AddBraBrb(bra, brb) => alu_bra_brb(cpu, bra, brb, Add),
         AddVraVrb(vra, vrb) => alu_vra_vrb(cpu, vra, vrb, Add),
@@ -38,22 +38,22 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         SbbRaRb(ra, rb) => alu_ra_rb(cpu, ra, rb, Sbb),
         SbbBraBrb(bra, brb) => alu_bra_brb(cpu, bra, brb, Sbb),
         SbbVraVrb(vra, vrb) => alu_vra_vrb(cpu, vra, vrb, Sbb),
-        AddRaImm16(ra) => alu_ra_imm16(cpu, ram, ra, Add),
-        AdcRaImm16(ra) => alu_ra_imm16(cpu, ram, ra, Adc),
-        AddBraImm32(bra) => alu_bra_imm32(cpu, ram, bra, Add),
-        AdcBraImm32(bra) => alu_bra_imm32(cpu, ram, bra, Adc),
-        AddVraImm8(vra) => alu_vra_imm8(cpu, ram, vra, Add),
-        AdcVraImm8(vra) => alu_vra_imm8(cpu, ram, vra, Adc),
-        SubRaImm16(ra) => alu_ra_imm16(cpu, ram, ra, Sub),
-        SbbRaImm16(ra) => alu_ra_imm16(cpu, ram, ra, Sbb),
-        SubBraImm32(bra) => alu_bra_imm32(cpu, ram, bra, Sub),
-        SbbBraImm32(bra) => alu_bra_imm32(cpu, ram, bra, Sbb),
-        SubVraImm8(vra) => alu_vra_imm8(cpu, ram, vra, Sub),
-        SbbVraImm8(vra) => alu_vra_imm8(cpu, ram, vra, Sbb),
-        AddRaBrb(ra, brb) => alu_ra_brb(cpu, ram, ra, brb, Add),
-        AdcRaBrb(ra, brb) => alu_ra_brb(cpu, ram, ra, brb, Adc),
-        SubRaBrb(ra, brb) => alu_ra_brb(cpu, ram, ra, brb, Sub),
-        SbbRaBrb(ra, brb) => alu_ra_brb(cpu, ram, ra, brb, Sbb),
+        AddRaImm16(ra) => alu_ra_imm16(cpu, mmu, ra, Add),
+        AdcRaImm16(ra) => alu_ra_imm16(cpu, mmu, ra, Adc),
+        AddBraImm32(bra) => alu_bra_imm32(cpu, mmu, bra, Add),
+        AdcBraImm32(bra) => alu_bra_imm32(cpu, mmu, bra, Adc),
+        AddVraImm8(vra) => alu_vra_imm8(cpu, mmu, vra, Add),
+        AdcVraImm8(vra) => alu_vra_imm8(cpu, mmu, vra, Adc),
+        SubRaImm16(ra) => alu_ra_imm16(cpu, mmu, ra, Sub),
+        SbbRaImm16(ra) => alu_ra_imm16(cpu, mmu, ra, Sbb),
+        SubBraImm32(bra) => alu_bra_imm32(cpu, mmu, bra, Sub),
+        SbbBraImm32(bra) => alu_bra_imm32(cpu, mmu, bra, Sbb),
+        SubVraImm8(vra) => alu_vra_imm8(cpu, mmu, vra, Sub),
+        SbbVraImm8(vra) => alu_vra_imm8(cpu, mmu, vra, Sbb),
+        AddRaBrb(ra, brb) => alu_ra_brb(cpu, mmu, ra, brb, Add),
+        AdcRaBrb(ra, brb) => alu_ra_brb(cpu, mmu, ra, brb, Adc),
+        SubRaBrb(ra, brb) => alu_ra_brb(cpu, mmu, ra, brb, Sub),
+        SbbRaBrb(ra, brb) => alu_ra_brb(cpu, mmu, ra, brb, Sbb),
         TcpRa(ra) => alu_ra_rb(cpu, ra, ra, Tcp),
         TcpBra(bra) => alu_bra_brb(cpu, bra, bra, Tcp),
         TcpVra(vra) => alu_vra_vrb(cpu, vra, vra, Tcp),
@@ -66,30 +66,30 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         PssRa(ra) => pss_ra(cpu, ra),
         PssBra(bra) => pss_bra(cpu, bra),
         PssVra(vra) => pss_vra(cpu, vra),
-        PssImm16 => pss_imm16(cpu, ram),
-        PssImm32 => pss_imm32(cpu, ram),
-        PssImm8 => pss_imm8(cpu, ram),
+        PssImm16 => pss_imm16(cpu, mmu),
+        PssImm32 => pss_imm32(cpu, mmu),
+        PssImm8 => pss_imm8(cpu, mmu),
         AndRaRb(ra, rb) => alu_ra_rb(cpu, ra, rb, And),
         AndBraBrb(bra, brb) => alu_bra_brb(cpu, bra, brb, And),
         AndVraVrb(vra, vrb) => alu_vra_vrb(cpu, vra, vrb, And),
-        AndRaBrb(ra, brb) => alu_ra_brb(cpu, ram, ra, brb, And),
+        AndRaBrb(ra, brb) => alu_ra_brb(cpu, mmu, ra, brb, And),
         OrRaRb(ra, rb) => alu_ra_rb(cpu, ra, rb, Or),
         OrBraBrb(bra, brb) => alu_bra_brb(cpu, bra, brb, Or),
         OrVraVrb(vra, vrb) => alu_vra_vrb(cpu, vra, vrb, Or),
-        OrRaBrb(ra, brb) => alu_ra_brb(cpu, ram, ra, brb, Or),
+        OrRaBrb(ra, brb) => alu_ra_brb(cpu, mmu, ra, brb, Or),
         XorRaRb(ra, rb) => alu_ra_rb(cpu, ra, rb, Xor),
         XorBraBrb(bra, brb) => alu_bra_brb(cpu, bra, brb, Xor),
         XorVraVrb(vra, vrb) => alu_vra_vrb(cpu, vra, vrb, Xor),
-        XorRaBrb(ra, brb) => alu_ra_brb(cpu, ram, ra, brb, Xor),
-        AndRaImm16(ra) => alu_ra_imm16(cpu, ram, ra, And),
-        AndBraImm32(bra) => alu_bra_imm32(cpu, ram, bra, And),
-        AndVraImm8(vra) => alu_vra_imm8(cpu, ram, vra, And),
-        OrRaImm16(ra) => alu_ra_imm16(cpu, ram, ra, Or),
-        OrBraImm32(bra) => alu_bra_imm32(cpu, ram, bra, Or),
-        OrVraImm8(vra) => alu_vra_imm8(cpu, ram, vra, Or),
-        XorRaImm16(ra) => alu_ra_imm16(cpu, ram, ra, Xor),
-        XorBraImm32(bra) => alu_bra_imm32(cpu, ram, bra, Xor),
-        XorVraImm8(vra) => alu_vra_imm8(cpu, ram, vra, Xor),
+        XorRaBrb(ra, brb) => alu_ra_brb(cpu, mmu, ra, brb, Xor),
+        AndRaImm16(ra) => alu_ra_imm16(cpu, mmu, ra, And),
+        AndBraImm32(bra) => alu_bra_imm32(cpu, mmu, bra, And),
+        AndVraImm8(vra) => alu_vra_imm8(cpu, mmu, vra, And),
+        OrRaImm16(ra) => alu_ra_imm16(cpu, mmu, ra, Or),
+        OrBraImm32(bra) => alu_bra_imm32(cpu, mmu, bra, Or),
+        OrVraImm8(vra) => alu_vra_imm8(cpu, mmu, vra, Or),
+        XorRaImm16(ra) => alu_ra_imm16(cpu, mmu, ra, Xor),
+        XorBraImm32(bra) => alu_bra_imm32(cpu, mmu, bra, Xor),
+        XorVraImm8(vra) => alu_vra_imm8(cpu, mmu, vra, Xor),
         NotRa(ra) => alu_ra_rb(cpu, ra, ra, Not),
         NotBra(bra) => alu_bra_brb(cpu, bra, bra, Not),
         NotVra(vra) => alu_vra_vrb(cpu, vra, vra, Not),
@@ -117,24 +117,24 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         CmpRaRb(ra, rb) => cmp_ra_rb(cpu, ra, rb),
         CmpBraBrb(bra, brb) => cmp_bra_brb(cpu, bra, brb),
         CmpVraVrb(vra, vrb) => cmp_vra_vrb(cpu, vra, vrb),
-        CmpRaImm16(ra) => cmp_ra_imm16(cpu, ram, ra),
-        CmpBraImm32(bra) => cmp_bra_imm32(cpu, ram, bra),
-        CmpVraImm8(vra) => cmp_vra_imm8(cpu, ram, vra),
-        CmpImm16Ra(ra) => cmp_imm16_ra(cpu, ram, ra),
-        CmpImm32Bra(bra) => cmp_imm32_bra(cpu, ram, bra),
-        CmpImm8Vra(vra) => cmp_imm8_vra(cpu, ram, vra),
-        CmpRaBrb(ra, brb) => cmp_ra_brb(cpu, ram, ra, brb),
-        CmpBraRb(bra, rb) => cmp_bra_rb(cpu, ram, bra, rb),
+        CmpRaImm16(ra) => cmp_ra_imm16(cpu, mmu, ra),
+        CmpBraImm32(bra) => cmp_bra_imm32(cpu, mmu, bra),
+        CmpVraImm8(vra) => cmp_vra_imm8(cpu, mmu, vra),
+        CmpImm16Ra(ra) => cmp_imm16_ra(cpu, mmu, ra),
+        CmpImm32Bra(bra) => cmp_imm32_bra(cpu, mmu, bra),
+        CmpImm8Vra(vra) => cmp_imm8_vra(cpu, mmu, vra),
+        CmpRaBrb(ra, brb) => cmp_ra_brb(cpu, mmu, ra, brb),
+        CmpBraRb(bra, rb) => cmp_bra_rb(cpu, mmu, bra, rb),
         BitRaB(ra, b) => bit_ra_b(cpu, ra, b),
-        BitBraB(bra, b) => bit_bra_b(cpu, ram, bra, b),
+        BitBraB(bra, b) => bit_bra_b(cpu, mmu, bra, b),
         StbRaB(ra, b) => bit_op_ra_b(cpu, ra, b, BitOp::Set),
-        StbBraB(bra, b) => bit_op_bra_b(cpu, ram, bra, b, BitOp::Set),
+        StbBraB(bra, b) => bit_op_bra_b(cpu, mmu, bra, b, BitOp::Set),
         RsbRaB(ra, b) => bit_op_ra_b(cpu, ra, b, BitOp::Reset),
-        RsbBraB(bra, b) => bit_op_bra_b(cpu, ram, bra, b, BitOp::Reset),
+        RsbBraB(bra, b) => bit_op_bra_b(cpu, mmu, bra, b, BitOp::Reset),
         TgbRaB(ra, b) => bit_op_ra_b(cpu, ra, b, BitOp::Toggle),
-        TgbBraB(bra, b) => bit_op_bra_b(cpu, ram, bra, b, BitOp::Toggle),
+        TgbBraB(bra, b) => bit_op_bra_b(cpu, mmu, bra, b, BitOp::Toggle),
         SwpRa(ra) => swp_ra(cpu, ra),
-        SwpBra(bra) => swp_bra(cpu, ram, bra),
+        SwpBra(bra) => swp_bra(cpu, mmu, bra),
         Szf => set_flag(cpu, Flag::Zero),
         Rzf => reset_flag(cpu, Flag::Zero),
         Tzf => toggle_flag(cpu, Flag::Zero),
@@ -152,18 +152,18 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         Tnf => toggle_flag(cpu, Flag::Negative),
         Saf => set_all_flags(cpu),
         Raf => reset_all_flags(cpu),
-        JpImm32 => jp_imm32(cpu, ram),
-        JrImm32 => jr_imm32(cpu, ram),
-        JpzImm32 => cond_jump_imm32(cpu, ram, Flag::Zero, true),
-        JnzImm32 => cond_jump_imm32(cpu, ram, Flag::Zero, false),
-        JpcImm32 => cond_jump_imm32(cpu, ram, Flag::Carry, true),
-        JncImm32 => cond_jump_imm32(cpu, ram, Flag::Carry, false),
-        JpoImm32 => cond_jump_imm32(cpu, ram, Flag::Overflow, true),
-        JnoImm32 => cond_jump_imm32(cpu, ram, Flag::Overflow, false),
-        JppImm32 => cond_jump_imm32(cpu, ram, Flag::Parity, true),
-        JnpImm32 => cond_jump_imm32(cpu, ram, Flag::Parity, false),
-        JpnImm32 => cond_jump_imm32(cpu, ram, Flag::Negative, true),
-        JnnImm32 => cond_jump_imm32(cpu, ram, Flag::Negative, false),
+        JpImm32 => jp_imm32(cpu, mmu),
+        JrImm32 => jr_imm32(cpu, mmu),
+        JpzImm32 => cond_jump_imm32(cpu, mmu, Flag::Zero, true),
+        JnzImm32 => cond_jump_imm32(cpu, mmu, Flag::Zero, false),
+        JpcImm32 => cond_jump_imm32(cpu, mmu, Flag::Carry, true),
+        JncImm32 => cond_jump_imm32(cpu, mmu, Flag::Carry, false),
+        JpoImm32 => cond_jump_imm32(cpu, mmu, Flag::Overflow, true),
+        JnoImm32 => cond_jump_imm32(cpu, mmu, Flag::Overflow, false),
+        JppImm32 => cond_jump_imm32(cpu, mmu, Flag::Parity, true),
+        JnpImm32 => cond_jump_imm32(cpu, mmu, Flag::Parity, false),
+        JpnImm32 => cond_jump_imm32(cpu, mmu, Flag::Negative, true),
+        JnnImm32 => cond_jump_imm32(cpu, mmu, Flag::Negative, false),
         JpBra(bra) => jp_bra(cpu, bra),
         JrBra(bra) => jr_bra(cpu, bra),
         JpzBra(bra) => cond_jump_bra(cpu, bra, Flag::Zero, true),
@@ -176,43 +176,43 @@ pub fn step(cpu: &mut Cpu, ram: &mut Ram) {
         JnpBra(bra) => cond_jump_bra(cpu, bra, Flag::Parity, false),
         JpnBra(bra) => cond_jump_bra(cpu, bra, Flag::Negative, true),
         JnnBra(bra) => cond_jump_bra(cpu, bra, Flag::Negative, false),
-        CallImm32 => call_imm32(cpu, ram),
-        ClzImm32 => cond_call_imm32(cpu, ram, Flag::Zero, true),
-        CnzImm32 => cond_call_imm32(cpu, ram, Flag::Zero, false),
-        ClcImm32 => cond_call_imm32(cpu, ram, Flag::Carry, true),
-        CncImm32 => cond_call_imm32(cpu, ram, Flag::Carry, false),
-        CloImm32 => cond_call_imm32(cpu, ram, Flag::Overflow, true),
-        CnoImm32 => cond_call_imm32(cpu, ram, Flag::Overflow, false),
-        ClpImm32 => cond_call_imm32(cpu, ram, Flag::Parity, true),
-        CnpImm32 => cond_call_imm32(cpu, ram, Flag::Parity, false),
-        ClnImm32 => cond_call_imm32(cpu, ram, Flag::Negative, true),
-        CnnImm32 => cond_call_imm32(cpu, ram, Flag::Negative, false),
-        CallBra(bra) => call_bra(cpu, ram, bra),
-        Ret => ret(cpu, ram),
-        Rtz => cond_ret(cpu, ram, Flag::Zero, true),
-        Rnz => cond_ret(cpu, ram, Flag::Zero, false),
-        Rtc => cond_ret(cpu, ram, Flag::Carry, true),
-        Rnc => cond_ret(cpu, ram, Flag::Carry, false),
-        Rto => cond_ret(cpu, ram, Flag::Overflow, true),
-        Rno => cond_ret(cpu, ram, Flag::Overflow, false),
-        Rtp => cond_ret(cpu, ram, Flag::Parity, true),
-        Rnp => cond_ret(cpu, ram, Flag::Parity, false),
-        Rtn => cond_ret(cpu, ram, Flag::Negative, true),
-        Rnn => cond_ret(cpu, ram, Flag::Negative, false),
-        ClzBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Zero, true),
-        CnzBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Zero, false),
-        ClcBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Carry, true),
-        CncBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Carry, false),
-        CloBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Overflow, true),
-        CnoBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Overflow, false),
-        ClpBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Parity, true),
-        CnpBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Parity, false),
-        ClnBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Negative, true),
-        CnnBra(bra) => cond_call_bra(cpu, ram, bra, Flag::Negative, false),
-        PushBra(bra) => push_bra(cpu, ram, bra),
-        PopBra(bra) => pop_bra(cpu, ram, bra),
-        PeekBra(bra) => peek_bra(cpu, ram, bra),
-        PushImm32 => push_imm32(cpu, ram),
+        CallImm32 => call_imm32(cpu, mmu),
+        ClzImm32 => cond_call_imm32(cpu, mmu, Flag::Zero, true),
+        CnzImm32 => cond_call_imm32(cpu, mmu, Flag::Zero, false),
+        ClcImm32 => cond_call_imm32(cpu, mmu, Flag::Carry, true),
+        CncImm32 => cond_call_imm32(cpu, mmu, Flag::Carry, false),
+        CloImm32 => cond_call_imm32(cpu, mmu, Flag::Overflow, true),
+        CnoImm32 => cond_call_imm32(cpu, mmu, Flag::Overflow, false),
+        ClpImm32 => cond_call_imm32(cpu, mmu, Flag::Parity, true),
+        CnpImm32 => cond_call_imm32(cpu, mmu, Flag::Parity, false),
+        ClnImm32 => cond_call_imm32(cpu, mmu, Flag::Negative, true),
+        CnnImm32 => cond_call_imm32(cpu, mmu, Flag::Negative, false),
+        CallBra(bra) => call_bra(cpu, mmu, bra),
+        Ret => ret(cpu, mmu),
+        Rtz => cond_ret(cpu, mmu, Flag::Zero, true),
+        Rnz => cond_ret(cpu, mmu, Flag::Zero, false),
+        Rtc => cond_ret(cpu, mmu, Flag::Carry, true),
+        Rnc => cond_ret(cpu, mmu, Flag::Carry, false),
+        Rto => cond_ret(cpu, mmu, Flag::Overflow, true),
+        Rno => cond_ret(cpu, mmu, Flag::Overflow, false),
+        Rtp => cond_ret(cpu, mmu, Flag::Parity, true),
+        Rnp => cond_ret(cpu, mmu, Flag::Parity, false),
+        Rtn => cond_ret(cpu, mmu, Flag::Negative, true),
+        Rnn => cond_ret(cpu, mmu, Flag::Negative, false),
+        ClzBra(bra) => cond_call_bra(cpu, mmu, bra, Flag::Zero, true),
+        CnzBra(bra) => cond_call_bra(cpu, mmu, bra, Flag::Zero, false),
+        ClcBra(bra) => cond_call_bra(cpu, mmu, bra, Flag::Carry, true),
+        CncBra(bra) => cond_call_bra(cpu, mmu, bra, Flag::Carry, false),
+        CloBra(bra) => cond_call_bra(cpu, mmu, bra, Flag::Overflow, true),
+        CnoBra(bra) => cond_call_bra(cpu, mmu, bra, Flag::Overflow, false),
+        ClpBra(bra) => cond_call_bra(cpu, mmu, bra, Flag::Parity, true),
+        CnpBra(bra) => cond_call_bra(cpu, mmu, bra, Flag::Parity, false),
+        ClnBra(bra) => cond_call_bra(cpu, mmu, bra, Flag::Negative, true),
+        CnnBra(bra) => cond_call_bra(cpu, mmu, bra, Flag::Negative, false),
+        PushBra(bra) => push_bra(cpu, mmu, bra),
+        PopBra(bra) => pop_bra(cpu, mmu, bra),
+        PeekBra(bra) => peek_bra(cpu, mmu, bra),
+        PushImm32 => push_imm32(cpu, mmu),
         Halt => halt(cpu),
     }
 }
@@ -267,34 +267,34 @@ fn ld_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32) {
     }
 }
 
-fn ld_sp_imm32(cpu: &mut Cpu, ram: &mut Ram) {
+fn ld_sp_imm32(cpu: &mut Cpu, mmu: &mut Mmu) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
-        2 => cpu.read_next_word(ram),
-        3 => cpu.sp = Addr::new(get_dword_from_last(cpu)),
+        1 => cpu.read_next_word(mmu),
+        2 => cpu.read_next_word(mmu),
+        3 => cpu.sp = Addr::new_default_range(get_dword_from_last(cpu)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn ld_imm32_sp(cpu: &mut Cpu, ram: &mut Ram) {
+fn ld_imm32_sp(cpu: &mut Cpu, mmu: &mut Mmu) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
-        2 => cpu.read_next_word(ram),
-        3 => write_dword_to_last(cpu, ram, cpu.sp.into()),
+        1 => cpu.read_next_word(mmu),
+        2 => cpu.read_next_word(mmu),
+        3 => write_dword_to_last(cpu, mmu, cpu.sp.address()),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
 fn ld_sp_bra(cpu: &mut Cpu, bra: Reg32) {
     match cpu.step_num {
-        1 => cpu.sp = Addr::new(cpu.breg(bra)),
+        1 => cpu.sp = Addr::new_default_range(cpu.breg(bra)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
 fn ld_bra_sp(cpu: &mut Cpu, bra: Reg32) {
     match cpu.step_num {
-        1 => cpu.set_breg(bra, cpu.sp.into()),
+        1 => cpu.set_breg(bra, cpu.sp.address()),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
@@ -306,94 +306,94 @@ fn ld_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
     }
 }
 
-fn ld_ra_imm16(cpu: &mut Cpu, ram: &Ram, ra: Reg16) {
+fn ld_ra_imm16(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
+        1 => cpu.read_next_word(mmu),
         2 => cpu.set_reg(ra, cpu.last_word),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn ld_bra_imm16(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32) {
+fn ld_bra_imm16(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
-        2 => ram.write_word(cpu.breg(bra), cpu.last_word),
+        1 => cpu.read_next_word(mmu),
+        2 => mmu.write_word(cpu.breg(bra), cpu.last_word),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn ld_bra_imm32(cpu: &mut Cpu, ram: &Ram, bra: Reg32) {
+fn ld_bra_imm32(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
-        2 => cpu.read_next_word(ram),
+        1 => cpu.read_next_word(mmu),
+        2 => cpu.read_next_word(mmu),
         3 => cpu.set_breg(bra, get_dword_from_last(cpu)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn ld_vra_imm8(cpu: &mut Cpu, ram: &Ram, vra: Reg8) {
+fn ld_vra_imm8(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8) {
     match cpu.step_num {
-        1 => cpu.read_next_byte(ram),
+        1 => cpu.read_next_byte(mmu),
         2 => cpu.set_vreg(vra, cpu.last_byte),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn ld_bra_rb(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, rb: Reg16) {
+fn ld_bra_rb(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, rb: Reg16) {
     match cpu.step_num {
         1 => cpu.update_last_word(cpu.reg(rb)),
-        2 => ram.write_word(cpu.breg(bra), cpu.last_word),
+        2 => mmu.write_word(cpu.breg(bra), cpu.last_word),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn ld_ra_brb(cpu: &mut Cpu, ram: &mut Ram, ra: Reg16, brb: Reg32) {
+fn ld_ra_brb(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32) {
     match cpu.step_num {
-        1 => cpu.read_word_at_addr(ram, cpu.breg(brb)),
+        1 => cpu.read_word_at_addr(mmu, cpu.breg(brb)),
         2 => cpu.set_reg(ra, cpu.last_word),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn ldr_ra_imm32(cpu: &mut Cpu, ram: &Ram, ra: Reg16) {
+fn ldr_ra_imm32(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
-        2 => cpu.read_next_word(ram),
+        1 => cpu.read_next_word(mmu),
+        2 => cpu.read_next_word(mmu),
         3 => {
-            let mut addr = Addr::new(get_dword_from_last(cpu));
+            let mut addr = Addr::new_default_range(get_dword_from_last(cpu));
             addr.wrapping_add(cpu.breg(Reg32::HL));
-            cpu.read_word_at_addr(ram, addr.into());
+            cpu.read_word_at_addr(mmu, addr.into());
         }
         4 => cpu.set_reg(ra, cpu.last_word),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn ldi_bra_rb(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, rb: Reg16) {
+fn ldi_bra_rb(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, rb: Reg16) {
     match cpu.step_num {
         1 => cpu.update_last_word(cpu.reg(rb)),
         2 => {
-            ram.write_word(cpu.breg(bra), cpu.last_word);
+            mmu.write_word(cpu.breg(bra), cpu.last_word);
             dbl_inc_addr(cpu, bra);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn ldd_bra_rb(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, rb: Reg16) {
+fn ldd_bra_rb(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, rb: Reg16) {
     match cpu.step_num {
         1 => cpu.update_last_word(cpu.reg(rb)),
         2 => {
-            ram.write_word(cpu.breg(bra), cpu.last_word);
+            mmu.write_word(cpu.breg(bra), cpu.last_word);
             dbl_dec_addr(cpu, bra);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn ldi_ra_brb(cpu: &mut Cpu, ram: &mut Ram, ra: Reg16, brb: Reg32) {
+fn ldi_ra_brb(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32) {
     match cpu.step_num {
-        1 => cpu.read_word_at_addr(ram, cpu.breg(brb)),
+        1 => cpu.read_word_at_addr(mmu, cpu.breg(brb)),
         2 => {
             cpu.set_reg(ra, cpu.last_word);
             dbl_inc_addr(cpu, brb);
@@ -402,9 +402,9 @@ fn ldi_ra_brb(cpu: &mut Cpu, ram: &mut Ram, ra: Reg16, brb: Reg32) {
     }
 }
 
-fn ldd_ra_brb(cpu: &mut Cpu, ram: &mut Ram, ra: Reg16, brb: Reg32) {
+fn ldd_ra_brb(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32) {
     match cpu.step_num {
-        1 => cpu.read_word_at_addr(ram, cpu.breg(brb)),
+        1 => cpu.read_word_at_addr(mmu, cpu.breg(brb)),
         2 => {
             cpu.set_reg(ra, cpu.last_word);
             dbl_dec_addr(cpu, brb);
@@ -449,9 +449,9 @@ fn alu_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8, operation: AluOp) {
     }
 }
 
-fn alu_ra_imm16(cpu: &mut Cpu, ram: &Ram, ra: Reg16, operation: AluOp) {
+fn alu_ra_imm16(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, operation: AluOp) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
+        1 => cpu.read_next_word(mmu),
         2 => {
             let a = cpu.reg(ra);
             let b = cpu.last_word;
@@ -462,10 +462,10 @@ fn alu_ra_imm16(cpu: &mut Cpu, ram: &Ram, ra: Reg16, operation: AluOp) {
     }
 }
 
-fn alu_bra_imm32(cpu: &mut Cpu, ram: &Ram, bra: Reg32, operation: AluOp) {
+fn alu_bra_imm32(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, operation: AluOp) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
-        2 => cpu.read_next_word(ram),
+        1 => cpu.read_next_word(mmu),
+        2 => cpu.read_next_word(mmu),
         3 => {
             let a = cpu.breg(bra);
             let b = get_dword_from_last(cpu);
@@ -476,9 +476,9 @@ fn alu_bra_imm32(cpu: &mut Cpu, ram: &Ram, bra: Reg32, operation: AluOp) {
     }
 }
 
-fn alu_vra_imm8(cpu: &mut Cpu, ram: &Ram, vra: Reg8, operation: AluOp) {
+fn alu_vra_imm8(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8, operation: AluOp) {
     match cpu.step_num {
-        1 => cpu.read_next_byte(ram),
+        1 => cpu.read_next_byte(mmu),
         2 => {
             let a = cpu.vreg(vra);
             let b = cpu.last_byte;
@@ -489,9 +489,9 @@ fn alu_vra_imm8(cpu: &mut Cpu, ram: &Ram, vra: Reg8, operation: AluOp) {
     }
 }
 
-fn alu_ra_brb(cpu: &mut Cpu, ram: &Ram, ra: Reg16, brb: Reg32, operation: AluOp) {
+fn alu_ra_brb(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, brb: Reg32, operation: AluOp) {
     match cpu.step_num {
-        1 => cpu.read_word_at_addr(ram, cpu.breg(brb)),
+        1 => cpu.read_word_at_addr(mmu, cpu.breg(brb)),
         2 => {
             let a = cpu.reg(ra);
             let b = cpu.last_word;
@@ -532,9 +532,9 @@ fn pss_vra(cpu: &mut Cpu, vra: Reg8) {
     }
 }
 
-fn pss_imm16(cpu: &mut Cpu, ram: &Ram) {
+fn pss_imm16(cpu: &mut Cpu, mmu: &Mmu) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
+        1 => cpu.read_next_word(mmu),
         2 => {
             let a = cpu.last_word;
             alu(cpu, Pss, a, 0);
@@ -543,10 +543,10 @@ fn pss_imm16(cpu: &mut Cpu, ram: &Ram) {
     }
 }
 
-fn pss_imm32(cpu: &mut Cpu, ram: &Ram) {
+fn pss_imm32(cpu: &mut Cpu, mmu: &Mmu) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
-        2 => cpu.read_next_word(ram),
+        1 => cpu.read_next_word(mmu),
+        2 => cpu.read_next_word(mmu),
         3 => {
             let a = get_dword_from_last(cpu);
             alu(cpu, Pss, a, 0);
@@ -555,9 +555,9 @@ fn pss_imm32(cpu: &mut Cpu, ram: &Ram) {
     }
 }
 
-fn pss_imm8(cpu: &mut Cpu, ram: &Ram) {
+fn pss_imm8(cpu: &mut Cpu, mmu: &Mmu) {
     match cpu.step_num {
-        1 => cpu.read_next_byte(ram),
+        1 => cpu.read_next_byte(mmu),
         2 => {
             let a = cpu.last_byte;
             alu(cpu, Pss, a, 0);
@@ -632,9 +632,9 @@ fn cmp_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
     }
 }
 
-fn cmp_ra_imm16(cpu: &mut Cpu, ram: &Ram, ra: Reg16) {
+fn cmp_ra_imm16(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
+        1 => cpu.read_next_word(mmu),
         2 => {
             let a = cpu.reg(ra);
             let b = cpu.last_word;
@@ -644,10 +644,10 @@ fn cmp_ra_imm16(cpu: &mut Cpu, ram: &Ram, ra: Reg16) {
     }
 }
 
-fn cmp_bra_imm32(cpu: &mut Cpu, ram: &Ram, bra: Reg32) {
+fn cmp_bra_imm32(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
-        2 => cpu.read_next_word(ram),
+        1 => cpu.read_next_word(mmu),
+        2 => cpu.read_next_word(mmu),
         3 => {
             let a = cpu.breg(bra);
             let b = get_dword_from_last(cpu);
@@ -657,9 +657,9 @@ fn cmp_bra_imm32(cpu: &mut Cpu, ram: &Ram, bra: Reg32) {
     }
 }
 
-fn cmp_vra_imm8(cpu: &mut Cpu, ram: &Ram, vra: Reg8) {
+fn cmp_vra_imm8(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8) {
     match cpu.step_num {
-        1 => cpu.read_next_byte(ram),
+        1 => cpu.read_next_byte(mmu),
         2 => {
             let a = cpu.vreg(vra);
             let b = cpu.last_byte;
@@ -669,9 +669,9 @@ fn cmp_vra_imm8(cpu: &mut Cpu, ram: &Ram, vra: Reg8) {
     }
 }
 
-fn cmp_imm16_ra(cpu: &mut Cpu, ram: &Ram, ra: Reg16) {
+fn cmp_imm16_ra(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
+        1 => cpu.read_next_word(mmu),
         2 => {
             let a = cpu.last_word;
             let b = cpu.reg(ra);
@@ -681,10 +681,10 @@ fn cmp_imm16_ra(cpu: &mut Cpu, ram: &Ram, ra: Reg16) {
     }
 }
 
-fn cmp_imm32_bra(cpu: &mut Cpu, ram: &Ram, bra: Reg32) {
+fn cmp_imm32_bra(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
-        2 => cpu.read_next_word(ram),
+        1 => cpu.read_next_word(mmu),
+        2 => cpu.read_next_word(mmu),
         3 => {
             let a = get_dword_from_last(cpu);
             let b = cpu.breg(bra);
@@ -694,9 +694,9 @@ fn cmp_imm32_bra(cpu: &mut Cpu, ram: &Ram, bra: Reg32) {
     }
 }
 
-fn cmp_imm8_vra(cpu: &mut Cpu, ram: &Ram, vra: Reg8) {
+fn cmp_imm8_vra(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8) {
     match cpu.step_num {
-        1 => cpu.read_next_byte(ram),
+        1 => cpu.read_next_byte(mmu),
         2 => {
             let a = cpu.last_byte;
             let b = cpu.vreg(vra);
@@ -706,9 +706,9 @@ fn cmp_imm8_vra(cpu: &mut Cpu, ram: &Ram, vra: Reg8) {
     }
 }
 
-fn cmp_ra_brb(cpu: &mut Cpu, ram: &Ram, ra: Reg16, brb: Reg32) {
+fn cmp_ra_brb(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, brb: Reg32) {
     match cpu.step_num {
-        1 => cpu.read_word_at_addr(ram, cpu.breg(brb)),
+        1 => cpu.read_word_at_addr(mmu, cpu.breg(brb)),
         2 => {
             let a = cpu.reg(ra);
             let b = cpu.last_word;
@@ -718,9 +718,9 @@ fn cmp_ra_brb(cpu: &mut Cpu, ram: &Ram, ra: Reg16, brb: Reg32) {
     }
 }
 
-fn cmp_bra_rb(cpu: &mut Cpu, ram: &Ram, bra: Reg32, rb: Reg16) {
+fn cmp_bra_rb(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, rb: Reg16) {
     match cpu.step_num {
-        1 => cpu.read_word_at_addr(ram, cpu.breg(bra)),
+        1 => cpu.read_word_at_addr(mmu, cpu.breg(bra)),
         2 => {
             let a = cpu.last_word;
             let b = cpu.reg(rb);
@@ -737,9 +737,9 @@ fn bit_ra_b(cpu: &mut Cpu, ra: Reg16, b: u8) {
     }
 }
 
-fn bit_bra_b(cpu: &mut Cpu, ram: &Ram, bra: Reg32, b: u8) {
+fn bit_bra_b(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, b: u8) {
     match cpu.step_num {
-        1 => cpu.read_word_at_addr(ram, cpu.breg(bra)),
+        1 => cpu.read_word_at_addr(mmu, cpu.breg(bra)),
         2 => cpu.change_flag(Flag::Zero, !test_bit(cpu.last_word, b as u16)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -752,10 +752,10 @@ fn bit_op_ra_b(cpu: &mut Cpu, ra: Reg16, b: u8, bit_op: BitOp) {
     }
 }
 
-fn bit_op_bra_b(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, b: u8, bit_op: BitOp) {
+fn bit_op_bra_b(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, b: u8, bit_op: BitOp) {
     match cpu.step_num {
-        1 => cpu.read_word_at_addr(ram, cpu.breg(bra)),
-        2 => ram.write_word(cpu.breg(bra), change_bit(cpu.last_word, b, bit_op)),
+        1 => cpu.read_word_at_addr(mmu, cpu.breg(bra)),
+        2 => mmu.write_word(cpu.breg(bra), change_bit(cpu.last_word, b, bit_op)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
@@ -770,12 +770,12 @@ fn swp_ra(cpu: &mut Cpu, ra: Reg16) {
     }
 }
 
-fn swp_bra(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32) {
+fn swp_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     match cpu.step_num {
-        1 => cpu.read_word_at_addr(ram, cpu.breg(bra)),
+        1 => cpu.read_word_at_addr(mmu, cpu.breg(bra)),
         2 => {
             let (msb, lsb) = split_word(cpu.last_word);
-            ram.write_word(cpu.breg(bra), combine_u8_le(msb, lsb));
+            mmu.write_word(cpu.breg(bra), combine_u8_le(msb, lsb));
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -816,28 +816,28 @@ fn reset_all_flags(cpu: &mut Cpu) {
     }
 }
 
-fn jp_imm32(cpu: &mut Cpu, ram: &Ram) {
+fn jp_imm32(cpu: &mut Cpu, mmu: &Mmu) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
-        2 => cpu.read_next_word(ram),
+        1 => cpu.read_next_word(mmu),
+        2 => cpu.read_next_word(mmu),
         3 => cpu.jump(get_dword_from_last(cpu)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn jr_imm32(cpu: &mut Cpu, ram: &Ram) {
+fn jr_imm32(cpu: &mut Cpu, mmu: &Mmu) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
-        2 => cpu.read_next_word(ram),
+        1 => cpu.read_next_word(mmu),
+        2 => cpu.read_next_word(mmu),
         3 => cpu.relative_jump(get_dword_from_last(cpu)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn cond_jump_imm32(cpu: &mut Cpu, ram: &Ram, flag: Flag, expected: bool) {
+fn cond_jump_imm32(cpu: &mut Cpu, mmu: &Mmu, flag: Flag, expected: bool) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
-        2 => cpu.read_next_word(ram),
+        1 => cpu.read_next_word(mmu),
+        2 => cpu.read_next_word(mmu),
         3 => cpu.check_conditional(flag, expected),
         4 => {
             if cpu.last_conditional_satisfied {
@@ -874,24 +874,24 @@ fn cond_jump_bra(cpu: &mut Cpu, bra: Reg32, flag: Flag, expected: bool) {
     }
 }
 
-fn call_imm32(cpu: &mut Cpu, ram: &mut Ram) {
+fn call_imm32(cpu: &mut Cpu, mmu: &mut Mmu) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
-        2 => cpu.read_next_word(ram),
-        3 => cpu.push_stack(ram, cpu.pc.into()),
+        1 => cpu.read_next_word(mmu),
+        2 => cpu.read_next_word(mmu),
+        3 => cpu.push_stack(mmu, cpu.pc.address()),
         4 => cpu.jump(get_dword_from_last(cpu)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn cond_call_imm32(cpu: &mut Cpu, ram: &mut Ram, flag: Flag, expected: bool) {
+fn cond_call_imm32(cpu: &mut Cpu, mmu: &mut Mmu, flag: Flag, expected: bool) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
-        2 => cpu.read_next_word(ram),
+        1 => cpu.read_next_word(mmu),
+        2 => cpu.read_next_word(mmu),
         3 => cpu.check_conditional(flag, expected),
         4 => {
             if cpu.last_conditional_satisfied {
-                cpu.push_stack(ram, cpu.pc.into());
+                cpu.push_stack(mmu, cpu.pc.address());
             }
         }
         5 => {
@@ -903,39 +903,39 @@ fn cond_call_imm32(cpu: &mut Cpu, ram: &mut Ram, flag: Flag, expected: bool) {
     }
 }
 
-fn call_bra(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32) {
+fn call_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     match cpu.step_num {
-        1 => cpu.push_stack(ram, cpu.pc.into()),
+        1 => cpu.push_stack(mmu, cpu.pc.address()),
         2 => cpu.jump(cpu.breg(bra)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn ret(cpu: &mut Cpu, ram: &mut Ram) {
+fn ret(cpu: &mut Cpu, mmu: &mut Mmu) {
     match cpu.step_num {
-        1 => cpu.pc = Addr::new(cpu.pop_stack(ram)),
+        1 => cpu.pc = Addr::new_default_range(cpu.pop_stack(mmu)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn cond_ret(cpu: &mut Cpu, ram: &mut Ram, flag: Flag, expected: bool) {
+fn cond_ret(cpu: &mut Cpu, mmu: &mut Mmu, flag: Flag, expected: bool) {
     match cpu.step_num {
         1 => cpu.check_conditional(flag, expected),
         2 => {
             if cpu.last_conditional_satisfied {
-                cpu.pc = Addr::new(cpu.pop_stack(ram));
+                cpu.pc = Addr::new_default_range(cpu.pop_stack(mmu));
             }
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn cond_call_bra(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, flag: Flag, expected: bool) {
+fn cond_call_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, flag: Flag, expected: bool) {
     match cpu.step_num {
         1 => cpu.check_conditional(flag, expected),
         2 => {
             if cpu.last_conditional_satisfied {
-                cpu.push_stack(ram, cpu.pc.into());
+                cpu.push_stack(mmu, cpu.pc.address());
             }
         }
         3 => {
@@ -947,35 +947,35 @@ fn cond_call_bra(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32, flag: Flag, expected:
     }
 }
 
-fn push_bra(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32) {
+fn push_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     match cpu.step_num {
-        1 => cpu.push_stack(ram, cpu.breg(bra)),
+        1 => cpu.push_stack(mmu, cpu.breg(bra)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn pop_bra(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32) {
+fn pop_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     match cpu.step_num {
         1 => {
-            let popped_val = cpu.pop_stack(ram);
+            let popped_val = cpu.pop_stack(mmu);
             cpu.set_breg(bra, popped_val);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn peek_bra(cpu: &mut Cpu, ram: &mut Ram, bra: Reg32) {
+fn peek_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     match cpu.step_num {
-        1 => cpu.set_breg(bra, ram.read_dword(cpu.sp.into())),
+        1 => cpu.set_breg(bra, mmu.read_dword(cpu.sp.address())),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
 
-fn push_imm32(cpu: &mut Cpu, ram: &mut Ram) {
+fn push_imm32(cpu: &mut Cpu, mmu: &mut Mmu) {
     match cpu.step_num {
-        1 => cpu.read_next_word(ram),
-        2 => cpu.read_next_word(ram),
-        3 => cpu.push_stack(ram, get_dword_from_last(cpu)),
+        1 => cpu.read_next_word(mmu),
+        2 => cpu.read_next_word(mmu),
+        3 => cpu.push_stack(mmu, get_dword_from_last(cpu)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }

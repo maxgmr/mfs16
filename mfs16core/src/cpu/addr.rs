@@ -1,38 +1,115 @@
-use std::{convert::Into, fmt::Display};
+use std::{
+    cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
+    convert::Into,
+    default::Default,
+    fmt::Display,
+};
 
-use crate::RAM_SIZE;
+const MAX_TOO_BIG_MSG: &str =
+    "The given range exceeds the maximum bounds of a 32-bit unsigned integer.";
 
-/// Address on RAM. Restricted to [RAM_SIZE].
-#[derive(Debug, Default, PartialOrd, Ord, PartialEq, Eq, Copy, Clone)]
-pub struct Addr(u32);
+/// Address in memory. Restricted to a given size and offset.
+#[derive(Debug, Clone, Eq)]
+pub struct Addr {
+    address: u32,
+    start: u32,
+    end: u32,
+}
 impl Addr {
     /// Create a new [Addr], panicking if out of bounds.
-    pub fn new(value: u32) -> Self {
-        if (value as usize) >= RAM_SIZE {
+    pub fn new(offset: usize, size: usize, value: u32) -> Self {
+        Self::check_max(offset, size);
+
+        if value > ((size + offset) as u32) {
             panic!(
-                "Illegal program counter value. Given value {} is greater than maximum value {}.",
+                "Illegal address value. Given value `{}` is greater than maximum value `{}`.",
                 value,
-                RAM_SIZE - 1
-            );
+                (size + offset)
+            )
         }
 
-        Self(value)
+        if value < (offset as u32) {
+            panic!(
+                "Illegal address value. Given value `{}` is smaller than minimum value `{}`.",
+                value, offset
+            )
+        }
+
+        Self {
+            address: value,
+            start: offset.try_into().unwrap(),
+            end: (offset + size).try_into().unwrap(),
+        }
+    }
+
+    /// Create a new [Addr] with the default range and offset.
+    pub fn new_default_range(value: u32) -> Self {
+        Self {
+            address: value,
+            ..Self::default()
+        }
     }
 
     /// Create a new [Addr], wrapping if out of bounds.
-    pub fn new_wrapped(value: u32) -> Self {
-        let wrapped_value = value % (RAM_SIZE as u32);
-        Self(wrapped_value)
+    pub fn new_wrapped(offset: usize, size: usize, value: u32) -> Self {
+        Self::check_max(offset, size);
+        let wrapped_value = value % ((offset + size) as u32);
+
+        Self {
+            address: wrapped_value,
+            start: offset.try_into().unwrap(),
+            end: (offset + size).try_into().unwrap(),
+        }
+    }
+
+    fn check_max(offset: usize, size: usize) {
+        if (size + offset) > u32::MAX.try_into().unwrap() {
+            panic!("{}", MAX_TOO_BIG_MSG);
+        }
+    }
+
+    /// Get the address of this [Addr].
+    pub fn address(&self) -> u32 {
+        self.address
+    }
+
+    /// Get the start value of this [Addr]'s range.
+    pub fn range_start(&self) -> u32 {
+        self.start
+    }
+
+    /// Get the end value of this [Addr]'s range.
+    pub fn range_end(&self) -> u32 {
+        self.end
+    }
+
+    fn modulo_arg(&self) -> u32 {
+        (self.end - self.start).wrapping_add(1)
+    }
+
+    /// Get the address of this [Addr] relative to the offset of its range.
+    pub fn relative_address(&self) -> u32 {
+        self.address - self.start
     }
 
     /// Add value to this [Addr], wrapping if out of bounds.
     pub fn wrapping_add(&mut self, value: u32) {
-        self.0 = (self.0.wrapping_add(value)) % (RAM_SIZE as u32);
+        if self.modulo_arg() == 0 {
+            self.address = self.relative_address().wrapping_add(value) + self.start;
+        } else {
+            self.address =
+                (self.relative_address().wrapping_add(value) % self.modulo_arg()) + self.start;
+        }
     }
 
     /// Subtract value from this [Addr], wrapping if out of bounds.
     pub fn wrapping_sub(&mut self, value: u32) {
-        self.0 = (self.0.wrapping_sub(value)) % (RAM_SIZE as u32);
+        if self.modulo_arg() == 0 {
+            self.address = self.relative_address().wrapping_sub(value) + self.start;
+        } else {
+            self.address =
+                (self.relative_address().wrapping_sub(value) % self.modulo_arg()) + self.start;
+        }
     }
 
     /// Increment this [Addr], wrapping on overflow.
@@ -45,21 +122,41 @@ impl Addr {
         self.wrapping_sub(1);
     }
 }
+impl PartialOrd for Addr {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl Ord for Addr {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.address.cmp(&other.address)
+    }
+}
+impl PartialEq for Addr {
+    fn eq(&self, other: &Self) -> bool {
+        self.address == other.address
+    }
+}
+impl Default for Addr {
+    fn default() -> Self {
+        Self::new(0, <u32>::MAX.try_into().unwrap(), 0)
+    }
+}
 #[allow(clippy::from_over_into)]
 impl Into<u32> for Addr {
     fn into(self) -> u32 {
-        self.0
+        self.address
     }
 }
 #[allow(clippy::from_over_into)]
 impl Into<u32> for &Addr {
     fn into(self) -> u32 {
-        self.0
+        self.address
     }
 }
 impl Display for Addr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:#08X}", self.0)
+        write!(f, "{:#010X}", self.address)
     }
 }
 
@@ -68,90 +165,99 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use super::*;
+    use crate::{RAM_OFFSET, RAM_SIZE, ROM_OFFSET, ROM_SIZE};
 
     #[test]
     #[should_panic]
     fn test_addr_too_big() {
-        let _ = Addr::new(RAM_SIZE as u32);
+        let _ = Addr::new(RAM_OFFSET, RAM_SIZE - 1, (RAM_SIZE + RAM_OFFSET) as u32);
     }
 
     #[test]
     fn test_addr_wrapping_add() {
-        let mut addr = Addr::new(0x0012_3456);
+        let mut addr = Addr::new(RAM_OFFSET, RAM_SIZE - 1, RAM_OFFSET as u32 + 0x12_3456);
         // add 1
         addr.wrapping_add(1);
-        assert_eq!(addr, Addr::new(0x12_3457));
+        assert_eq!(addr.address(), RAM_OFFSET as u32 + 0x12_3457);
 
-        let mut addr = Addr::new(0x00FF_FFFF);
+        let mut addr = Addr::new(
+            RAM_OFFSET,
+            RAM_SIZE - 1,
+            ((RAM_OFFSET + RAM_SIZE) - 1) as u32,
+        );
         // add 2 (wrap)
         addr.wrapping_add(2);
-        assert_eq!(addr, Addr::new(0x00_0001));
+        assert_eq!(addr.address(), RAM_OFFSET as u32 + 1);
 
-        let mut addr = Addr::new(0x12_3456);
+        let mut addr = Addr::new(RAM_OFFSET, RAM_SIZE - 1, RAM_OFFSET as u32 + 0x12_3456);
         // add -1
         addr.wrapping_add(0xFFFF_FFFF);
-        assert_eq!(addr, Addr::new(0x12_3455));
+        assert_eq!(addr.address(), RAM_OFFSET as u32 + 0x12_3455);
 
-        let mut addr = Addr::new(0x12_3456);
+        let mut addr = Addr::new(RAM_OFFSET, RAM_SIZE - 1, RAM_OFFSET as u32 + 0x12_3456);
         // add -0x0012_3456
         addr.wrapping_add(0xFFED_CBAA);
-        assert_eq!(addr, Addr::new(0x0));
+        assert_eq!(addr.address(), RAM_OFFSET as u32);
 
-        let mut addr = Addr::new(0x12_3456);
+        let mut addr = Addr::new(RAM_OFFSET, RAM_SIZE - 1, RAM_OFFSET as u32 + 0x12_3456);
         // add -0x0012_3457
         addr.wrapping_add(0xFFED_CBA9);
-        assert_eq!(addr, Addr::new(0xFF_FFFF));
+        assert_eq!(addr.address(), (RAM_OFFSET + RAM_SIZE) as u32 - 1);
     }
 
     #[test]
     fn test_addr_wrapping_sub() {
-        let mut addr = Addr::new(0x0012_3456);
+        let mut addr = Addr::new(ROM_OFFSET, ROM_SIZE - 1, ROM_OFFSET as u32 + 0x0012_3456);
         // sub 1
         addr.wrapping_sub(1);
-        assert_eq!(addr, Addr::new(0x12_3455));
+        assert_eq!(addr.address(), ROM_OFFSET as u32 + 0x12_3455);
 
-        let mut addr = Addr::new(0x00_0001);
+        let mut addr = Addr::new(ROM_OFFSET, ROM_SIZE - 1, ROM_OFFSET as u32 + 0x00_0001);
         // sub 3
         addr.wrapping_sub(3);
-        assert_eq!(addr, Addr::new(0xFF_FFFE));
+        assert_eq!(addr.address(), (ROM_OFFSET + ROM_SIZE) as u32 - 2);
 
-        let mut addr = Addr::new(0x12_3456);
+        let mut addr = Addr::new(ROM_OFFSET, ROM_SIZE - 1, ROM_OFFSET as u32 + 0x12_3456);
         // sub -1
         addr.wrapping_sub(0xFFFF_FFFF);
-        assert_eq!(addr, Addr::new(0x12_3457));
+        assert_eq!(addr.address(), ROM_OFFSET as u32 + 0x12_3457);
 
-        let mut addr = Addr::new(0x12_3456);
+        let mut addr = Addr::new(RAM_OFFSET, RAM_SIZE - 1, RAM_OFFSET as u32 + 0x12_3456);
         // sub 0x0012_3456
         addr.wrapping_sub(0x12_3456);
-        assert_eq!(addr, Addr::new(0x0));
+        assert_eq!(addr.address(), RAM_OFFSET as u32);
 
-        let mut addr = Addr::new(0x12_3456);
+        let mut addr = Addr::new(RAM_OFFSET, RAM_SIZE - 1, RAM_OFFSET as u32 + 0x12_3456);
         // sub 0x0012_3457
         addr.wrapping_sub(0x12_3457);
-        assert_eq!(addr, Addr::new(0xFF_FFFF));
+        assert_eq!(addr.address(), (RAM_OFFSET as u32 + RAM_SIZE as u32) - 1);
     }
 
     #[test]
     fn test_addr_wrapping_inc() {
-        let mut addr = Addr::default();
-        assert_eq!(addr.0, 0);
+        let mut addr = Addr::new(RAM_OFFSET, RAM_SIZE - 1, RAM_OFFSET as u32);
+        assert_eq!(addr.address(), RAM_OFFSET as u32);
         addr.wrapping_inc();
-        assert_eq!(addr.0, 1);
-        let mut addr = Addr::new((RAM_SIZE as u32) - 2);
-        assert_eq!(addr.0, (RAM_SIZE as u32) - 2);
+        assert_eq!(addr.address(), RAM_OFFSET as u32 + 1);
+        let mut addr = Addr::new(
+            RAM_OFFSET,
+            RAM_SIZE - 1,
+            ((RAM_SIZE + RAM_OFFSET) as u32) - 2,
+        );
+        assert_eq!(addr.address(), ((RAM_SIZE + RAM_OFFSET) as u32) - 2);
         addr.wrapping_inc();
-        assert_eq!(addr.0, (RAM_SIZE as u32) - 1);
+        assert_eq!(addr.address(), ((RAM_SIZE + RAM_OFFSET) as u32) - 1);
         addr.wrapping_inc();
-        assert_eq!(addr.0, 0);
+        assert_eq!(addr.address(), RAM_OFFSET as u32);
     }
 
     #[test]
     fn test_addr_wrapping_dec() {
-        let mut addr = Addr::default();
-        assert_eq!(addr.0, 0);
+        let mut addr = Addr::new(RAM_OFFSET, RAM_SIZE - 1, RAM_OFFSET as u32);
+        assert_eq!(addr.address(), RAM_OFFSET as u32);
         addr.wrapping_dec();
-        assert_eq!(addr.0, (RAM_SIZE as u32) - 1);
+        assert_eq!(addr.address(), ((RAM_SIZE + RAM_OFFSET) as u32) - 1);
         addr.wrapping_dec();
-        assert_eq!(addr.0, (RAM_SIZE as u32) - 2);
+        assert_eq!(addr.address(), ((RAM_SIZE + RAM_OFFSET) as u32) - 2);
     }
 }

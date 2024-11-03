@@ -16,7 +16,7 @@ fn main() -> eyre::Result<()> {
     let mut computer = Computer::new(args.debug);
 
     let bytes: Vec<u8> = load_binary(&args.bin)?;
-    computer.direct_write(Addr::new(0x00_0000), &bytes);
+    computer.direct_write(Addr::new_default_range(0x00_0000), &bytes);
 
     loop {
         computer.cycle();

@@ -1,6 +1,8 @@
 #![cfg(test)]
 
-use mfs16core::{gen_ram, Addr, Computer, Flags, Instruction::*, Ram, RamWritable, Reg, Reg32::*};
+use mfs16core::{
+    gen_mem, Addr, Computer, Flags, Instruction::*, MemWritable, Memory, Reg, Reg32::*,
+};
 use pretty_assertions::assert_eq;
 
 mod helpers;
@@ -15,7 +17,7 @@ fn test_push_pop() {
             (DE, 0x23_4567),
             (HL, 0x34_5678)
         ],
-        RAM: gen_ram![
+        MEM: gen_mem![
             PushBra(BC),
             PushBra(DE),
             PushBra(HL),
@@ -55,7 +57,7 @@ fn test_peek() {
             (DE, 0x23_4567),
             (HL, 0x34_5678)
         ],
-        RAM: gen_ram![
+        MEM: gen_mem![
             PushBra(BC),
             PushBra(DE),
             PushBra(HL),

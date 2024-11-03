@@ -31,7 +31,7 @@ fn main() -> eyre::Result<()> {
 
     // Load the binary into RAM
     let bytes: Vec<u8> = load_binary(&args.bin)?;
-    computer.direct_write(Addr::new(0x00_0000), &bytes);
+    computer.direct_write(Addr::new_default_range(0x00_0000), &bytes);
 
     Ok(())
 }

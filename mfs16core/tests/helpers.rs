@@ -1,10 +1,17 @@
-use mfs16core::{gen_ram, Addr, Computer, Flags, Ram, RamWritable, Reg, Reg8::*};
+use mfs16core::{gen_mem, Addr, Computer, Flags, MemWritable, Memory, Reg, Reg8::*};
 use pretty_assertions::assert_eq;
+
+/// Create a [Computer] without a ROM write restriction.
+pub fn test_computer() -> Computer {
+    let mut c = Computer::default();
+    c.mmu.rom.set_writable(true);
+    c
+}
 
 macro_rules! instr_test {
     (
         REGS: [$(($start_reg:ident, $start_val:literal)),*],
-        RAM: $ram:expr,
+        MEM: $mem:expr,
         FLAGS: $start_flags:literal,
         // Test values at each cycle
         [
@@ -13,7 +20,7 @@ macro_rules! instr_test {
     ) => {{
         let mut _cycle_num: u32 = 0;
         let mut c = Computer::default();
-        c.ram = $ram;
+        c.mmu.rom = $mem;
         $(
             $start_reg.set(&mut c.cpu, $start_val);
         )*
@@ -24,7 +31,7 @@ macro_rules! instr_test {
             _cycle_num += 1;
             assert_eq!(
                 c.cpu.pc,
-                Addr::new($pc),
+                Addr::new_default_range($pc),
                 "[{}] PC FAIL: {}, expected {:#08X}",
                 _cycle_num,
                 c.cpu.pc,
@@ -59,7 +66,7 @@ fn helper_test() {
     // 0xF2 + 0x05 = 0xF7, zcopN
     instr_test!(
         REGS: [(A1, 0xF2), (A0, 0x05)],
-        RAM: gen_ram![0x1101_u16],
+        MEM: gen_mem![0x1101_u16],
         FLAGS: "",
         [
             (0x00_0002, [(A1, 0xF2), (A0, 0x05)], ""),

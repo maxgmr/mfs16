@@ -15,8 +15,8 @@ mod helpers;
 mod instruction_helpers;
 mod instruction_impl;
 
-use super::{Cpu, Ram};
-use crate::{Reg16, Reg32, Reg8};
+use super::Cpu;
+use crate::{mmu::Mmu, Reg16, Reg32, Reg8};
 use alu::{AluOp::*, *};
 use helpers::*;
 use instruction_helpers::*;

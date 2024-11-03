@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use mfs16core::{gen_ram, Addr, Computer, Flags, Instruction::*, Ram, RamWritable};
+use mfs16core::{gen_mem, Addr, Computer, Flags, Instruction::*, MemWritable, Memory};
 use pretty_assertions::assert_eq;
 
 mod helpers;
@@ -11,7 +11,7 @@ use helpers::instr_test;
 fn test_set_reset_toggle_flags() {
     instr_test!(
         REGS: [],
-        RAM: gen_ram![
+        MEM: gen_mem![
             Szf.into_opcode(),
             Rzf.into_opcode(),
             Tzf.into_opcode(),
@@ -88,7 +88,7 @@ fn test_set_reset_toggle_flags() {
 
     instr_test!(
         REGS: [],
-        RAM: gen_ram![
+        MEM: gen_mem![
            Halt.into_opcode(),
            Szf.into_opcode()
         ],

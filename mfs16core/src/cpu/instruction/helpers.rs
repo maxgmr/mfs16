@@ -2,7 +2,7 @@
 use crate::{
     cpu::Cpu,
     helpers::{combine_u16_be, split_dword},
-    ram::Ram,
+    mmu::Mmu,
     Addr, Reg32,
 };
 
@@ -12,13 +12,13 @@ pub fn get_dword_from_last(cpu: &Cpu) -> u32 {
 }
 
 /// Write a little-endian 32-bit value to the address made from the last two words read.
-pub fn write_dword_to_last(cpu: &Cpu, ram: &mut Ram, val: u32) {
-    let mut addr = Addr::new(get_dword_from_last(cpu));
+pub fn write_dword_to_last(cpu: &Cpu, mmu: &mut Mmu, val: u32) {
+    let mut addr = Addr::new_default_range(get_dword_from_last(cpu));
     let (msw, lsw) = split_dword(val);
-    ram.write_word(addr.into(), lsw);
+    mmu.write_word(addr.address(), lsw);
     addr.wrapping_inc();
     addr.wrapping_inc();
-    ram.write_word(addr.into(), msw);
+    mmu.write_word(addr.address(), msw);
 }
 
 /// Increment the given address twice.
@@ -32,7 +32,7 @@ pub fn dbl_dec_addr(cpu: &mut Cpu, breg: Reg32) {
 }
 
 fn inc_dec_br_helper(cpu: &mut Cpu, breg: Reg32, is_inc: bool) {
-    let mut br_val = Addr::new(cpu.breg(breg));
+    let mut br_val = Addr::new_default_range(cpu.breg(breg));
     if is_inc {
         br_val.wrapping_inc();
         br_val.wrapping_inc();
