@@ -5,6 +5,7 @@ edition = "2021"
 authors = ["Max Gilmour"]
 repository = "https://github.com/maxgmr/mfs16"
 build = "build.rs"
+license-file = "LICENSE"
 
 [dependencies]
 camino = "1"
@@ -16,6 +17,7 @@ mfs16core = { path = "../mfs16core" }
 sdl2 = "0"
 serde = { version = "1", features = ["derive"] }
 shellexpand = "3"
+text_io = "0"
 toml = "0"
 
 [build-dependencies]

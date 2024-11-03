@@ -210,7 +210,20 @@ impl<'a> Parser<'a> {
 
     /// Get the number of consumed characters so far.
     fn num_consumed_chars(&self) -> eyre::Result<usize> {
-        self.current_index().ok_or_eyre("Invalid token index.")
+        if self.token_index >= self.tokens.len() {
+            return Ok(self
+                .tokens
+                .last()
+                .ok_or_eyre("Failed to get last token.")
+                .unwrap()
+                .location
+                .0);
+        }
+        self.current_index().ok_or_eyre(format!(
+            "Invalid token index {}. (Tokens length = {})",
+            self.token_index,
+            self.tokens.len()
+        ))
     }
 
     /// Get the lines consumed so far.

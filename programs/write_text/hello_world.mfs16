@@ -1,0 +1,73 @@
+// ADVANCE ROW: +0x140 (+320)
+ld DE,0x140:d;
+// ADVANCE CHAR: +4
+ld BC,4:d;
+
+ld HL,0x0100_0140:d;
+call write_h;
+// call write_e;
+// call write_l;
+// call write_l;
+// call write_o;
+// call write_space;
+// call write_w;
+// call write_o;
+// call write_r;
+// call write_l;
+// call write_d;
+// call write_bang;
+
+jp end_loop;
+
+next_line:
+    add HL,DE;
+    ret;
+prev_line:
+    sub HL,DE;
+    ret;
+next_char:
+    add HL,BC; 
+    ret;
+prev_char:
+    sub HL,BC;
+    ret;
+    
+
+write_h:
+    ld A,0x0F:w;
+    ldi [HL],A;
+    ld A,0xF0:w;
+    ldi [HL],A;
+    call prev_char;
+    call next_line;
+    ld A,0x0F:w;
+    ldi [HL],A;
+    ld A,0xF0:w;
+    ldi [HL],A;
+    call prev_char;
+    call next_line;
+    ld A,0x0F:w;
+    ldi [HL],A;
+    ld A,0xFF:w;
+    ldi [HL],A;
+    call prev_char;
+    call next_line;
+    ld A,0x0F:w;
+    ldi [HL],A;
+    ld A,0xF0:w;
+    ldi [HL],A;
+    call prev_char;
+    call next_line;
+    ld A,0x0F:w;
+    ldi [HL],A;
+    ld A,0xF0:w;
+    ldi [HL],A;
+    
+    call prev_line;
+    call prev_line;
+    call prev_line;
+    call prev_line;
+    ret;
+
+end_loop:
+    jp end_loop;

@@ -1,12 +1,17 @@
 [package]
-name = "cli"
+name = "mfs16assembler"
 version = "0.1.0"
 edition = "2021"
 authors = ["Max Gilmour"]
 repository = "https://github.com/maxgmr/mfs16"
+license-file = "LICENSE"
 
 [dependencies]
 camino = "1"
 clap = { version = "4", features = ["cargo", "derive", "string"] }
 color-eyre = "0"
 mfs16core = { path = "../mfs16core" }
+regex = "1"
+
+[dev-dependencies]
+pretty_assertions = "1"
