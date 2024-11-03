@@ -1,0 +1,17 @@
+/*
+    Used to test split files. Helpers for fibonacci_split.mfs16.
+*/
+
+case_0:
+    ld L,0:w;
+    halt;
+
+case_1:
+    ld L,1:w;
+    halt;
+
+done:
+    ld L,A; 
+    halt;
+end_lock:
+    jp end_lock;

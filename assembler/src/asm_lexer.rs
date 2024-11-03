@@ -1,7 +1,6 @@
 //! Performs lexical analysis on MFS-16 assembly language.
 use std::fmt::Display;
 
-use camino::Utf8Path;
 use color_eyre::{
     eyre::{self, eyre, OptionExt},
     owo_colors::OwoColorize,
@@ -34,15 +33,13 @@ const PC_STRING: &str = "PC";
 
 struct Lexer<'a> {
     index: usize,
-    path: &'a Utf8Path,
     original: &'a str,
     remaining: &'a str,
 }
 impl<'a> Lexer<'a> {
-    fn new(data: &'a str, path: &'a Utf8Path) -> Self {
+    fn new(data: &'a str) -> Self {
         Self {
             index: 0,
-            path,
             original: data,
             remaining: data,
         }
@@ -63,13 +60,7 @@ impl<'a> Lexer<'a> {
 
         Err(eyre!("{}", message))
             .with_section(|| {
-                format!(
-                    "{}:{}:{}",
-                    self.path.blue(),
-                    line_num.blue(),
-                    (col_num + 1).blue()
-                )
-                .header("Line Info:")
+                format!("{}:{}", line_num.blue(), (col_num + 1).blue()).header("Line Info:")
             })
             .with_section(|| {
                 format!(
@@ -116,8 +107,8 @@ impl<'a> Lexer<'a> {
 
 /// Lex a string of valid MFS-16 assembly code into a list of tokens alongside each token's start
 /// and end indicies in the original assembly code.
-pub fn lex(data: &str, path: &Utf8Path) -> eyre::Result<Vec<Token>> {
-    let mut lexer = Lexer::new(data, path);
+pub fn lex(data: &str) -> eyre::Result<Vec<Token>> {
+    let mut lexer = Lexer::new(data);
     let mut tokens = Vec::new();
 
     while let Some(token) = lexer.next_token()? {

@@ -1,4 +1,3 @@
-use camino::Utf8PathBuf;
 use mfs16core::{Reg16::*, Reg32::*, Reg8::*};
 use pretty_assertions::assert_eq;
 
@@ -145,7 +144,7 @@ fn test_lex_full_expr() {
         Token::new(9, 10, CloseParen),
         Token::new(10, 11, Semicolon),
     ];
-    assert_eq!(lex(expr, &Utf8PathBuf::from("")).unwrap(), expect);
+    assert_eq!(lex(expr).unwrap(), expect);
 }
 
 #[test]
@@ -170,10 +169,10 @@ fn test_lex_multiline() {
         Token::new(83, 84, CloseParen),
         Token::new(84, 85, Semicolon),
     ];
-    assert_eq!(lex(data, &Utf8PathBuf::from("")).unwrap(), expect);
+    assert_eq!(lex(data).unwrap(), expect);
 }
 
 #[test]
 fn detect_invalid() {
-    let _ = lex("blah blah blah~", &Utf8PathBuf::from("")).unwrap_err();
+    let _ = lex("blah blah blah~").unwrap_err();
 }

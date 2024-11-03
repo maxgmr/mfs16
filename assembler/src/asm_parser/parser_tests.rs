@@ -1,6 +1,5 @@
 use std::time::Instant;
 
-use camino::Utf8PathBuf;
 use mfs16core::{Reg16::*, Reg32::*, Reg8::*};
 use pretty_assertions::assert_eq;
 
@@ -17,18 +16,16 @@ macro_rules! parser_test {
     (FULL: $test_name:ident, $data:literal => $expected:expr) => {
         #[test]
         fn $test_name() {
-            let dummy_path = Utf8PathBuf::from("dummy_path");
-            let tokens = lex($data, &dummy_path).unwrap();
-            let machine_code = parse(tokens, &dummy_path, $data, 0, true).unwrap();
+            let tokens = lex($data).unwrap();
+            let machine_code = parse(tokens, $data, 0, true).unwrap();
             assert_eq!(machine_code, $expected);
         }
     };
     (FULL FAIL: $test_name:ident, $data:literal) => {
         #[test]
         fn $test_name() {
-            let dummy_path = Utf8PathBuf::from("dummy_path");
-            let tokens = lex($data, &dummy_path).unwrap();
-            let _ = parse(tokens, &dummy_path, $data, 0, true).unwrap_err();
+            let tokens = lex($data).unwrap();
+            let _ = parse(tokens, $data, 0, true).unwrap_err();
         }
     };
     ($test_name:ident, $data:expr => $expected:expr) => {
@@ -36,9 +33,8 @@ macro_rules! parser_test {
         fn $test_name() {
             let start = Instant::now();
 
-            let dummy_path = Utf8PathBuf::from("dummy_path");
-            let tokens = lex($data, &dummy_path).unwrap();
-            let mut parser = Parser::new(tokens, &dummy_path, $data, 0, false, true);
+            let tokens = lex($data).unwrap();
+            let mut parser = Parser::new(tokens, $data, 0, false, true);
             let result = parser.parse_instr();
 
             println!("[{}] - {:.2?} elapsed", $data, start.elapsed());
@@ -51,9 +47,8 @@ macro_rules! parser_test {
         fn $test_name() {
             let start = Instant::now();
 
-            let dummy_path = Utf8PathBuf::from("dummy_path");
-            let tokens = lex($data, &dummy_path).unwrap();
-            let mut parser = Parser::new(tokens, &dummy_path, $data, 0, false, true);
+            let tokens = lex($data).unwrap();
+            let mut parser = Parser::new(tokens, $data, 0, false, true);
             parser.parse_assignment().unwrap();
 
             println!("[{}] - {:.2?} elapsed", $data, start.elapsed());
@@ -66,9 +61,8 @@ macro_rules! parser_test {
         fn $test_name() {
             let start = Instant::now();
 
-            let dummy_path = Utf8PathBuf::from("dummy_path");
-            let tokens = lex($data, &dummy_path).unwrap();
-            let mut parser = Parser::new(tokens, &dummy_path, $data, 0, false, true);
+            let tokens = lex($data).unwrap();
+            let mut parser = Parser::new(tokens, $data, 0, false, true);
             let result = parser.$method();
 
             println!("[{}] - {:.2?} elapsed", $data, start.elapsed());

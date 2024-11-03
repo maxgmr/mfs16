@@ -24,19 +24,15 @@ fn main() -> eyre::Result<()> {
         return Err(eyre!("No input files given."));
     }
 
-    let mut machine_code: Vec<u8> = Vec::new();
+    let mut files_contents = String::new();
 
     for path in args.files {
-        let file_contents = read_file(&path)?;
-        let tokens = lex(&file_contents, &path)?;
-        machine_code.extend(parse(
-            tokens,
-            &path,
-            &file_contents,
-            machine_code.len(),
-            args.debug,
-        )?);
+        files_contents.push_str(&read_file(&path)?);
     }
+
+    let tokens = lex(&files_contents)?;
+
+    let machine_code: Vec<u8> = parse(tokens, &files_contents, 0, args.debug)?;
 
     if let Some(output_path) = &args.output {
         file_output(output_path, machine_code, args.replace)?;

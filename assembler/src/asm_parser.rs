@@ -1,6 +1,5 @@
 use std::{collections::HashMap, fmt::Display};
 
-use camino::Utf8Path;
 use color_eyre::{
     eyre::{self, eyre, OptionExt},
     owo_colors::OwoColorize,
@@ -32,12 +31,11 @@ macro_rules! get_next_expected {
 /// Parse a valid list of MFS-16 assembly [Token]s into machine code for the MFS-16 architecture.
 pub fn parse(
     tokens: Vec<Token>,
-    path: &Utf8Path,
     data: &str,
     bytes_offset: usize,
     debug: bool,
 ) -> eyre::Result<Vec<u8>> {
-    let mut parser = Parser::new(tokens, path, data, bytes_offset, true, debug);
+    let mut parser = Parser::new(tokens, data, bytes_offset, true, debug);
     // First pass to get labels
     while parser.parse_next()?.is_some() {}
 
@@ -64,7 +62,6 @@ pub struct Parser<'a> {
     variables: HashMap<String, Variable>,
     labels: HashMap<String, Option<u32>>,
     label_assignment_indicies: Vec<usize>,
-    path: &'a Utf8Path,
     original: &'a str,
     bytes_offset: usize,
     bytes_parsed: usize,
@@ -75,7 +72,6 @@ impl<'a> Parser<'a> {
     /// Create a new [Parser] with the given [Token]s, filepath, and file data.
     pub fn new(
         tokens: Vec<Token>,
-        path: &'a Utf8Path,
         data: &'a str,
         bytes_offset: usize,
         ignore_missing_vars: bool,
@@ -87,7 +83,6 @@ impl<'a> Parser<'a> {
             variables: HashMap::new(),
             labels: HashMap::new(),
             label_assignment_indicies: Vec::new(),
-            path,
             original: data,
             bytes_offset,
             bytes_parsed: bytes_offset,
@@ -200,13 +195,7 @@ impl<'a> Parser<'a> {
 
         Err(eyre!("{}", message))
             .with_section(|| {
-                format!(
-                    "{}:{}:{}",
-                    self.path.blue(),
-                    line_num.blue(),
-                    (col_num + 1).blue()
-                )
-                .header("Line Info:")
+                format!("{}:{}", line_num.blue(), (col_num + 1).blue()).header("Line Info:")
             })
             .with_section(|| {
                 format!(

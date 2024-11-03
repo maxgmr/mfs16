@@ -1,0 +1,43 @@
+/*
+    Fibonacci sequence. Calculates the nth Fibonacci number, storing the result in the
+    L register.
+    
+    Used to test split files.
+*/
+
+// Change this value to change which Fibonacci number is calculated.
+n = 12:w;
+
+// D register keeps track of progress.
+ld D,0:w;
+
+// Register A is current number, register B is previous, register C is two numbers back.
+ld C,D;
+ld B,0:w;
+inc B;
+
+handle_base_cases:
+    // if n == 0, result = 0.
+    cmp D,n;
+    jpz case_0;
+    inc D;
+    // if n == 1, result = 1.
+    cmp D,n;
+    jpz case_1;
+    inc D;
+
+
+main_loop:
+    // Add the last two numbers together to get the new number.
+    ld A,B;
+    add A,C;
+
+    // Check if done.
+    cmp n,D;
+    jpz done;
+
+    // Not done; Update older values & loop.
+    inc D;
+    ld C,B;
+    ld B,A;
+    jp main_loop;
