@@ -11,7 +11,7 @@ mod mmu;
 // Re-exports
 pub use computer::{
     Computer, CLOCK_FREQ, DISPLAY_HEIGHT, DISPLAY_WIDTH, RAM_OFFSET, RAM_SIZE, ROM_OFFSET,
-    ROM_SIZE, VRAM_SIZE,
+    ROM_SIZE, VRAM_OFFSET, VRAM_SIZE,
 };
 pub use cpu::{
     Addr, AsLargerType, Flag, Flags, HasMax, Instruction, Msb, NMinus1Mask, NumBits, Oneable, Reg,

@@ -2,7 +2,7 @@
 use std::default::Default;
 
 use crate::{
-    helpers::{combine_u8_le, split_word},
+    helpers::{combine_u16_le, combine_u8_le, split_dword, split_word},
     VRAM_SIZE,
 };
 
@@ -25,6 +25,21 @@ impl Gpu {
         flag
     }
 
+    /// Write a double word from VRAM starting at the given address.
+    pub fn write_dword(&mut self, address: u32, value: u32) {
+        let (high_word, low_word) = split_dword(value);
+        self.write_word(address, low_word);
+        self.write_word(address + 2, high_word);
+    }
+
+    /// Read a double word from VRAM starting at the given address.
+    pub fn read_dword(&self, address: u32) -> u32 {
+        combine_u16_le(
+            combine_u8_le(self.read_byte(address), self.read_byte(address + 1)),
+            combine_u8_le(self.read_byte(address + 2), self.read_byte(address + 3)),
+        )
+    }
+
     /// Write a word to VRAM starting at the given address.
     pub fn write_word(&mut self, address: u32, word: u16) {
         let (high_byte, low_byte) = split_word(word);
@@ -33,7 +48,7 @@ impl Gpu {
     }
 
     /// Read a word from VRAM starting at the given address.
-    pub fn read_word(&mut self, address: u32) -> u16 {
+    pub fn read_word(&self, address: u32) -> u16 {
         combine_u8_le(self.read_byte(address), self.read_byte(address + 1))
     }
 
@@ -44,7 +59,7 @@ impl Gpu {
     }
 
     /// Read a byte from VRAM at the given address.
-    pub fn read_byte(&mut self, address: u32) -> u8 {
+    pub fn read_byte(&self, address: u32) -> u8 {
         self.check_address_ok(address);
         self.vram[address as usize]
     }
