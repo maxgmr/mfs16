@@ -1,0 +1,19 @@
+ld HL,0x0100_0000:d;
+// Loop 4800 times (38_400 pixels / 8 pixels written per loop)
+ld B, 0x12C0:w;
+
+main_loop:
+    // Go through the colours
+    ld A, 0x2301:w;
+    ldi [HL],A;
+    ld A, 0x6745:w;
+    ldi [HL],A;
+    ld A, 0xAB89:w;
+    ldi [HL],A;
+    ld A, 0xEFCD:w;
+    ldi [HL],A;
+    dec B;
+    jnz main_loop;
+
+end_loop:
+    jp end_loop;

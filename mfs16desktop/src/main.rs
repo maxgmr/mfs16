@@ -7,11 +7,13 @@ use mfs16core::{Addr, Computer};
 
 mod arg_parser;
 mod config;
+mod emulator;
 mod scancodes;
 mod utils;
 
 use arg_parser::Cli;
 use config::UserConfig;
+use emulator::run_emulator;
 
 fn main() -> eyre::Result<()> {
     color_eyre::install()?;
@@ -24,14 +26,15 @@ fn main() -> eyre::Result<()> {
 
     // Load config
     let config = UserConfig::new(&config_dir)?;
-    dbg!(&config);
 
-    // Create new MFS-16 computer
+    // Create a new computer
     let mut computer = Computer::new(args.debug);
-
     // Load the binary into RAM
     let bytes: Vec<u8> = load_binary(&args.bin)?;
     computer.direct_write(Addr::new_default_range(0x00_0000), &bytes);
+
+    // Run the emulator
+    run_emulator(computer, &config)?;
 
     Ok(())
 }
