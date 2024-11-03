@@ -34,7 +34,7 @@ fn main() -> eyre::Result<()> {
     computer.direct_write(Addr::new_default_range(0x00_0000), &bytes);
 
     // Run the emulator
-    run_emulator(computer, &config)?;
+    run_emulator(computer, &args, &config)?;
 
     Ok(())
 }

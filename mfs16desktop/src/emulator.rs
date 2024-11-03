@@ -13,8 +13,9 @@ use sdl2::{
     event::Event, keyboard::Scancode, pixels::Color, rect::Rect, render::Canvas, video::Window,
     EventPump,
 };
+use text_io::read;
 
-use crate::config::UserConfig;
+use crate::{arg_parser::Cli, config::UserConfig};
 use Colour::*;
 
 const SCALE: u32 = 4;
@@ -43,7 +44,7 @@ const FPS: u32 = 60;
 // }
 
 /// Run the [Emulator].
-pub fn run_emulator(mut computer: Computer, config: &UserConfig) -> eyre::Result<()> {
+pub fn run_emulator(mut computer: Computer, args: &Cli, config: &UserConfig) -> eyre::Result<()> {
     let sdl_context = match sdl2::init() {
         Ok(sdlc) => sdlc,
         Err(e) => return Err(eyre!(e)),
@@ -90,6 +91,9 @@ pub fn run_emulator(mut computer: Computer, config: &UserConfig) -> eyre::Result
 
         computer.cycle();
         frame_cycles += 1;
+        if args.step {
+            breakpoint();
+        }
 
         // TODO make this less hack-y
         if frame_cycles >= 10000 {
@@ -198,6 +202,11 @@ pub fn run_emulator(mut computer: Computer, config: &UserConfig) -> eyre::Result
     // computer_handle.join().unwrap();
 
     Ok(())
+}
+
+fn breakpoint() {
+    println!("Enter any text to continue...");
+    let _: String = read!();
 }
 
 // TODO make this more flexible

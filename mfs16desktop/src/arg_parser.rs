@@ -16,4 +16,8 @@ pub struct Cli {
     /// The debug flag. Set to print debug messages.
     #[clap(short, long)]
     pub debug: bool,
+
+    /// The step flag. Set to step forward through cycles.
+    #[clap(short, long)]
+    pub step: bool,
 }
