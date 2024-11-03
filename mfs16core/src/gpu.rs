@@ -3,7 +3,7 @@ use std::default::Default;
 
 use crate::{
     helpers::{combine_u8_le, split_word},
-    DISPLAY_HEIGHT, DISPLAY_WIDTH,
+    VRAM_SIZE,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -11,12 +11,12 @@ pub struct Gpu {
     /// Video RAM responsible for storing the pixel data of the computer. Each pixel takes up one
     /// nibble of space.
     pub vram: [u8; Self::VRAM_SIZE],
-    /// Frame interrupt flag. Is collected by the CPU during the next cycle.
+    /// Frame interrupt flag. Is collected by the MMU during the next cycle.
     pub frame_interrupt: bool,
 }
 impl Gpu {
     /// This GPU's VRAM size.
-    pub const VRAM_SIZE: usize = DISPLAY_WIDTH * DISPLAY_HEIGHT / 2;
+    pub const VRAM_SIZE: usize = VRAM_SIZE;
 
     /// Consume the frame interrupt flag.
     pub fn consume_frame_interrupt(&mut self) -> bool {

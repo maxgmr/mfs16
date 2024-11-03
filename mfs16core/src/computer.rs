@@ -16,6 +16,8 @@ pub const RAM_OFFSET: usize = ROM_SIZE;
 pub const DISPLAY_HEIGHT: usize = 240;
 /// Display width
 pub const DISPLAY_WIDTH: usize = 320;
+/// Video RAM size in bytes
+pub const VRAM_SIZE: usize = DISPLAY_WIDTH * DISPLAY_HEIGHT / 2;
 
 /// The MFS-16 virtual computer.
 #[derive(Default, Debug, PartialEq, Clone)]
@@ -50,6 +52,9 @@ impl Computer {
 
     /// The display width in pixels.
     pub const DISPLAY_WIDTH: usize = DISPLAY_WIDTH;
+
+    /// The VRAM size in bytes.
+    pub const VRAM_SIZE: usize = VRAM_SIZE;
 
     /// Create a new [Computer] with empty [Ram].
     pub fn new(debug: bool) -> Self {
