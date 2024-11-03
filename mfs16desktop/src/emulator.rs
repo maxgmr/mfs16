@@ -105,18 +105,18 @@ pub fn run_emulator(mut computer: Computer, args: &Cli, config: &UserConfig) -> 
 
             // Update the canvas pixels from VRAM
             for (i, byte) in computer.mmu.gpu.vram.iter().enumerate() {
-                // Lower nibble
+                // Higher nibble
                 let mut index = i * 2;
-                let colour = Colour::from_nibble(*byte, false);
+                let colour = Colour::from_nibble(*byte, true);
                 canvas.set_draw_color(colour.into_sdl_rgb());
                 let x = (index % DISPLAY_WIDTH) as u32;
                 let y = (index / DISPLAY_WIDTH) as u32;
                 let rect = Rect::new((x * SCALE) as i32, (y * SCALE) as i32, SCALE, SCALE);
                 canvas.fill_rect(rect).unwrap();
 
-                // Higher nibble
+                // Lower nibble
                 index += 1;
-                let colour = Colour::from_nibble(*byte, true);
+                let colour = Colour::from_nibble(*byte, false);
                 canvas.set_draw_color(colour.into_sdl_rgb());
                 let x = (index % DISPLAY_WIDTH) as u32;
                 let y = (index / DISPLAY_WIDTH) as u32;

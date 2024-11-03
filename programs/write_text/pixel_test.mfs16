@@ -1,6 +1,6 @@
 ld HL,0x0100_0000:d;
-// Loop 4800 times (38_400 pixels / 8 pixels written per loop)
-ld B, 0x12C0:w;
+// Loop 4800 times (76_800 pixels / 16 pixels written per loop)
+ld B, 4800:w;
 
 main_loop:
     // Go through the colours
@@ -16,4 +16,5 @@ main_loop:
     jnz main_loop;
 
 end_loop:
+    halt;
     jp end_loop;
