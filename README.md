@@ -19,3 +19,5 @@ A 16-bit virtual computer.
 - Give notice if the old default config is different than the new one
 
 - Boot program, hard-coded to be loaded at the start of memory, sets up everything else then frees up the space it took up.
+
+- Merge CLI tools into one with different subcommands
