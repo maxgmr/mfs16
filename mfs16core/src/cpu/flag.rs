@@ -167,7 +167,6 @@ macro_rules! impl_msb {
     ($($t:ty),+) => {
         $(impl Msb for $t {
             fn msb(&self) -> bool {
-                println!("{}", <$t>::BITS);
                 (self >> (<$t>::BITS - 1)) == 1
             }
         })*
