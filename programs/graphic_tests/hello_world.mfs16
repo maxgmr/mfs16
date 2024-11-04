@@ -1,0 +1,31 @@
+row_len = 0x140:d;
+vram_start = 0x0100_0000:d;
+text_colour = 0xAAAA:w;
+
+ld BC,row_len;
+ld D,text_colour;
+ld HL,vram_start;
+
+call cap_h;
+call e;
+call l;
+call l;
+call o;
+call comma;
+call space;
+call cap_w;
+call o;
+call r;
+call l;
+call d;
+call bang;
+call newline;
+call newline;
+
+call test_print;
+
+call test_pattern;
+
+program_end:
+    halt;
+    jp program_end;

@@ -18,7 +18,7 @@ use text_io::read;
 use crate::{arg_parser::Cli, config::UserConfig};
 use Colour::*;
 
-const SCALE: u32 = 4;
+const SCALE: u32 = 2;
 
 const WINDOW_WIDTH: u32 = (DISPLAY_WIDTH as u32) * SCALE;
 const WINDOW_HEIGHT: u32 = (DISPLAY_HEIGHT as u32) * SCALE;
@@ -258,22 +258,38 @@ impl Colour {
     // TODO make this work with custom config palette
     fn into_sdl_rgb(self) -> Color {
         match self {
-            Black => Color::RGB(0x00, 0x00, 0x00),
-            Red => Color::RGB(0xDF, 0x00, 0x00),
-            Green => Color::RGB(0x00, 0xDF, 0x00),
-            Yellow => Color::RGB(0xDF, 0xDF, 0x00),
-            Blue => Color::RGB(0x00, 0x00, 0xDF),
-            Magenta => Color::RGB(0xDF, 0x00, 0xDF),
-            Cyan => Color::RGB(0x00, 0xDF, 0xDF),
-            White => Color::RGB(0xDF, 0xDF, 0xDF),
-            BrightBlack => Color::RGB(0x40, 0x40, 0x40),
-            BrightRed => Color::RGB(0xFF, 0x40, 0x40),
-            BrightGreen => Color::RGB(0x40, 0xFF, 0x40),
-            BrightYellow => Color::RGB(0xFF, 0xFF, 0x40),
-            BrightBlue => Color::RGB(0x40, 0x40, 0xFF),
-            BrightMagenta => Color::RGB(0xFF, 0x40, 0xFF),
-            BrightCyan => Color::RGB(0x40, 0xFF, 0xFF),
-            BrightWhite => Color::RGB(0xFF, 0xFF, 0xFF),
+            // Black => Color::RGB(0x00, 0x00, 0x00),
+            // Red => Color::RGB(0xDF, 0x00, 0x00),
+            // Green => Color::RGB(0x00, 0xDF, 0x00),
+            // Yellow => Color::RGB(0xDF, 0xDF, 0x00),
+            // Blue => Color::RGB(0x00, 0x00, 0xDF),
+            // Magenta => Color::RGB(0xDF, 0x00, 0xDF),
+            // Cyan => Color::RGB(0x00, 0xDF, 0xDF),
+            // White => Color::RGB(0xDF, 0xDF, 0xDF),
+            // BrightBlack => Color::RGB(0x40, 0x40, 0x40),
+            // BrightRed => Color::RGB(0xFF, 0x40, 0x40),
+            // BrightGreen => Color::RGB(0x40, 0xFF, 0x40),
+            // BrightYellow => Color::RGB(0xFF, 0xFF, 0x40),
+            // BrightBlue => Color::RGB(0x40, 0x40, 0xFF),
+            // BrightMagenta => Color::RGB(0xFF, 0x40, 0xFF),
+            // BrightCyan => Color::RGB(0x40, 0xFF, 0xFF),
+            // BrightWhite => Color::RGB(0xFF, 0xFF, 0xFF),
+            Black => Color::RGB(0x28, 0x28, 0x28),
+            Red => Color::RGB(0xCC, 0x24, 0x1D),
+            Green => Color::RGB(0x98, 0x97, 0x1A),
+            Yellow => Color::RGB(0xD7, 0x99, 0x21),
+            Blue => Color::RGB(0x45, 0x85, 0x88),
+            Magenta => Color::RGB(0xB1, 0x62, 0x86),
+            Cyan => Color::RGB(0x68, 0x9D, 0x6A),
+            White => Color::RGB(0xA8, 0x99, 0x84),
+            BrightBlack => Color::RGB(0x92, 0x83, 0x74),
+            BrightRed => Color::RGB(0xFB, 0x49, 0x34),
+            BrightGreen => Color::RGB(0xB8, 0xBB, 0x26),
+            BrightYellow => Color::RGB(0xFA, 0xBD, 0x2F),
+            BrightBlue => Color::RGB(0x83, 0xA5, 0x98),
+            BrightMagenta => Color::RGB(0xD3, 0x86, 0x9B),
+            BrightCyan => Color::RGB(0x8E, 0xC0, 0x7C),
+            BrightWhite => Color::RGB(0xEB, 0xDB, 0xB2),
         }
     }
 }

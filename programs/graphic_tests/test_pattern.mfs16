@@ -1,0 +1,95 @@
+jp test_pattern_end;
+// HOW TO USE:
+// Set HL = top-left corner (in VRAM) of where you want the test pattern to be printed.
+// Set BC = screen width in bytes.
+num_colours = 16:w;
+colours_per_row = 8:w;
+
+test_pattern:
+    push DE;
+    ld A,0x0000:w;
+
+    row_loop:
+        // Check if all the colours have been printed
+        cmp num_colours,A;
+        jpz row_loop_end;
+
+        push DE;
+
+        // E = colours printed in current row
+        ld E,0:w;
+
+        // For each colour in the row...
+        tp_colour_loop:
+            cmp colours_per_row,E;
+            jpz tp_colour_loop_end;
+
+            push DE;
+
+            ld D,0:w;
+            ld E,A;
+            mulu A,0x1111:w;
+
+            // Print 8 rows of colour
+            print_colour_row_loop:
+                cmp 8:w,D;
+                jpz print_colour_row_loop_end;
+
+                ldi [HL],A;
+                ldi [HL],A;
+                sub HL,4:d;
+                add HL,BC;
+
+                inc D;
+                jp print_colour_row_loop;
+            print_colour_row_loop_end:
+
+            ld A,E;
+            inc A;
+            
+            // Move HL to next block in row
+            sub HL,BC;
+            sub HL,BC;
+            sub HL,BC;
+            sub HL,BC;
+            sub HL,BC;
+            sub HL,BC;
+            sub HL,BC;
+            sub HL,BC;
+            add HL,4:d;
+
+            pop DE;
+
+            inc E;
+
+            jp tp_colour_loop;
+        tp_colour_loop_end:
+
+        // Move back to the start of the line (4 bytes * each colour in the row)
+        ld D,0:w;
+        ld E,colours_per_row;
+        mulu E,4:w;
+        sub HL,DE;
+
+        // Move down one row
+        add HL,BC;
+        add HL,BC;
+        add HL,BC;
+        add HL,BC;
+        add HL,BC;
+        add HL,BC;
+        add HL,BC;
+        add HL,BC;
+
+        pop DE;
+
+        jp row_loop;
+    row_loop_end:
+    // Done
+
+    pop DE;
+    ret;
+
+test_pattern_end:
+    halt;
+    jp test_pattern_end;

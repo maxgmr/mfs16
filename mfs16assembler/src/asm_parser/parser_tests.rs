@@ -709,3 +709,103 @@ to_bytes_test!(
     None,
     vec![0x09, 0x82, 0x56, 0x34, 0x12, 0x00]
 );
+to_bytes_test!(mulurarb, Mulu, Reg(A), Reg(B), vec![0x01, 0x50]);
+to_bytes_test!(mulirarb, Muli, Reg(A), Reg(B), vec![0x01, 0x51]);
+to_bytes_test!(divurarb, Divu, Reg(A), Reg(B), vec![0x01, 0x52]);
+to_bytes_test!(divirarb, Divi, Reg(A), Reg(B), vec![0x01, 0x53]);
+to_bytes_test!(mulubrabrb, Mulu, Breg(BC), Breg(DE), vec![0x78, 0x50]);
+to_bytes_test!(mulibrabrb, Muli, Breg(BC), Breg(DE), vec![0x78, 0x51]);
+to_bytes_test!(divubrabrb, Divu, Breg(BC), Breg(DE), vec![0x78, 0x52]);
+to_bytes_test!(divibrabrb, Divi, Breg(BC), Breg(DE), vec![0x78, 0x53]);
+to_bytes_test!(muluvravrb, Mulu, Vreg(A1), Vreg(A0), vec![0x01, 0x54]);
+to_bytes_test!(mulivravrb, Muli, Vreg(A1), Vreg(A0), vec![0x01, 0x55]);
+to_bytes_test!(divuvravrb, Divu, Vreg(A1), Vreg(A0), vec![0x01, 0x56]);
+to_bytes_test!(divivravrb, Divi, Vreg(A1), Vreg(A0), vec![0x01, 0x57]);
+to_bytes_test!(mulurabrb, Mulu, Reg(A), BregDeref(BC), vec![0x00, 0x58]);
+to_bytes_test!(mulirabrb, Muli, Reg(A), BregDeref(BC), vec![0x00, 0x59]);
+to_bytes_test!(divurabrb, Divu, Reg(A), BregDeref(BC), vec![0x00, 0x5A]);
+to_bytes_test!(divirabrb, Divi, Reg(A), BregDeref(BC), vec![0x00, 0x5B]);
+to_bytes_test!(
+    muluraimm16,
+    Mulu,
+    Reg(A),
+    Word(0x1234),
+    vec![0x00, 0x5C, 0x34, 0x12]
+);
+to_bytes_test!(
+    muliraimm16,
+    Muli,
+    Reg(A),
+    Word(0x1234),
+    vec![0x10, 0x5C, 0x34, 0x12]
+);
+to_bytes_test!(
+    divuraimm16,
+    Divu,
+    Reg(A),
+    Word(0x1234),
+    vec![0x20, 0x5C, 0x34, 0x12]
+);
+to_bytes_test!(
+    diviraimm16,
+    Divi,
+    Reg(A),
+    Word(0x1234),
+    vec![0x30, 0x5C, 0x34, 0x12]
+);
+to_bytes_test!(
+    mulubraimm32,
+    Mulu,
+    Breg(BC),
+    DWord(0x1234_5678),
+    vec![0x40, 0x5C, 0x78, 0x56, 0x34, 0x12]
+);
+to_bytes_test!(
+    mulibraimm32,
+    Muli,
+    Breg(BC),
+    DWord(0x1234_5678),
+    vec![0x50, 0x5C, 0x78, 0x56, 0x34, 0x12]
+);
+to_bytes_test!(
+    divubraimm32,
+    Divu,
+    Breg(BC),
+    DWord(0x1234_5678),
+    vec![0x60, 0x5C, 0x78, 0x56, 0x34, 0x12]
+);
+to_bytes_test!(
+    divibraimm32,
+    Divi,
+    Breg(BC),
+    DWord(0x1234_5678),
+    vec![0x70, 0x5C, 0x78, 0x56, 0x34, 0x12]
+);
+to_bytes_test!(
+    muluvraimm8,
+    Mulu,
+    Vreg(A1),
+    Byte(0xAB),
+    vec![0x80, 0x5C, 0xAB]
+);
+to_bytes_test!(
+    mulivraimm8,
+    Muli,
+    Vreg(A1),
+    Byte(0xAB),
+    vec![0x90, 0x5C, 0xAB]
+);
+to_bytes_test!(
+    divuvraimm8,
+    Divu,
+    Vreg(A1),
+    Byte(0xAB),
+    vec![0xA0, 0x5C, 0xAB]
+);
+to_bytes_test!(
+    divivraimm8,
+    Divi,
+    Vreg(A1),
+    Byte(0xAB),
+    vec![0xB0, 0x5C, 0xAB]
+);
