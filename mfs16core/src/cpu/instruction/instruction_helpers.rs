@@ -1,7 +1,9 @@
+use std::ops::{BitAnd, Div, Rem};
+
 use super::*;
 use crate::{
     helpers::{change_bit, combine_u8_le, split_word, test_bit, BitOp},
-    Addr, Flag, Flags,
+    Addr, Flag, Flags, Msb, Oneable, Reg, Zeroable,
 };
 
 /// Perform the current step of the current CPU instruction.
@@ -152,6 +154,34 @@ pub fn step(cpu: &mut Cpu, mmu: &mut Mmu) {
         Tnf => toggle_flag(cpu, Flag::Negative),
         Saf => set_all_flags(cpu),
         Raf => reset_all_flags(cpu),
+        MuluRaRb(ra, rb) => alu_ra_rb(cpu, ra, rb, Mulu),
+        MuliRaRb(ra, rb) => alu_ra_rb(cpu, ra, rb, Muli),
+        DivuRaRb(ra, rb) => alu_a_b_dbl(cpu, ra, rb, Divu),
+        DiviRaRb(ra, rb) => alu_a_b_dbl(cpu, ra, rb, Divi),
+        MuluBraBrb(bra, brb) => alu_bra_brb(cpu, bra, brb, Mulu),
+        MuliBraBrb(bra, brb) => alu_bra_brb(cpu, bra, brb, Muli),
+        DivuBraBrb(bra, brb) => alu_a_b_dbl(cpu, bra, brb, Divu),
+        DiviBraBrb(bra, brb) => alu_a_b_dbl(cpu, bra, brb, Divi),
+        MuluVraVrb(vra, vrb) => alu_vra_vrb(cpu, vra, vrb, Mulu),
+        MuliVraVrb(vra, vrb) => alu_vra_vrb(cpu, vra, vrb, Muli),
+        DivuVraVrb(vra, vrb) => alu_a_b_dbl(cpu, vra, vrb, Divu),
+        DiviVraVrb(vra, vrb) => alu_a_b_dbl(cpu, vra, vrb, Divi),
+        MuluRaBrb(ra, brb) => alu_ra_brb(cpu, mmu, ra, brb, Mulu),
+        MuliRaBrb(ra, brb) => alu_ra_brb(cpu, mmu, ra, brb, Muli),
+        DivuRaBrb(ra, brb) => alu_ra_brb_dbl(cpu, mmu, ra, brb, Divu),
+        DiviRaBrb(ra, brb) => alu_ra_brb_dbl(cpu, mmu, ra, brb, Divi),
+        MuluRaImm16(ra) => alu_ra_imm16(cpu, mmu, ra, Mulu),
+        MuliRaImm16(ra) => alu_ra_imm16(cpu, mmu, ra, Muli),
+        DivuRaImm16(ra) => alu_ra_imm16_dbl(cpu, mmu, ra, Divu),
+        DiviRaImm16(ra) => alu_ra_imm16_dbl(cpu, mmu, ra, Divi),
+        MuluBraImm32(bra) => alu_bra_imm32(cpu, mmu, bra, Mulu),
+        MuliBraImm32(bra) => alu_bra_imm32(cpu, mmu, bra, Muli),
+        DivuBraImm32(bra) => alu_bra_imm32_dbl(cpu, mmu, bra, Divu),
+        DiviBraImm32(bra) => alu_bra_imm32_dbl(cpu, mmu, bra, Divi),
+        MuluVraImm8(vra) => alu_vra_imm8(cpu, mmu, vra, Mulu),
+        MuliVraImm8(vra) => alu_vra_imm8(cpu, mmu, vra, Muli),
+        DivuVraImm8(vra) => alu_vra_imm8_dbl(cpu, mmu, vra, Divu),
+        DiviVraImm8(vra) => alu_vra_imm8_dbl(cpu, mmu, vra, Divi),
         JpImm32 => jp_imm32(cpu, mmu),
         JrImm32 => jr_imm32(cpu, mmu),
         JpzImm32 => cond_jump_imm32(cpu, mmu, Flag::Zero, true),
@@ -599,12 +629,96 @@ fn alu_vra_b<T: Into<u8>>(cpu: &mut Cpu, vra: Reg8, b: T, operation: AluOp) {
     }
 }
 
+fn alu_a_b_dbl<R, T, S>(cpu: &mut Cpu, a: R, b: R, operation: AluDblOp)
+where
+    R: Reg<ValueType = T>,
+    T: AsSignedType<Output = S>
+        + Zeroable
+        + Msb
+        + Copy
+        + Eq
+        + Rem<Output = T>
+        + BitAnd<Output = T>
+        + Oneable
+        + Div<Output = T>,
+    S: AsUnsignedType<Output = T> + Rem<Output = S> + OverflowingMulDiv,
+{
+    match cpu.step_num {
+        1 => {
+            let input_a = a.get(cpu);
+            let input_b = b.get(cpu);
+            let (output_a, output_b) = alu_dbl(cpu, operation, input_a, input_b);
+            a.set(cpu, output_a);
+            b.set(cpu, output_b);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn alu_ra_brb_dbl(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32, operation: AluDblOp) {
+    match cpu.step_num {
+        1 => cpu.read_word_at_addr(mmu, cpu.breg(brb)),
+        2 => {
+            let a = cpu.reg(ra);
+            let b = cpu.last_word;
+            let (result_a, result_b) = alu_dbl(cpu, operation, a, b);
+            cpu.set_reg(ra, result_a);
+            cpu.update_last_word(result_b);
+        }
+        3 => mmu.write_word(cpu.breg(brb), cpu.last_word),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn alu_ra_imm16_dbl(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, operation: AluDblOp) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(mmu),
+        2 => {
+            let a = cpu.reg(ra);
+            let b = cpu.last_word;
+            let (result_a, result_b) = alu_dbl(cpu, operation, a, b);
+            cpu.set_reg(ra, result_a);
+            cpu.set_reg(Reg16::default(), result_b);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn alu_bra_imm32_dbl(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, operation: AluDblOp) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(mmu),
+        2 => cpu.read_next_word(mmu),
+        3 => {
+            let a = cpu.breg(bra);
+            let b = get_dword_from_last(cpu);
+            let (result_a, result_b) = alu_dbl(cpu, operation, a, b);
+            cpu.set_breg(bra, result_a);
+            cpu.set_breg(Reg32::default(), result_b);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn alu_vra_imm8_dbl(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8, operation: AluDblOp) {
+    match cpu.step_num {
+        1 => cpu.read_next_byte(mmu),
+        2 => {
+            let a = cpu.vreg(vra);
+            let b = cpu.last_byte;
+            let (result_a, result_b) = alu_dbl(cpu, operation, a, b);
+            cpu.set_vreg(vra, result_a);
+            cpu.set_vreg(Reg8::default(), result_b);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
 fn cmp_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
     match cpu.step_num {
         1 => {
             let a = cpu.reg(ra);
             let b = cpu.reg(rb);
-            alu::<u16>(cpu, Sub, a, b);
+            alu::<u16, u32, i16>(cpu, Sub, a, b);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -615,7 +729,7 @@ fn cmp_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32) {
         1 => {
             let a = cpu.breg(bra);
             let b = cpu.breg(brb);
-            alu::<u32>(cpu, Sub, a, b);
+            alu::<u32, u64, i32>(cpu, Sub, a, b);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -626,7 +740,7 @@ fn cmp_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
         1 => {
             let a = cpu.vreg(vra);
             let b = cpu.vreg(vrb);
-            alu::<u8>(cpu, Sub, a, b);
+            alu::<u8, u16, i8>(cpu, Sub, a, b);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -638,7 +752,7 @@ fn cmp_ra_imm16(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
         2 => {
             let a = cpu.reg(ra);
             let b = cpu.last_word;
-            alu::<u16>(cpu, Sub, a, b);
+            alu::<u16, u32, i16>(cpu, Sub, a, b);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -651,7 +765,7 @@ fn cmp_bra_imm32(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32) {
         3 => {
             let a = cpu.breg(bra);
             let b = get_dword_from_last(cpu);
-            alu::<u32>(cpu, Sub, a, b);
+            alu::<u32, u64, i32>(cpu, Sub, a, b);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -663,7 +777,7 @@ fn cmp_vra_imm8(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8) {
         2 => {
             let a = cpu.vreg(vra);
             let b = cpu.last_byte;
-            alu::<u8>(cpu, Sub, a, b);
+            alu::<u8, u16, i8>(cpu, Sub, a, b);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -675,7 +789,7 @@ fn cmp_imm16_ra(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
         2 => {
             let a = cpu.last_word;
             let b = cpu.reg(ra);
-            alu::<u16>(cpu, Sub, a, b);
+            alu::<u16, u32, i16>(cpu, Sub, a, b);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -688,7 +802,7 @@ fn cmp_imm32_bra(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32) {
         3 => {
             let a = get_dword_from_last(cpu);
             let b = cpu.breg(bra);
-            alu::<u32>(cpu, Sub, a, b);
+            alu::<u32, u64, i32>(cpu, Sub, a, b);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -700,7 +814,7 @@ fn cmp_imm8_vra(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8) {
         2 => {
             let a = cpu.last_byte;
             let b = cpu.vreg(vra);
-            alu::<u8>(cpu, Sub, a, b);
+            alu::<u8, u16, i8>(cpu, Sub, a, b);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -712,7 +826,7 @@ fn cmp_ra_brb(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, brb: Reg32) {
         2 => {
             let a = cpu.reg(ra);
             let b = cpu.last_word;
-            alu::<u16>(cpu, Sub, a, b);
+            alu::<u16, u32, i16>(cpu, Sub, a, b);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -724,7 +838,7 @@ fn cmp_bra_rb(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, rb: Reg16) {
         2 => {
             let a = cpu.last_word;
             let b = cpu.reg(rb);
-            alu::<u16>(cpu, Sub, a, b);
+            alu::<u16, u32, i16>(cpu, Sub, a, b);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }

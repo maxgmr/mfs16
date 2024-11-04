@@ -1,7 +1,10 @@
 //! All the Arithmetic Logic Unit (ALU) instructions.
 use std::{
     fmt::{Binary, Display},
-    ops::{Add as OpsAdd, BitAnd, BitOr, BitXor, Not as OpsNot, Rem, Shl, Shr, Sub as OpsSub},
+    ops::{
+        Add as OpsAdd, BitAnd, BitOr, BitXor, Div as OpsDiv, Mul as OpsMul, Not as OpsNot, Rem,
+        Shl, Shr, Sub as OpsSub,
+    },
 };
 
 use crate::{
@@ -13,6 +16,7 @@ use crate::{
     Flag::*,
 };
 
+use AluDblOp::*;
 use AluOp::*;
 
 /// All the operations the ALU can perform.
@@ -36,13 +40,21 @@ pub enum AluOp {
     Rtl,
     Rcr,
     Rcl,
+    Muli,
+    Mulu,
+}
+
+/// All the double-output operations the ALU can perform.
+pub enum AluDblOp {
+    Divi,
+    Divu,
 }
 
 /// ALU function. Take two integer operands and the operation as input. Produce the integer result
 /// and set CPU flags accordingly.
 ///
 /// Argument 'b' is ignored for single-operand operations.
-pub fn alu<T>(cpu: &mut Cpu, operation: AluOp, a: T, b: T) -> T
+pub fn alu<T, L, S>(cpu: &mut Cpu, operation: AluOp, a: T, b: T) -> T
 where
     T: Zeroable
         + Oneable
@@ -67,9 +79,28 @@ where
         + Shl<Output = T>
         + Shr<Output = T>
         + NumBits
-        + Rem<Output = T>,
-    <T as AsLargerType>::Output: std::ops::Add + PartialOrd,
-    <<T as AsLargerType>::Output as std::ops::Add>::Output: Into<<T as AsLargerType>::Output>,
+        + Rem<Output = T>
+        + AsSignedType<Output = S>
+        + AsLargerType<Output = L>,
+    L: OpsAdd<Output = L>
+        + PartialOrd
+        + OpsMul<Output = L>
+        + Zeroable
+        + BitAnd<Output = L>
+        + OpsNot<Output = L>
+        + Copy
+        + AsSmallerType<Output = T>,
+    S: BitAnd<Output = S>
+        + OpsMul<Output = S>
+        + OpsNot<Output = S>
+        + Oneable
+        + Msb
+        + Shr<Output = S>
+        + Zeroable
+        + PartialEq
+        + OverflowingMulDiv
+        + Copy
+        + AsUnsignedType<Output = T>,
 {
     match operation {
         Add => alu_add(cpu, a, b, false),
@@ -91,10 +122,34 @@ where
         Rtl => alu_rotate(cpu, a, b, true),
         Rcr => alu_rotate_carry(cpu, a, b, false),
         Rcl => alu_rotate_carry(cpu, a, b, true),
+        Muli => alu_muli(cpu, a, b),
+        Mulu => alu_mulu(cpu, a, b),
     }
 }
 
-fn alu_add<T>(cpu: &mut Cpu, a: T, b: T, use_carry: bool) -> T
+/// ALU function. Take two integer operands and the operation as input. Set CPU flags accordingly.
+///
+/// This version returns two integer results.
+pub fn alu_dbl<T, S>(cpu: &mut Cpu, operation: AluDblOp, a: T, b: T) -> (T, T)
+where
+    T: AsSignedType<Output = S>
+        + Zeroable
+        + Msb
+        + Copy
+        + Eq
+        + Rem<Output = T>
+        + BitAnd<Output = T>
+        + Oneable
+        + OpsDiv<Output = T>,
+    S: AsUnsignedType<Output = T> + Rem<Output = S> + OverflowingMulDiv,
+{
+    match operation {
+        Divu => alu_divu(cpu, a, b),
+        Divi => alu_divi(cpu, a, b),
+    }
+}
+
+fn alu_add<T, L>(cpu: &mut Cpu, a: T, b: T, use_carry: bool) -> T
 where
     T: Zeroable
         + Oneable
@@ -106,17 +161,16 @@ where
         + BitAnd<Output = T>
         + WrappingAdd
         + NMinus1Mask
-        + AsLargerType
+        + AsLargerType<Output = L>
         + HasMax,
-    <T as AsLargerType>::Output: std::ops::Add + PartialOrd,
-    <<T as AsLargerType>::Output as std::ops::Add>::Output: Into<<T as AsLargerType>::Output>,
+    L: OpsAdd<Output = L> + PartialOrd,
 {
     let c = get_carry::<T>(cpu, use_carry);
 
     let result = a.trait_wrapping_add(b).trait_wrapping_add(c);
 
     let lower_n_minus_1_bits = T::n_minus_1_mask();
-    let n_carry = ((a.as_larger_type() + b.as_larger_type()).into() + c.as_larger_type()).into()
+    let n_carry = (a.as_larger_type() + b.as_larger_type() + c.as_larger_type())
         > T::get_max().as_larger_type();
     let n_minus_1_carry = (a & lower_n_minus_1_bits)
         .trait_wrapping_add(b & lower_n_minus_1_bits)
@@ -173,7 +227,7 @@ where
     result
 }
 
-fn alu_inc_dec<T>(cpu: &mut Cpu, a: T, is_inc: bool) -> T
+fn alu_inc_dec<T, L>(cpu: &mut Cpu, a: T, is_inc: bool) -> T
 where
     T: Zeroable
         + Oneable
@@ -186,10 +240,9 @@ where
         + WrappingAdd
         + WrappingSub
         + NMinus1Mask
-        + AsLargerType
+        + AsLargerType<Output = L>
         + HasMax,
-    <T as AsLargerType>::Output: std::ops::Add + PartialOrd,
-    <<T as AsLargerType>::Output as std::ops::Add>::Output: Into<<T as AsLargerType>::Output>,
+    L: OpsAdd<Output = L> + PartialOrd,
 {
     let original_carry = cpu.flag(Carry);
     let original_overflow = cpu.flag(Overflow);
@@ -480,6 +533,100 @@ where
     result
 }
 
+fn alu_mulu<T, L>(cpu: &mut Cpu, a: T, b: T) -> T
+where
+    T: AsLargerType<Output = L>
+        + HasMax
+        + Copy
+        + Zeroable
+        + Oneable
+        + Msb
+        + BitAnd<Output = T>
+        + Eq,
+    L: OpsMul<Output = L>
+        + Zeroable
+        + BitAnd<Output = L>
+        + OpsNot<Output = L>
+        + PartialEq
+        + Copy
+        + AsSmallerType<Output = T>,
+{
+    let result = a.as_larger_type() * b.as_larger_type();
+
+    let overspill = result & !(<T>::get_max().as_larger_type());
+    if overspill != <L>::zero() {
+        cpu.set_flag(Carry);
+    } else {
+        cpu.reset_flag(Carry);
+    }
+
+    let final_result = result.as_smaller_type();
+    set_mul_div_flags(cpu, final_result);
+    final_result
+}
+
+fn alu_muli<T, S>(cpu: &mut Cpu, a: T, b: T) -> T
+where
+    T: AsSignedType<Output = S> + Copy + Msb + Zeroable + Oneable + Eq + BitAnd<Output = T>,
+    S: OpsMul<Output = S> + OverflowingMulDiv + AsUnsignedType<Output = T>,
+{
+    let (result, is_overflow) = a.as_signed_type().overflowing_mul(b.as_signed_type());
+    let final_result = result.as_unsigned_type();
+    cpu.change_flag(Overflow, is_overflow);
+    set_mul_div_flags(cpu, final_result);
+    final_result
+}
+
+fn alu_divu<T>(cpu: &mut Cpu, a: T, b: T) -> (T, T)
+where
+    T: Zeroable
+        + PartialEq
+        + Rem<Output = T>
+        + OpsDiv<Output = T>
+        + Copy
+        + BitAnd<Output = T>
+        + Oneable
+        + Msb
+        + Eq,
+{
+    if b == <T>::zero() {
+        return (a, b);
+    }
+
+    let quotient = a / b;
+    let remainder = a % b;
+
+    set_mul_div_flags(cpu, quotient);
+
+    (quotient, remainder)
+}
+
+fn alu_divi<T, S>(cpu: &mut Cpu, a: T, b: T) -> (T, T)
+where
+    T: Zeroable + Copy + BitAnd<Output = T> + Oneable + Msb + AsSignedType<Output = S> + Eq,
+    S: Rem<Output = S> + OverflowingMulDiv + AsUnsignedType<Output = T>,
+{
+    if b == <T>::zero() {
+        return (a, b);
+    }
+
+    let (quotient, is_overflow) = a.as_signed_type().overflowing_div(b.as_signed_type());
+    cpu.change_flag(Overflow, is_overflow);
+
+    let remainder = if is_overflow {
+        b.as_signed_type()
+    } else {
+        a.as_signed_type() % b.as_signed_type()
+    };
+
+    let final_quotient = quotient.as_unsigned_type();
+    let final_remainder = remainder.as_unsigned_type();
+
+    set_mul_div_flags(cpu, final_quotient);
+
+    (final_quotient, final_remainder)
+}
+
 fn get_carry<T>(cpu: &Cpu, use_carry: bool) -> T
 where
     T: Oneable + Zeroable,
@@ -489,6 +636,15 @@ where
     } else {
         T::zero()
     }
+}
+
+fn set_mul_div_flags<T>(cpu: &mut Cpu, result: T)
+where
+    T: Zeroable + Copy + Eq + BitAnd<Output = T> + Oneable + Msb,
+{
+    cpu.flags.change_zero(result);
+    cpu.flags.change_parity(result);
+    cpu.flags.change_negative(result);
 }
 
 fn set_add_sub_flags<T>(cpu: &mut Cpu, n_minus_1_carry: bool, n_carry: bool, result: T)
@@ -585,6 +741,66 @@ macro_rules! impl_as_larger_type {
 }
 impl_as_larger_type!((u8, u16), (u16, u32), (u32, u64), (u64, u128));
 
+/// Implementors of this trait are able to cast themselves as the smaller version of that type.
+pub trait AsSmallerType {
+    /// The smaller version of the type.
+    type Output;
+
+    /// Get the value cast to the smaller version of that type.
+    fn as_smaller_type(&self) -> Self::Output;
+}
+macro_rules! impl_as_smaller_type {
+    ($(($t:ty, $t_small:ty)),+) => {
+        $(impl AsSmallerType for $t {
+            type Output = $t_small;
+            fn as_smaller_type(&self) -> Self::Output {
+                *self as Self::Output
+            }
+        })*
+    }
+}
+impl_as_smaller_type!((u16, u8), (u32, u16), (u64, u32), (u128, u64));
+
+/// Implementors of this trait are able to cast themselves as the signed version of that type.
+pub trait AsSignedType {
+    /// The signed version of the type.
+    type Output;
+
+    /// Get the value cast to the signed version of that type.
+    fn as_signed_type(&self) -> Self::Output;
+}
+macro_rules! impl_as_signed_type {
+    ($(($t:ty, $t_signed:ty)),+) => {
+        $(impl AsSignedType for $t {
+            type Output = $t_signed;
+            fn as_signed_type(&self) -> Self::Output {
+                *self as Self::Output
+            }
+        })*
+    }
+}
+impl_as_signed_type!((u8, i8), (u16, i16), (u32, i32), (u64, i64), (u128, i128));
+
+/// Implementors of this trait are able to cast themselves as the unsigned version of that type.
+pub trait AsUnsignedType {
+    /// The larger signed version of the type.
+    type Output;
+
+    /// Get the value cast to the smaller unsigned version of that type.
+    fn as_unsigned_type(&self) -> Self::Output;
+}
+macro_rules! impl_as_unsigned_type {
+    ($(($t:ty, $t_unsigned:ty)),+) => {
+        $(impl AsUnsignedType for $t {
+            type Output = $t_unsigned;
+            fn as_unsigned_type(&self) -> Self::Output {
+                *self as Self::Output
+            }
+        })*
+    }
+}
+impl_as_unsigned_type!((i8, u8), (i16, u16), (i32, u32), (i64, u64), (i128, u128));
+
 /// Implementors of this trait are able to return the maximum value of that type as a constant.
 pub trait HasMax {
     /// Get the maximum value of this data type.
@@ -616,6 +832,33 @@ macro_rules! impl_num_bits {
     }
 }
 impl_num_bits!(u8, u16, u32, u64, u128);
+
+/// Implementors of this trait have methods for overflowing multiplication and division.
+pub trait OverflowingMulDiv {
+    /// Overflowing multiplication.
+    fn overflowing_mul(self, rhs: Self) -> (Self, bool)
+    where
+        Self: Sized;
+
+    /// Overflowing division.
+    fn overflowing_div(self, rhs: Self) -> (Self, bool)
+    where
+        Self: Sized;
+}
+macro_rules! impl_overflowing_mul_div {
+    ($($t:ty),+) => {
+        $(impl OverflowingMulDiv for $t {
+            fn overflowing_mul(self, rhs: Self) -> (Self, bool) {
+               self.overflowing_mul(rhs)
+            }
+
+            fn overflowing_div(self, rhs: Self) -> (Self, bool) {
+               self.overflowing_div(rhs)
+            }
+        })*
+    }
+}
+impl_overflowing_mul_div!(i8, i16, i32, i64, i128);
 
 #[cfg(test)]
 mod tests {

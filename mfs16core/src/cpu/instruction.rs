@@ -17,7 +17,7 @@ mod instruction_impl;
 
 use super::Cpu;
 use crate::{mmu::Mmu, Reg16, Reg32, Reg8};
-use alu::{AluOp::*, *};
+use alu::{AluDblOp::*, AluOp::*, *};
 use helpers::*;
 use instruction_helpers::*;
 use Instruction::*;
@@ -592,6 +592,118 @@ pub enum Instruction {
     /// 0x4D30 - RAF
     /// Reset all flags.
     Raf,
+    /// 0x50ab - MULU ra,rb
+    /// Unsigned multiply ra and rb.
+    /// ra *= rb
+    MuluRaRb(Reg16, Reg16),
+    /// 0x51ab - MULI ra,rb
+    /// Signed multiply ra and rb.
+    /// ra *= rb
+    MuliRaRb(Reg16, Reg16),
+    /// 0x52ab - DIVU ra,rb
+    /// Unsigned divide ra and rb, storing the remainder in rb.
+    /// ra /= rb; rb = ra % rb
+    DivuRaRb(Reg16, Reg16),
+    /// 0x53ab - DIVI ra,rb
+    /// Signed divide ra and rb, storing the remainder in rb.
+    /// ra /= rb; rb = ra % rb
+    DiviRaRb(Reg16, Reg16),
+    /// 0x50(a+7)(b+7) - MULU bra,brb
+    /// Unsigned multiply bra and brb.
+    /// bra *= brb
+    MuluBraBrb(Reg32, Reg32),
+    /// 0x51(a+7)(b+7) - MULI bra,brb
+    /// Signed multiply bra and brb.
+    /// bra *= brb
+    MuliBraBrb(Reg32, Reg32),
+    /// 0x52(a+7)(b+7) - DIVU bra,brb
+    /// Unsigned divide bra and brb, storing the remainder in brb.
+    /// bra /= brb; brb = bra % brb
+    DivuBraBrb(Reg32, Reg32),
+    /// 0x53(a+7)(b+7) - DIVI bra,brb
+    /// Signed divide bra and brb, storing the remainder in brb.
+    /// bra /= brb; brb = bra % brb
+    DiviBraBrb(Reg32, Reg32),
+    /// 0x54ab - MULU vra,vrb
+    /// Unsigned multiply vra and vrb.
+    /// vra *= vrb
+    MuluVraVrb(Reg8, Reg8),
+    /// 0x55ab - MULI vra,vrb
+    /// Signed multiply vra and vrb.
+    /// vra *= vrb
+    MuliVraVrb(Reg8, Reg8),
+    /// 0x56ab - DIVU vra,vrb
+    /// Unsigned divide vra and vrb, storing the remainder in vrb.
+    /// vra /= vrb; vrb = vra % vrb
+    DivuVraVrb(Reg8, Reg8),
+    /// 0x57ab - DIVI vra,vrb
+    /// Signed divide vra and vrb, storing the remainder in vrb.
+    /// vra /= vrb; vrb = vra % vrb
+    DiviVraVrb(Reg8, Reg8),
+    /// 0x58ab - MULU ra,[brb]
+    /// Unsigned multiply ra and the value stored at brb.
+    /// ra *= brb
+    MuluRaBrb(Reg16, Reg32),
+    /// 0x59ab - MULI ra,[brb]
+    /// Signed multiply ra and the value stored at brb.
+    /// ra *= brb
+    MuliRaBrb(Reg16, Reg32),
+    /// 0x5Aab - DIVU ra,[brb]
+    /// Unsigned divide ra and the value stored at brb, storing the remainder in [brb].
+    /// ra /= brb; brb = ra % brb
+    DivuRaBrb(Reg16, Reg32),
+    /// 0x5Bab - DIVI ra,[brb]
+    /// Signed divide ra and the value stored at brb, storing the remainder in [brb].
+    /// ra /= brb; brb = ra % brb
+    DiviRaBrb(Reg16, Reg32),
+    /// 0x5C0a - MULU ra,imm16
+    /// Unsigned multiply ra and imm16.
+    /// ra *= imm16
+    MuluRaImm16(Reg16),
+    /// 0x5C1a - MULI ra,imm16
+    /// Signed multiply ra and imm16.
+    /// ra *= imm16
+    MuliRaImm16(Reg16),
+    /// 0x5C2a - DIVU ra,imm16
+    /// Unsigned divide ra and imm16, storing the remainder in A.
+    /// ra /= imm16; A = ra % imm16
+    DivuRaImm16(Reg16),
+    /// 0x5C3a - DIVI ra,imm16
+    /// Signed divide ra and imm16, storing the remainder in A.
+    /// ra /= imm16; A = ra % imm16
+    DiviRaImm16(Reg16),
+    /// 0x5C4a - MULU bra,imm32
+    /// Unsigned multiply bra and imm32.
+    /// bra *= imm32
+    MuluBraImm32(Reg32),
+    /// 0x5C5a - MULI bra,imm32
+    /// Signed multiply bra and imm32.
+    /// bra *= imm32
+    MuliBraImm32(Reg32),
+    /// 0x5C6a - DIVU bra,imm32
+    /// Unsigned divide bra and imm32, storing the remainder in BC.
+    /// bra /= imm32; BC = bra % imm32
+    DivuBraImm32(Reg32),
+    /// 0x5C7a - DIVI bra,imm32
+    /// Signed divide bra and imm32, storing the remainder in BC.
+    /// bra /= imm32; BC = bra % imm32
+    DiviBraImm32(Reg32),
+    /// 0x5C8a - MULU vra,imm8
+    /// Unsigned multiply vra and imm8.
+    /// vra *= imm8
+    MuluVraImm8(Reg8),
+    /// 0x5C9a - MULI vra,imm8
+    /// Signed multiply vra and imm8.
+    /// vra *= imm8
+    MuliVraImm8(Reg8),
+    /// 0x5CAa - DIVU vra,imm8
+    /// Unsigned divide vra and imm8, storing the remainder in A1.
+    /// vra /= imm8; A1 = vra % imm8
+    DivuVraImm8(Reg8),
+    /// 0x5CBa - DIVI vra,imm8
+    /// Signed divide vra and imm8, storing the remainder in A1.
+    /// vra /= imm8; A1 = vra % imm8
+    DiviVraImm8(Reg8),
     /// 0x8000 - JP imm32
     /// Jump to the address stored in the immediate 32-bit value.
     JpImm32,
@@ -785,6 +897,7 @@ pub enum Instruction {
     // Get clock count
     // Disable interrupts
     // Enable interrupts
+    // Modulo
 }
 
 #[cfg(test)]

@@ -761,6 +761,22 @@ fn test_sub() {
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_002E));
     assert_eq!(c.cpu.reg(L), 0x7FFF);
     assert_eq!(c.cpu.flags, Flags::from_string("zcopn"));
+
+    // Test HL carry
+    instr_test!(
+        REGS: [(HL, 0x0000_0010)],
+        MEM: gen_mem![
+            SubBraImm32(HL),
+            0x140_u32
+        ],
+        FLAGS: "",
+        [
+            (0x00_0002, [(HL, 0x0000_0010)], ""),
+            (0x00_0004, [(HL, 0x0000_0010)], ""),
+            (0x00_0006, [(HL, 0x0000_0010)], ""),
+            (0x00_0006, [(HL, 0xFFFF_FED0_u32)], "CPN")
+        ]
+    );
 }
 
 #[test]

@@ -16,6 +16,7 @@ pub enum FpuOp {
     Sub,
     Mul,
     Div,
+    Mod,
 }
 
 /// FPU function. Take two operands and the operation as input. Return the result.
@@ -36,6 +37,7 @@ where
         Sub => fpu_operation(cpu, a, b, |x, y| x - y),
         Mul => fpu_operation(cpu, a, b, |x, y| x * y),
         Div => fpu_operation(cpu, a, b, |x, y| x / y),
+        Mod => fpu_operation(cpu, a, b, |x, y| x % y),
     }
 }
 

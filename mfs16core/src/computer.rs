@@ -17,9 +17,9 @@ pub const VRAM_OFFSET: usize = RAM_SIZE + ROM_SIZE;
 pub const VRAM_SIZE: usize = DISPLAY_WIDTH * DISPLAY_HEIGHT / 2;
 
 /// Display height
-pub const DISPLAY_HEIGHT: usize = 240;
+pub const DISPLAY_HEIGHT: usize = 480;
 /// Display width
-pub const DISPLAY_WIDTH: usize = 320;
+pub const DISPLAY_WIDTH: usize = 640;
 
 /// The MFS-16 virtual computer.
 #[derive(Default, Debug, PartialEq, Clone)]

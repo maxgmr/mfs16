@@ -167,12 +167,13 @@ macro_rules! impl_msb {
     ($($t:ty),+) => {
         $(impl Msb for $t {
             fn msb(&self) -> bool {
+                println!("{}", <$t>::BITS);
                 (self >> (<$t>::BITS - 1)) == 1
             }
         })*
     }
 }
-impl_msb!(u8, u16, u32, u64, u128);
+impl_msb!(u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
 
 /// Trait to get 0 in the given data type.
 pub trait Zeroable {
