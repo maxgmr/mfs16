@@ -1,7 +1,7 @@
 use crate::{cpu::Cpu, mmu::Mmu, Addr};
 
-/// System clock frequency: 33_554_432 Hz (33.55 MHz)
-pub const CLOCK_FREQ: u32 = 2_u32.pow(25);
+/// System clock frequency: 8_388_608 Hz (~8.4 MHz)
+pub const CLOCK_FREQ: u32 = 2_u32.pow(23);
 
 /// ROM Size: 8 MiB (~8.39 MB)
 pub const ROM_SIZE: usize = 0x80_0000;

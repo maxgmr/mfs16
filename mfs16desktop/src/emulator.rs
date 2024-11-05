@@ -8,7 +8,7 @@ use std::{
 };
 
 use color_eyre::eyre::{self, eyre};
-use mfs16core::{Computer, DISPLAY_HEIGHT, DISPLAY_WIDTH};
+use mfs16core::{Computer, CLOCK_FREQ, DISPLAY_HEIGHT, DISPLAY_WIDTH};
 use sdl2::{
     event::Event,
     pixels::PixelFormatEnum,
@@ -47,33 +47,34 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
     let emu_thread = std::thread::spawn(move || {
         let mut computer = computer;
 
-        let mut frame_cycles = 0;
         let mut last_second = Instant::now();
         let mut cps = 0;
+        let mut last_frame_time = Instant::now();
 
         while !emu_should_quit.load(Ordering::SeqCst) {
             if last_second.elapsed() >= Duration::from_secs(1) {
                 last_second = Instant::now();
-                println!("{cps} CPS");
                 cps = 0;
             }
 
             computer.cycle();
-            frame_cycles += 1;
             cps += 1;
 
             if should_step {
                 breakpoint();
             }
 
-            // Render a new frame every 10k cycles.
-            // TODO make this less hack-y
-            // TODO change this to some sort of interrupt/signal sent by the CPU?
-            if frame_cycles >= 100_000 {
-                frame_cycles %= 100_000;
+            if last_frame_time.elapsed().as_secs_f32() >= S_PER_FRAME {
+                last_frame_time = Instant::now();
                 if let Err(e) = tx.send(computer.mmu.gpu.vram.to_vec()) {
                     emu_should_quit.store(true, Ordering::SeqCst);
                     eprintln!("{e}");
+                }
+            }
+
+            if cps >= CLOCK_FREQ {
+                while last_second.elapsed() < Duration::from_secs(1) {
+                    thread::sleep((Duration::from_secs(1) - last_second.elapsed()) / 5);
                 }
             }
         }
@@ -116,9 +117,16 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
     // Create pixel array
     let mut pixels = vec![0_u8; DISPLAY_WIDTH * DISPLAY_HEIGHT * BYTES_PER_RGB24_PIXEL];
 
+    let mut last_second = Instant::now();
+    let mut fps = 0;
+
     // Main thread for event handling and rendering
     'main_loop: loop {
-        let loop_start = Instant::now();
+        if last_second.elapsed() >= Duration::from_secs(1) {
+            last_second = Instant::now();
+            println!("FPS: {fps}");
+            fps = 0;
+        }
 
         // Handle keypress events
         for event in event_pump.poll_iter() {
@@ -143,12 +151,9 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
         // Wait for the CPU thread to send a VRAM update
         if let Ok(vram) = rx.try_recv() {
             render_graphics(&mut sdl_canvas, &mut pixels, &mut texture, &palette, vram);
+            fps += 1;
         }
-
-        let remaining_s = S_PER_FRAME - loop_start.elapsed().as_secs_f32();
-        if remaining_s >= 0.0 {
-            thread::sleep(Duration::from_secs_f32(remaining_s));
-        }
+        thread::sleep(Duration::from_millis(1));
     }
 
     emu_thread.join().unwrap();
