@@ -37,6 +37,8 @@ pub struct Cpu {
     pub is_halted: bool,
     /// If true, print debug messages to stdout.
     pub debug: bool,
+    /// The total number of CPU cycles performed.
+    pub total_cycles: u128,
     /// The byte last read by the CPU.
     last_byte: u8,
     /// The word last read by the CPU.
@@ -76,6 +78,7 @@ impl Cpu {
             // Current instruction is in progress; perform the appropriate instruction step.
             step(self, mmu);
         }
+        self.total_cycles += 1;
         self.step_num += 1;
     }
 
@@ -205,6 +208,7 @@ impl Default for Cpu {
             step_num: Instruction::default().num_steps(),
             is_halted: false,
             debug: true,
+            total_cycles: 0,
             last_byte: 0x00,
             last_word: 0x0000,
             second_last_word: 0x0000,

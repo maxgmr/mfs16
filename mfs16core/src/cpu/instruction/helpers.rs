@@ -6,6 +6,19 @@ use crate::{
     Addr, Reg32,
 };
 
+/// Generate a LFSR-based pseudorandom number.
+pub fn lfsr_rand(cpu: &Cpu) -> u32 {
+    let mut state = (cpu.total_cycles as u32)
+        .rotate_left(cpu.pc.address())
+        .wrapping_add(cpu.pc.address());
+    for _ in 0..32 {
+        let mut new_bit = state ^ (state >> 2) ^ (state >> 3) ^ (state >> 5);
+        new_bit &= 1;
+        state = (state >> 1) | (new_bit << 31);
+    }
+    state
+}
+
 /// Get 32-bit double word from the last two words read.
 pub fn get_dword_from_last(cpu: &Cpu) -> u32 {
     combine_u16_be(cpu.last_word, cpu.second_last_word)

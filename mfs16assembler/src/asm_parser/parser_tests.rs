@@ -503,6 +503,9 @@ to_bytes_test!(rnf, Rnf, None, None, vec![0x2D, 0x4D]);
 to_bytes_test!(tnf, Tnf, None, None, vec![0x2E, 0x4D]);
 to_bytes_test!(saf, Saf, None, None, vec![0x2F, 0x4D]);
 to_bytes_test!(raf, Raf, None, None, vec![0x30, 0x4D]);
+to_bytes_test!(randra, Rand, Reg(A), None, vec![0x00, 0x60]);
+to_bytes_test!(randbra, Rand, Breg(BC), None, vec![0x10, 0x60]);
+to_bytes_test!(randvra, Rand, Vreg(A1), None, vec![0x20, 0x60]);
 to_bytes_test!(
     jpimm32,
     Jp,

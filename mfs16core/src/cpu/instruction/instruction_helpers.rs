@@ -182,6 +182,9 @@ pub fn step(cpu: &mut Cpu, mmu: &mut Mmu) {
         MuliVraImm8(vra) => alu_vra_imm8(cpu, mmu, vra, Muli),
         DivuVraImm8(vra) => alu_vra_imm8_dbl(cpu, mmu, vra, Divu),
         DiviVraImm8(vra) => alu_vra_imm8_dbl(cpu, mmu, vra, Divi),
+        RandRa(ra) => rand_ra(cpu, ra),
+        RandBra(bra) => rand_bra(cpu, bra),
+        RandVra(vra) => rand_vra(cpu, vra),
         JpImm32 => jp_imm32(cpu, mmu),
         JrImm32 => jr_imm32(cpu, mmu),
         JpzImm32 => cond_jump_imm32(cpu, mmu, Flag::Zero, true),
@@ -926,6 +929,33 @@ fn set_all_flags(cpu: &mut Cpu) {
 fn reset_all_flags(cpu: &mut Cpu) {
     match cpu.step_num {
         1 => cpu.flags = Flags::from_string(""),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn rand_ra(cpu: &mut Cpu, ra: Reg16) {
+    match cpu.step_num {
+        1 => {
+            ra.set(cpu, lfsr_rand(cpu) as u16);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn rand_bra(cpu: &mut Cpu, bra: Reg32) {
+    match cpu.step_num {
+        1 => {
+            bra.set(cpu, lfsr_rand(cpu));
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn rand_vra(cpu: &mut Cpu, vra: Reg8) {
+    match cpu.step_num {
+        1 => {
+            vra.set(cpu, lfsr_rand(cpu) as u8);
+        }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }

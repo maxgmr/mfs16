@@ -1,11 +1,41 @@
 #![cfg(test)]
 
-use mfs16core::{gen_mem, Addr, Computer, Flags, Instruction::*, MemWritable, Memory};
+use mfs16core::{
+    gen_mem, Addr, Computer, Flags, Instruction::*, MemWritable, Memory, Reg, Reg16::*, Reg32::*,
+    Reg8::*,
+};
 use pretty_assertions::assert_eq;
 
 mod helpers;
 
 use helpers::instr_test;
+
+#[test]
+fn test_rand() {
+    instr_test!(
+        REGS: [(A, 0), (BC, 0), (D1, 0)],
+        MEM: gen_mem![
+            Nop,
+            Nop,
+            RandRa(A),
+            RandBra(BC),
+            RandVra(D1)
+        ],
+        FLAGS: "",
+        [
+            (0x00_0002, [], ""),
+            (0x00_0002, [], ""),
+            (0x00_0004, [], ""),
+            (0x00_0004, [], ""),
+            (0x00_0006, [(A, 0)], ""),
+            (0x00_0006, [(A, 0x0135)], ""),
+            (0x00_0008, [(BC, 0)], ""),
+            (0x00_0008, [(BC, 0x3800_0613)], ""),
+            (0x00_000A, [(D1, 0)], ""),
+            (0x00_000A, [(D1, 0xA9)], "")
+        ]
+    );
+}
 
 #[test]
 fn test_set_reset_toggle_flags() {

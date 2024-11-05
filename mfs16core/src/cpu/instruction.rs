@@ -704,6 +704,15 @@ pub enum Instruction {
     /// Signed divide vra and imm8, storing the remainder in A1.
     /// vra /= imm8; A1 = vra % imm8
     DiviVraImm8(Reg8),
+    /// 0x600a - RAND ra
+    /// Fill ra with a pseudorandom LFSR-based random number.
+    RandRa(Reg16),
+    /// 0x601a - RAND bra
+    /// Fill bra with a pseudorandom LFSR-based random number.
+    RandBra(Reg32),
+    /// 0x602a - RAND vra
+    /// Fill vra with a pseudorandom LFSR-based random number,
+    RandVra(Reg8),
     /// 0x8000 - JP imm32
     /// Jump to the address stored in the immediate 32-bit value.
     JpImm32,

@@ -2,6 +2,7 @@ use mfs16core::{gen_mem, Addr, Computer, Flags, MemWritable, Memory, Reg, Reg8::
 use pretty_assertions::assert_eq;
 
 /// Create a [Computer] without a ROM write restriction.
+#[allow(unused)]
 pub fn test_computer() -> Computer {
     let mut c = Computer::default();
     c.mmu.rom.set_writable(true);
