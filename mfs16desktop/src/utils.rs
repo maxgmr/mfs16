@@ -1,6 +1,6 @@
 use std::{env, fs, io::Write};
 
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::Utf8PathBuf;
 use color_eyre::eyre::{self, eyre};
 use directories::ProjectDirs;
 
@@ -101,7 +101,7 @@ fn pkg_name_constant_case() -> String {
     env!("CARGO_PKG_NAME").to_uppercase().to_string()
 }
 
-/// Expand the given file path.
-pub fn expand_path<P: AsRef<Utf8Path>>(path: P) -> eyre::Result<Utf8PathBuf> {
-    Ok(Utf8PathBuf::from(&shellexpand::full(&path.as_ref())?))
-}
+// /// Expand the given file path.
+// pub fn expand_path<P: AsRef<Utf8Path>>(path: P) -> eyre::Result<Utf8PathBuf> {
+//     Ok(Utf8PathBuf::from(&shellexpand::full(&path.as_ref())?))
+// }

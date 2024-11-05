@@ -1,7 +1,6 @@
 use std::default::Default;
 
 use hex_color::HexColor;
-use sdl2::pixels::Color;
 use serde::{Deserialize, Serialize};
 
 /// A 16-colour palette of RGB24 colours.
@@ -72,15 +71,6 @@ impl Rgb24Palette {
             15 => self.bright_white,
             _ => unreachable!("Value is too big for a nibble!"),
         }
-    }
-
-    /// Get the color corresponding to the given nibble as an sdl2 [Color].
-    pub fn as_sdl2_color(&self, byte: u8, is_high_nibble: bool) -> Color {
-        Color::RGB(
-            self.r(byte, is_high_nibble),
-            self.g(byte, is_high_nibble),
-            self.b(byte, is_high_nibble),
-        )
     }
 
     /// Get the R channel of the color corresponding to the given nibble.
