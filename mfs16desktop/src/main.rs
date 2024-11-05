@@ -20,7 +20,10 @@ fn main() -> eyre::Result<()> {
     color_eyre::install()?;
 
     // Parse CLI args
-    let args = Cli::parse();
+    let mut args = Cli::parse();
+    if args.strong_debug {
+        args.debug = true;
+    }
 
     // Set up directories
     let config_dir = utils::config_dir_setup()?;
@@ -29,7 +32,7 @@ fn main() -> eyre::Result<()> {
     let config = UserConfig::new(&config_dir)?;
 
     // Create a new computer
-    let mut computer = Computer::new(false);
+    let mut computer = Computer::new(args.strong_debug);
     // Load the binary into RAM
     let bytes: Vec<u8> = load_binary(&args.bin)?;
     computer.direct_write(Addr::new_default_range(0x00_0000), &bytes);
