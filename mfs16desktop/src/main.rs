@@ -29,7 +29,7 @@ fn main() -> eyre::Result<()> {
     let config = UserConfig::new(&config_dir)?;
 
     // Create a new computer
-    let mut computer = Computer::new(args.debug);
+    let mut computer = Computer::new(false);
     // Load the binary into RAM
     let bytes: Vec<u8> = load_binary(&args.bin)?;
     computer.direct_write(Addr::new_default_range(0x00_0000), &bytes);

@@ -18,7 +18,6 @@ mfs16core = { path = "../mfs16core" }
 sdl2 = "0"
 serde = { version = "1", features = ["derive"] }
 shellexpand = "3"
-text_io = "0"
 toml = "0"
 
 [build-dependencies]

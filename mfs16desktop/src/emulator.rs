@@ -16,7 +16,6 @@ use sdl2::{
     render::{Canvas, Texture, TextureAccess},
     video::Window,
 };
-use text_io::read;
 
 use crate::{arg_parser::Cli, config::UserConfig, palette::Rgb24Palette};
 
@@ -34,7 +33,7 @@ const S_PER_FRAME: f32 = 1.0 / FPS_LIMIT;
 
 /// Run the [Emulator].
 pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre::Result<()> {
-    let should_step = args.step;
+    let debug = args.debug;
 
     // Channel to send graphics data to the renderer thread
     let (tx, rx) = mpsc::channel();
@@ -45,6 +44,8 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
 
     // Start the emulation thread
     let emu_thread = std::thread::spawn(move || {
+        // Don't want to spam console if too slow
+        let mut too_slow_printed = false;
         let mut computer = computer;
 
         let mut last_second = Instant::now();
@@ -53,30 +54,39 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
 
         while !emu_should_quit.load(Ordering::SeqCst) {
             if last_second.elapsed() >= Duration::from_secs(1) {
+                if (debug || !too_slow_printed) && (cps < CLOCK_FREQ) {
+                    println!("Warning: emulator is unable to keep up with clock speed!");
+                    too_slow_printed = true;
+                }
+                if debug {
+                    println!("CPS: {cps}");
+                }
                 last_second = Instant::now();
                 cps = 0;
             }
 
-            computer.cycle();
-            cps += 1;
-
-            if should_step {
-                breakpoint();
+            if cps < CLOCK_FREQ {
+                computer.cycle();
+                cps += 1;
+            } else {
+                thread::sleep((Duration::from_secs(1).saturating_sub(last_second.elapsed())) / 100);
             }
 
             if last_frame_time.elapsed().as_secs_f32() >= S_PER_FRAME {
                 last_frame_time = Instant::now();
                 if let Err(e) = tx.send(computer.mmu.gpu.vram.to_vec()) {
                     emu_should_quit.store(true, Ordering::SeqCst);
-                    eprintln!("{e}");
+                    eprintln!("{}", eyre!("{e}"));
                 }
             }
 
-            if cps >= CLOCK_FREQ {
-                while last_second.elapsed() < Duration::from_secs(1) {
-                    thread::sleep((Duration::from_secs(1) - last_second.elapsed()) / 5);
-                }
-            }
+            // if cps >= CLOCK_FREQ {
+            //     while last_second.elapsed() < Duration::from_secs(1) {
+            //         thread::sleep(
+            //             (Duration::from_secs(1).saturating_sub(last_second.elapsed())) / 5,
+            //         );
+            //     }
+            // }
         }
     });
 
@@ -124,7 +134,9 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
     'main_loop: loop {
         if last_second.elapsed() >= Duration::from_secs(1) {
             last_second = Instant::now();
-            println!("FPS: {fps}");
+            if args.debug {
+                println!("FPS: {fps}");
+            }
             fps = 0;
         }
 
@@ -198,9 +210,4 @@ fn render_graphics(
     sdl_canvas.clear();
     sdl_canvas.copy(texture, None, Some(dest_rect)).unwrap();
     sdl_canvas.present();
-}
-
-fn breakpoint() {
-    println!("Enter any text to continue...");
-    let _: String = read!();
 }
