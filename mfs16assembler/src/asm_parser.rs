@@ -95,7 +95,7 @@ impl<'a> Parser<'a> {
     fn reset(&mut self) {
         self.token_index = 0;
         self.variables = HashMap::new();
-        self.bytes_offset = 0;
+        self.bytes_parsed = self.bytes_offset;
     }
 
     /// Swap all the variable [Token]s of this parser with their corresponding [Label] values.
@@ -116,6 +116,16 @@ impl<'a> Parser<'a> {
     fn parse_next(&mut self) -> eyre::Result<Option<Vec<u8>>> {
         if self.token_index == self.tokens.len() {
             return Ok(None);
+        }
+
+        // Attempt to parse an absolute label assignment.
+        match self.parse_absolute_label() {
+            Ok(Some(padding)) => {
+                self.bytes_parsed += padding.len();
+                return Ok(Some(padding));
+            }
+            Ok(None) => {}
+            Err(e) => return self.parsing_error(e.to_string()),
         }
 
         // Prioritise instructions over variable assignments.
@@ -288,6 +298,34 @@ impl<'a> Parser<'a> {
         self.variables.insert(assignee_name, value);
 
         Ok(())
+    }
+
+    /// Parse an absolute label, returning empty bytes padding up to the given memory location.
+    fn parse_absolute_label(&mut self) -> eyre::Result<Option<Vec<u8>>> {
+        let label_addr = match self.peek() {
+            Some(DWord(addr)) => *addr,
+            // Not an absolute label.
+            _ => return Ok(None),
+        };
+        get_next_expected!(self, "DWord", DWord(_));
+
+        if let Some(&Colon) = self.peek() {
+            self.next_expected()?;
+        } else {
+            return Err(eyre!("Expected `:` for absolute label."));
+        }
+
+        if label_addr < (self.bytes_parsed as u32) {
+            return Err(eyre!("Absolute label address {:#010X} must be equal to or greater than current address {:#010X}.", label_addr, self.bytes_parsed));
+        }
+
+        let num_bytes = (label_addr as usize) - self.bytes_parsed;
+
+        if self.debug {
+            println!("Found absolute label at address {:#010X}: padding {} bytes starting from {:#010X}.", label_addr, num_bytes, self.bytes_parsed);
+        }
+
+        Ok(Some(vec![0x00; num_bytes]))
     }
 
     /// Parse a label, returning the memory address of said label.

@@ -25,6 +25,7 @@ macro_rules! parser_test {
         #[test]
         fn $test_name() {
             let tokens = lex($data).unwrap();
+            println!("{:?}", tokens);
             let _ = parse(tokens, $data, 0, true).unwrap_err();
         }
     };
@@ -72,6 +73,22 @@ macro_rules! parser_test {
     };
 }
 
+parser_test!(
+    FULL: abslabelzero,
+    "// abslabelzero test.\n0:d:"
+    =>
+    vec![]
+);
+parser_test!(
+    FULL FAIL: abslabeltoosmall,
+    "nop;\nnop;\n0x3:d:"
+);
+parser_test!(
+    FULL: abslabel,
+    "INC B;\n2:d:\n4:d:\nINC C;\n0x10:d:\nINC D;"
+    =>
+    vec![0x31, 0x1D, 0x00, 0x00, 0x32, 0x1D, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x33, 0x1D]
+);
 parser_test!(
     FULL: label,
     "// looping label test.\nld A1,0x00:b;\n\nloop:\n\tinc A1;\n\tjnz loop;\n\nhalt;"
