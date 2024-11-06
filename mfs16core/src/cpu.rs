@@ -14,7 +14,10 @@ pub use instruction::{
 };
 pub use register::{Reg, Reg16, Reg32, Reg8};
 
-use crate::{mmu::Mmu, RAM_OFFSET, RAM_SIZE};
+use crate::{
+    mmu::{Mmu, IE_REGISTER_ADDR, INTERRUPT_REGISTER_ADDR},
+    RAM_OFFSET, RAM_SIZE,
+};
 use register::Registers;
 
 const BYTES_IN_DWORD: usize = 4;
@@ -35,6 +38,8 @@ pub struct Cpu {
     pub step_num: u32,
     /// If true, the CPU is halted and will not do anything until an interrupt.
     pub is_halted: bool,
+    /// If true, then maskable interrupts are enabled.
+    pub interrupts_enabled: bool,
     /// If true, print debug messages to stdout.
     pub debug: bool,
     /// The total number of CPU cycles performed.
@@ -61,7 +66,9 @@ impl Cpu {
 
     /// Perform one clock cycle.
     pub fn cycle(&mut self, mmu: &mut Mmu) {
-        // TODO check for interrupts
+        if self.handle_interrupts(mmu) {
+            return;
+        }
 
         if self.is_halted {
             return;
@@ -80,6 +87,31 @@ impl Cpu {
         }
         self.total_cycles += 1;
         self.step_num += 1;
+    }
+
+    /// Handle interrupts, returning `true` iff any interrupts were handled.
+    fn handle_interrupts(&mut self, mmu: &mut Mmu) -> bool {
+        if !self.interrupts_enabled && !self.is_halted {
+            return false;
+        }
+
+        let activated_interrupts =
+            mmu.read_byte(IE_REGISTER_ADDR as u32) & mmu.read_byte(INTERRUPT_REGISTER_ADDR as u32);
+        if activated_interrupts == 0 {
+            return false;
+        }
+
+        self.is_halted = false;
+
+        if !self.interrupts_enabled {
+            return false;
+        }
+
+        // Prioritise lowest activated interrupt
+        let offset = activated_interrupts.trailing_zeros();
+
+        // TODO
+        false
     }
 
     /// Wrapper function for self.regs.reg(Reg16). Fetch the value of the given CPU register.
@@ -207,6 +239,7 @@ impl Default for Cpu {
             instr: Instruction::default(),
             step_num: Instruction::default().num_steps(),
             is_halted: false,
+            interrupts_enabled: false,
             debug: true,
             total_cycles: 0,
             last_byte: 0x00,

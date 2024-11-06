@@ -16,6 +16,11 @@ const ROM_END: usize = ROM_OFFSET + ROM_SIZE;
 const RAM_END: usize = RAM_OFFSET + RAM_SIZE;
 const VRAM_END: usize = VRAM_OFFSET + VRAM_SIZE;
 
+/// Address of the interrupt enable register.
+pub const IE_REGISTER_ADDR: usize = 0xFFFF_FFFE;
+/// Address of the interrupt register.
+pub const INTERRUPT_REGISTER_ADDR: usize = 0xFFFF_FFFF;
+
 /// The memory management unit. Routes reads/writes and controls computer state.
 #[derive(Debug, PartialEq, Clone)]
 pub struct Mmu {
@@ -25,6 +30,10 @@ pub struct Mmu {
     pub ram: Memory,
     /// The graphics processing unit of the computer.
     pub gpu: Gpu,
+    /// The interrupt enable register. Serves as a bitmask for the interrupt register.
+    pub ie_register: u8,
+    /// The interrupt register. Denotes which interrupts have been triggered.
+    pub interrupt_register: u8,
 }
 impl Mmu {
     /// Create a new memory management unit.
@@ -42,6 +51,8 @@ impl Mmu {
             ROM_OFFSET..ROM_END => self.rom.read_byte(address - ROM_OFFSET as u32),
             RAM_OFFSET..RAM_END => self.ram.read_byte(address - RAM_OFFSET as u32),
             VRAM_OFFSET..VRAM_END => self.gpu.read_byte(address - VRAM_OFFSET as u32),
+            IE_REGISTER_ADDR => self.ie_register,
+            INTERRUPT_REGISTER_ADDR => self.interrupt_register,
             _ => NOT_READABLE_BYTE,
         }
     }
@@ -52,6 +63,8 @@ impl Mmu {
             ROM_OFFSET..ROM_END => self.rom.write_byte(address - ROM_OFFSET as u32, value),
             RAM_OFFSET..RAM_END => self.ram.write_byte(address - RAM_OFFSET as u32, value),
             VRAM_OFFSET..VRAM_END => self.gpu.write_byte(address - VRAM_OFFSET as u32, value),
+            IE_REGISTER_ADDR => self.ie_register = value,
+            INTERRUPT_REGISTER_ADDR => self.interrupt_register = value,
             _ => {}
         };
     }
@@ -105,6 +118,8 @@ impl Default for Mmu {
             rom: Memory::new_empty(ROM_SIZE, true, false),
             ram: Memory::new_empty(RAM_SIZE, true, true),
             gpu: Gpu::default(),
+            ie_register: 0xFF,
+            interrupt_register: 0x00,
         }
     }
 }
