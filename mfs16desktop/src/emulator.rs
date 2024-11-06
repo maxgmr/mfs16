@@ -1,13 +1,14 @@
 use std::{
     sync::{
         atomic::{AtomicBool, Ordering},
-        mpsc, Arc,
+        Arc,
     },
     thread,
     time::{Duration, Instant},
 };
 
 use color_eyre::eyre::{self, eyre};
+use crossbeam::channel;
 use mfs16core::{Computer, CLOCK_FREQ, DISPLAY_HEIGHT, DISPLAY_WIDTH};
 use sdl2::{
     event::Event,
@@ -30,13 +31,21 @@ const BYTES_PER_VRAM_INDEX: usize = BYTES_PER_RGB24_PIXEL * PIXELS_PER_VRAM_INDE
 
 const FPS_LIMIT: f32 = 60.0;
 const S_PER_FRAME: f32 = 1.0 / FPS_LIMIT;
+const CYCLES_PER_FRAME: u32 = (S_PER_FRAME * (CLOCK_FREQ as f32)) as u32;
 
 /// Run the [Emulator].
 pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre::Result<()> {
+    let frame_duration = Duration::from_secs_f32(S_PER_FRAME);
+    let emu_frame_duration = frame_duration;
     let debug = args.debug;
 
     // Channel to send graphics data to the renderer thread
-    let (tx, rx) = mpsc::channel();
+    let (vram_sender, vram_receiver) = channel::bounded(1);
+    // Channel to signal frame updates to the emulation thread
+    let (frame_sender, frame_receiver): (
+        channel::Sender<Option<()>>,
+        channel::Receiver<Option<()>>,
+    ) = channel::bounded(1);
 
     // Atomic flag to signal program quit
     let should_quit = Arc::new(AtomicBool::new(false));
@@ -48,45 +57,44 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
         let mut too_slow_printed = false;
         let mut computer = computer;
 
-        let mut last_second = Instant::now();
-        let mut cps = 0;
-        let mut last_frame_time = Instant::now();
-
         while !emu_should_quit.load(Ordering::SeqCst) {
-            if last_second.elapsed() >= Duration::from_secs(1) {
-                if (debug || !too_slow_printed) && (cps < CLOCK_FREQ) {
-                    println!("Warning: emulator is unable to keep up with clock speed!");
-                    too_slow_printed = true;
-                }
-                if debug {
-                    println!("CPS: {cps}");
-                }
-                last_second = Instant::now();
-                cps = 0;
-            }
-
-            if cps < CLOCK_FREQ {
-                computer.cycle();
-                cps += 1;
-            } else {
-                thread::sleep((Duration::from_secs(1).saturating_sub(last_second.elapsed())) / 100);
-            }
-
-            if last_frame_time.elapsed().as_secs_f32() >= S_PER_FRAME {
-                last_frame_time = Instant::now();
-                if let Err(e) = tx.send(computer.mmu.gpu.vram.to_vec()) {
+            // Wait for frame signal from main thread
+            match frame_receiver.recv() {
+                // Frame signal received, continue
+                Ok(Some(())) => {}
+                // Program execution finished, break
+                Ok(None) => {
                     emu_should_quit.store(true, Ordering::SeqCst);
-                    eprintln!("{}", eyre!("{e}"));
+                    break;
+                }
+                // Error; print error then break
+                Err(e) => {
+                    emu_should_quit.store(true, Ordering::SeqCst);
+                    eprintln!("{}", eyre!(e));
+                    break;
                 }
             }
 
-            // if cps >= CLOCK_FREQ {
-            //     while last_second.elapsed() < Duration::from_secs(1) {
-            //         thread::sleep(
-            //             (Duration::from_secs(1).saturating_sub(last_second.elapsed())) / 5,
-            //         );
-            //     }
-            // }
+            let cycles_start = Instant::now();
+
+            // Perform the CPU cycles for this frame
+            for _ in 0..CYCLES_PER_FRAME {
+                computer.cycle();
+            }
+
+            // TODO set the frame interrupt
+
+            // Send the new VRAM state
+            if let Err(e) = vram_sender.send(computer.mmu.gpu.vram.to_vec()) {
+                emu_should_quit.store(true, Ordering::SeqCst);
+                eprintln!("{}", eyre!("{e}"));
+                break;
+            }
+
+            if (debug || !too_slow_printed) && (cycles_start.elapsed() >= emu_frame_duration) {
+                println!("Warning: emulator is unable to keep up with FPS!\nTime limit for {} cycles: {:?}\nActual time: {:?}", CYCLES_PER_FRAME, emu_frame_duration, cycles_start.elapsed());
+                too_slow_printed = true;
+            }
         }
     });
 
@@ -131,7 +139,9 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
     let mut fps = 0;
 
     // Main thread for event handling and rendering
-    'main_loop: loop {
+    while !should_quit.load(Ordering::SeqCst) {
+        let frame_start = Instant::now();
+
         if last_second.elapsed() >= Duration::from_secs(1) {
             last_second = Instant::now();
             if args.debug {
@@ -144,31 +154,48 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. } => {
+                    let _ = frame_sender.send(None);
                     should_quit.store(true, Ordering::SeqCst);
-                    break 'main_loop;
+                    break;
                 }
                 Event::KeyDown {
                     scancode: Some(sc), ..
                 } => {
                     // TODO match keypress
                     if &sc == config.exit_scancode() {
+                        let _ = frame_sender.send(None);
                         should_quit.store(true, Ordering::SeqCst);
-                        break 'main_loop;
+                        break;
                     }
                 }
                 _ => {}
             }
         }
 
-        // Wait for the CPU thread to send a VRAM update
-        if let Ok(vram) = rx.try_recv() {
+        // Render the current frame
+        if let Ok(vram) = vram_receiver.try_recv() {
             render_graphics(&mut sdl_canvas, &mut pixels, &mut texture, &palette, vram);
             fps += 1;
         }
-        thread::sleep(Duration::from_millis(1));
+
+        // Send a signal to the CPU thread for this frame
+        let _ = frame_sender.send(Some(()));
+
+        // Maintain target FPS
+        let current_frame_time = frame_start.elapsed();
+        if current_frame_time < frame_duration {
+            thread::sleep(frame_duration - current_frame_time);
+        }
     }
 
-    emu_thread.join().unwrap();
+    // Cleanup
+    let _ = frame_sender.send(None);
+    should_quit.store(true, Ordering::SeqCst);
+    drop(frame_sender);
+    if emu_thread.join().is_err() {
+        return Err(eyre!("Failed to join emulation thread."));
+    };
+
     Ok(())
 }
 

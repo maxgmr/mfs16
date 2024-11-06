@@ -12,6 +12,7 @@ camino = "1"
 clap = { version = "4", features = ["cargo", "derive", "string"] }
 color-eyre = "0"
 config = "0"
+crossbeam = "0"
 directories = "5"
 hex_color = { version = "3", features = ["serde"] }
 mfs16core = { path = "../mfs16core" }
