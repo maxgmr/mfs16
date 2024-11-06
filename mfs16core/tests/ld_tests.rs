@@ -427,4 +427,52 @@ fn test_ld() {
             (0x00_001C, [(B, 0xBABE)], "")
         ]
     );
+
+    // LDI [BC],0xCAFE
+    c.cpu.set_breg(BC, 0xAB_ABAB);
+    c.mmu.write_word(0xAB_ABAB, 0x0000);
+    c.mmu.write_word(0x00_0031, 0x0970);
+    c.mmu.write_word(0x00_0033, 0xCAFE);
+
+    // Read instruction
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0033));
+    assert_eq!(c.cpu.breg(BC), 0xAB_ABAB);
+    assert_eq!(c.mmu.read_word(0xAB_ABAB), 0x0000);
+
+    // Read immediate word
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0035));
+    assert_eq!(c.cpu.breg(BC), 0xAB_ABAB);
+    assert_eq!(c.mmu.read_word(0xAB_ABAB), 0x0000);
+
+    // Write immediate word to pointed-to value, dbl inc BC
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0035));
+    assert_eq!(c.cpu.breg(BC), 0xAB_ABAD);
+    assert_eq!(c.mmu.read_word(0xAB_ABAB), 0xCAFE);
+
+    // LDD [DE],0xF00D
+    c.cpu.set_breg(DE, 0xFE_FEFE);
+    c.mmu.write_word(0xFE_FEFE, 0x0000);
+    c.mmu.write_word(0x00_0035, 0x0981);
+    c.mmu.write_word(0x00_0037, 0xF00D);
+
+    // Read instruction
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0037));
+    assert_eq!(c.cpu.breg(DE), 0xFE_FEFE);
+    assert_eq!(c.mmu.read_word(0xFE_FEFE), 0x0000);
+
+    // Read immediate word
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0039));
+    assert_eq!(c.cpu.breg(DE), 0xFE_FEFE);
+    assert_eq!(c.mmu.read_word(0xFE_FEFE), 0x0000);
+
+    // Write immediate word to pointed-to value, dbl dec DE
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0039));
+    assert_eq!(c.cpu.breg(DE), 0xFE_FEFC);
+    assert_eq!(c.mmu.read_word(0xFE_FEFE), 0xF00D);
 }

@@ -400,6 +400,8 @@ pub fn instr_to_bytes(
         (Operation::Ldd, BregDeref(bra), Reg(rb)) => Ok(i2b(LddBraRb(*bra, *rb))),
         (Operation::Ldi, Reg(ra), BregDeref(brb)) => Ok(i2b(LdiRaBrb(*ra, *brb))),
         (Operation::Ldd, Reg(ra), BregDeref(brb)) => Ok(i2b(LddRaBrb(*ra, *brb))),
+        (Operation::Ldi, BregDeref(bra), Word(w)) => Ok(i2b_imm16(LdiBraImm16(*bra), *w)),
+        (Operation::Ldd, BregDeref(bra), Word(w)) => Ok(i2b_imm16(LddBraImm16(*bra), *w)),
         (Operation::Add, Reg(ra), Reg(rb)) => Ok(i2b(AddRaRb(*ra, *rb))),
         (Operation::Add, Breg(bra), Breg(brb)) => Ok(i2b(AddBraBrb(*bra, *brb))),
         (Operation::Add, Vreg(vra), Vreg(vrb)) => Ok(i2b(AddVraVrb(*vra, *vrb))),

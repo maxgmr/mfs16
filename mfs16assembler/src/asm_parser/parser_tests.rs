@@ -833,3 +833,17 @@ to_bytes_test!(reti, Reti, None, None, vec![0x1E, 0x81]);
 to_bytes_test!(ei, Ei, None, None, vec![0xFD, 0xFF]);
 to_bytes_test!(di, Di, None, None, vec![0xFE, 0xFF]);
 to_bytes_test!(stop, Stop, None, None, vec![0xFC, 0xFF]);
+to_bytes_test!(
+    ldibraimm16,
+    Ldi,
+    BregDeref(DE),
+    Word(0x1234),
+    vec![0x71, 0x09, 0x34, 0x12]
+);
+to_bytes_test!(
+    lddbraimm16,
+    Ldd,
+    BregDeref(HL),
+    Word(0x5678),
+    vec![0x82, 0x09, 0x78, 0x56]
+);

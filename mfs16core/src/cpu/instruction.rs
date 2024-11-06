@@ -127,6 +127,12 @@ pub enum Instruction {
     /// Load [brb] in ra, then decrement brb by two.
     /// ra = [brb]; brb -= 2
     LddRaBrb(Reg16, Reg32),
+    /// 0x097a - LDI [bra],imm16
+    /// Load imm16 into [bra], then increment bra by two.
+    LdiBraImm16(Reg32),
+    /// 0x098a - LDD [bra],imm16
+    /// Load imm16 into [bra], then decrement bra by two.
+    LddBraImm16(Reg32),
     /// 0x10ab - ADD ra,rb
     /// Add rb to ra.
     /// ra += rb

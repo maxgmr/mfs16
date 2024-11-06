@@ -28,6 +28,8 @@ pub fn step(cpu: &mut Cpu, mmu: &mut Mmu) {
         LddBraRb(bra, rb) => ldd_bra_rb(cpu, mmu, bra, rb),
         LdiRaBrb(ra, brb) => ldi_ra_brb(cpu, mmu, ra, brb),
         LddRaBrb(ra, brb) => ldd_ra_brb(cpu, mmu, ra, brb),
+        LdiBraImm16(bra) => ldid_bra_imm16(cpu, mmu, bra, true),
+        LddBraImm16(bra) => ldid_bra_imm16(cpu, mmu, bra, false),
         AddRaRb(ra, rb) => alu_ra_rb(cpu, ra, rb, Add),
         AddBraBrb(bra, brb) => alu_bra_brb(cpu, bra, brb, Add),
         AddVraVrb(vra, vrb) => alu_vra_vrb(cpu, vra, vrb, Add),
@@ -445,6 +447,21 @@ fn ldd_ra_brb(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32) {
         2 => {
             cpu.set_reg(ra, cpu.last_word);
             dbl_dec_addr(cpu, brb);
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn ldid_bra_imm16(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, is_inc: bool) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(mmu),
+        2 => {
+            mmu.write_word(cpu.breg(bra), cpu.last_word);
+            if is_inc {
+                dbl_inc_addr(cpu, bra);
+            } else {
+                dbl_dec_addr(cpu, bra);
+            }
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
