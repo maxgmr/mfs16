@@ -40,12 +40,12 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
     let debug = args.debug;
 
     // Channel to send graphics data to the renderer thread
-    let (vram_sender, vram_receiver) = channel::bounded(1);
+    let (vram_sender, vram_receiver) = channel::bounded(2);
     // Channel to signal frame updates to the emulation thread
     let (frame_sender, frame_receiver): (
         channel::Sender<Option<()>>,
         channel::Receiver<Option<()>>,
-    ) = channel::bounded(1);
+    ) = channel::bounded(2);
 
     // Atomic flag to signal program quit
     let should_quit = Arc::new(AtomicBool::new(false));
@@ -156,6 +156,8 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
                 Event::Quit { .. } => {
                     let _ = frame_sender.send(None);
                     should_quit.store(true, Ordering::SeqCst);
+                    // Flush event pump
+                    let _ = event_pump.poll_iter();
                     break;
                 }
                 Event::KeyDown {
@@ -165,6 +167,8 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
                     if &sc == config.exit_scancode() {
                         let _ = frame_sender.send(None);
                         should_quit.store(true, Ordering::SeqCst);
+                        // Flush event pump
+                        let _ = event_pump.poll_iter();
                         break;
                     }
                 }
