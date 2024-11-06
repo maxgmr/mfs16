@@ -37,6 +37,13 @@ fn main() -> eyre::Result<()> {
     let bytes: Vec<u8> = load_binary(&args.bin)?;
     computer.direct_write(Addr::new_default_range(0x00_0000), &bytes);
 
+    if args.debug {
+        // Enable memory debug
+        computer.mmu.debug = true;
+        computer.mmu.ram.debug = true;
+        computer.mmu.rom.debug = true;
+    }
+
     // Run the emulator
     run_emulator(computer, &args, &config)?;
 

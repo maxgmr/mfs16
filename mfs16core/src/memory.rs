@@ -2,7 +2,7 @@ use std::default::Default;
 
 use crate::{
     helpers::{combine_u16_le, combine_u8_le, split_dword, split_word},
-    mmu::NOT_READABLE_BYTE,
+    mmu::{print_warning_message, NOT_READABLE_BYTE},
     Instruction,
 };
 
@@ -15,20 +15,23 @@ pub struct Memory {
     readable: bool,
     /// Determines whether the memory is writable or not.
     writable: bool,
+    /// If true, print debug messages to stderr.
+    pub debug: bool,
 }
 impl Memory {
     /// Create new [Memory]. All bytes are initialised to the given array.
-    pub fn new(contents: Vec<u8>, is_readable: bool, is_writable: bool) -> Self {
+    pub fn new(contents: Vec<u8>, is_readable: bool, is_writable: bool, debug: bool) -> Self {
         Self {
             contents,
             readable: is_readable,
             writable: is_writable,
+            debug,
         }
     }
 
     /// Create new empty [Memory] of the given size, with the given permissions.
     pub fn new_empty(size: usize, is_readable: bool, is_writable: bool) -> Self {
-        Self::new(vec![0x00; size], is_readable, is_writable)
+        Self::new(vec![0x00; size], is_readable, is_writable, false)
     }
 
     /// Check if this [Memory] is readable.
@@ -55,6 +58,7 @@ impl Memory {
     pub fn read_byte(&self, address: u32) -> u8 {
         self.check_addr(address, "read");
         if !self.readable {
+            print_warning_message("read from unreadable memory", address, self.debug);
             return NOT_READABLE_BYTE;
         }
         self.contents[address as usize]
@@ -65,6 +69,8 @@ impl Memory {
         self.check_addr(address, "write");
         if self.writable {
             self.contents[address as usize] = value;
+        } else {
+            print_warning_message("read from unreadable memory", address, self.debug);
         }
     }
 
@@ -111,9 +117,9 @@ impl Memory {
 }
 impl Default for Memory {
     /// Default: All bytes in memory initialised to 0x00. 0x100_0000 bytes size. Can read and
-    /// write.
+    /// write. Debug messages off.
     fn default() -> Self {
-        Self::new(vec![0x00; 0x100_0000], true, true)
+        Self::new(vec![0x00; 0x100_0000], true, true, false)
     }
 }
 
@@ -257,7 +263,7 @@ mod tests {
         mem_contents[addr_word_start + 1] = val_word_msb;
         mem_contents[addr_end] = val_end;
 
-        let mut mem = Memory::new(mem_contents, true, true);
+        let mut mem = Memory::new(mem_contents, true, true, true);
 
         assert_eq!(mem.read_byte(addr_start as u32), val_start);
         assert_eq!(mem.read_byte(addr_word_start as u32), val_word_lsb);

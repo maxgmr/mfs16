@@ -34,6 +34,8 @@ pub struct Mmu {
     pub ie_register: u8,
     /// The interrupt register. Denotes which interrupts have been triggered.
     pub interrupt_register: u8,
+    /// If true, print debug messages to stderr.
+    pub debug: bool,
 }
 impl Mmu {
     /// Create a new memory management unit.
@@ -58,7 +60,10 @@ impl Mmu {
             VRAM_OFFSET..VRAM_END => self.gpu.read_byte(address - VRAM_OFFSET as u32),
             IE_REGISTER_ADDR => self.ie_register,
             INTERRUPT_REGISTER_ADDR => self.interrupt_register,
-            _ => NOT_READABLE_BYTE,
+            _ => {
+                print_warning_message("read a byte", address, self.debug);
+                NOT_READABLE_BYTE
+            }
         }
     }
 
@@ -70,7 +75,9 @@ impl Mmu {
             VRAM_OFFSET..VRAM_END => self.gpu.write_byte(address - VRAM_OFFSET as u32, value),
             IE_REGISTER_ADDR => self.ie_register = value,
             INTERRUPT_REGISTER_ADDR => self.interrupt_register = value,
-            _ => {}
+            _ => {
+                print_warning_message("write a byte", address, self.debug);
+            }
         };
     }
 
@@ -90,7 +97,9 @@ impl Mmu {
             ROM_OFFSET..ROM_END => self.rom.write_word(address - ROM_OFFSET as u32, value),
             RAM_OFFSET..RAM_END => self.ram.write_word(address - RAM_OFFSET as u32, value),
             VRAM_OFFSET..VRAM_END => self.gpu.write_word(address - VRAM_OFFSET as u32, value),
-            _ => {}
+            _ => {
+                print_warning_message("write a word", address, self.debug);
+            }
         };
     }
 
@@ -113,7 +122,9 @@ impl Mmu {
             ROM_OFFSET..ROM_END => self.rom.write_dword(address - ROM_OFFSET as u32, value),
             RAM_OFFSET..RAM_END => self.ram.write_dword(address - RAM_OFFSET as u32, value),
             VRAM_OFFSET..VRAM_END => self.gpu.write_dword(address - VRAM_OFFSET as u32, value),
-            _ => {}
+            _ => {
+                print_warning_message("write a double word", address, self.debug);
+            }
         };
     }
 }
@@ -125,7 +136,18 @@ impl Default for Mmu {
             gpu: Gpu::default(),
             ie_register: 0xFF,
             interrupt_register: 0x00,
+            debug: false,
         }
+    }
+}
+
+/// Print a warning message if debugging is allowed.
+pub fn print_warning_message(verb: &'static str, address: u32, debug: bool) {
+    if debug {
+        eprintln!(
+            "MMU Warning: failed to {} at address {:#010X}.",
+            verb, address
+        );
     }
 }
 
