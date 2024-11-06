@@ -58,6 +58,12 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
         let mut computer = computer;
 
         while !emu_should_quit.load(Ordering::SeqCst) {
+            // Check if stopped
+            if computer.cpu.is_stopped {
+                emu_should_quit.store(true, Ordering::SeqCst);
+                break;
+            }
+
             // Wait for frame signal from main thread
             match frame_receiver.recv() {
                 // Frame signal received, continue

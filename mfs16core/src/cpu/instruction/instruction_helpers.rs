@@ -247,6 +247,7 @@ pub fn step(cpu: &mut Cpu, mmu: &mut Mmu) {
         PopBra(bra) => pop_bra(cpu, mmu, bra),
         PeekBra(bra) => peek_bra(cpu, mmu, bra),
         PushImm32 => push_imm32(cpu, mmu),
+        Stop => stop(cpu),
         Ei => set_interrupts(cpu, true),
         Di => set_interrupts(cpu, false),
         Halt => halt(cpu),
@@ -1131,6 +1132,13 @@ fn push_imm32(cpu: &mut Cpu, mmu: &mut Mmu) {
         1 => cpu.read_next_word(mmu),
         2 => cpu.read_next_word(mmu),
         3 => cpu.push_stack(mmu, get_dword_from_last(cpu)),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn stop(cpu: &mut Cpu) {
+    match cpu.step_num {
+        1 => cpu.is_stopped = true,
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }

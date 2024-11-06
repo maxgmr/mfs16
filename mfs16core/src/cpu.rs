@@ -39,6 +39,8 @@ pub struct Cpu {
     pub step_num: u32,
     /// If true, the CPU is halted and will not do anything until an interrupt.
     pub is_halted: bool,
+    /// If true, the CPU is stopped and will not do anything anymore.
+    pub is_stopped: bool,
     /// If true, then maskable interrupts are enabled.
     pub interrupts_enabled: bool,
     /// If true, print debug messages to stdout.
@@ -67,6 +69,10 @@ impl Cpu {
 
     /// Perform one clock cycle.
     pub fn cycle(&mut self, mmu: &mut Mmu) {
+        if self.is_stopped {
+            return;
+        }
+
         if self.handle_interrupts(mmu) {
             return;
         }
@@ -250,6 +256,7 @@ impl Default for Cpu {
             instr: Instruction::default(),
             step_num: Instruction::default().num_steps(),
             is_halted: false,
+            is_stopped: false,
             interrupts_enabled: false,
             debug: true,
             total_cycles: 0,

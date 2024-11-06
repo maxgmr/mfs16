@@ -299,6 +299,7 @@ impl Instruction {
                 PopBra(Reg32::from_nib(bra - NUM_BREGS))
             }
             (0x8, 0x2, 0x0, bra) => PeekBra(Reg32::from_nib(bra - (NUM_BREGS * 2))),
+            (0xF, 0xF, 0xF, 0xC) => Stop,
             (0xF, 0xF, 0xF, 0xD) => Ei,
             (0xF, 0xF, 0xF, 0xE) => Di,
             (0xF, 0xF, 0xF, 0xF) => Halt,
@@ -547,6 +548,7 @@ impl Instruction {
             PopBra(bra) => opc_1arg_off(0x820_u16, bra, NUM_BREGS.into()),
             PeekBra(bra) => opc_1arg_off(0x820_u16, bra, (NUM_BREGS * 2).into()),
             PushImm32 => 0x8209,
+            Stop => 0xFFFC,
             Ei => 0xFFFD,
             Di => 0xFFFE,
             Halt => 0xFFFF,
@@ -794,6 +796,7 @@ impl Instruction {
             PopBra(..) => 2,
             PeekBra(..) => 2,
             PushImm32 => 4,
+            Stop => 3,
             Ei => 2,
             Di => 2,
             Halt => 2,
@@ -1044,6 +1047,7 @@ impl Display for Instruction {
                 PopBra(bra) => format!("POP {bra}"),
                 PeekBra(bra) => format!("PEEK {bra}"),
                 PushImm32 => String::from("PUSH imm32"),
+                Stop => String::from("STOP"),
                 Ei => String::from("EI"),
                 Di => String::from("DI"),
                 Halt => String::from("HALT"),

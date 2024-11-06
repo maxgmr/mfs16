@@ -11,6 +11,25 @@ mod helpers;
 use helpers::{instr_test, test_computer};
 
 #[test]
+fn test_stop() {
+    let mut c = test_computer();
+    c.cpu.is_stopped = false;
+
+    c.mmu.write_word(0x00_0000, 0xFFFC);
+
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0002));
+    assert!(!c.cpu.is_stopped);
+
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0002));
+    assert!(c.cpu.is_stopped);
+
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0002));
+}
+
+#[test]
 fn test_ei_di() {
     let mut c = test_computer();
     c.cpu.interrupts_enabled = false;

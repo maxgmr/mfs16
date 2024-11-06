@@ -899,6 +899,9 @@ pub enum Instruction {
     /// 0x8209 - PUSH imm32
     /// Push imm32 to the stack.
     PushImm32,
+    /// 0xFFFC - STOP
+    /// Irreversibly stop the CPU. Essentially a power-off message.
+    Stop,
     /// 0xFFFD - EI
     /// Enable interrupts.
     Ei,
