@@ -9,7 +9,7 @@ use std::{
 
 use color_eyre::eyre::{self, eyre};
 use crossbeam::channel;
-use mfs16core::{Computer, CLOCK_FREQ, DISPLAY_HEIGHT, DISPLAY_WIDTH};
+use mfs16core::{Computer, Interrupt, CLOCK_FREQ, DISPLAY_HEIGHT, DISPLAY_WIDTH};
 use sdl2::{
     event::Event,
     pixels::PixelFormatEnum,
@@ -82,7 +82,8 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
                 computer.cycle();
             }
 
-            // TODO set the frame interrupt
+            // Set the frame interrupt
+            computer.mmu.set_interrupt(Interrupt::Frame);
 
             // Send the new VRAM state
             if let Err(e) = vram_sender.send(computer.mmu.gpu.vram.to_vec()) {

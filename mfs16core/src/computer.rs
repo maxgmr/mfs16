@@ -16,6 +16,9 @@ pub const VRAM_OFFSET: usize = RAM_SIZE + ROM_SIZE;
 /// Video RAM size in bytes
 pub const VRAM_SIZE: usize = DISPLAY_WIDTH * DISPLAY_HEIGHT / 2;
 
+/// Starting memory location of interrupt handlers
+pub const INTERRUPT_HANDLERS_OFFSET: usize = 0x0000_0100;
+
 /// Display height
 pub const DISPLAY_HEIGHT: usize = 480;
 /// Display width

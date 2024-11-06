@@ -18,4 +18,4 @@ pub use cpu::{
     Reg16, Reg32, Reg8, WrappingAdd, WrappingSub, Zeroable,
 };
 pub use memory::{MemReadable, MemWritable, Memory};
-pub use mmu::Mmu;
+pub use mmu::{Interrupt, Mmu};

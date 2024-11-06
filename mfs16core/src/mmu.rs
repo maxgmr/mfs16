@@ -1,6 +1,6 @@
 //! Memory management unit. Responsible for memory reads and writes across all components of the
 //! system.
-use std::default::Default;
+use std::{default::Default, fmt::Display};
 
 use crate::{
     gpu::Gpu,
@@ -43,6 +43,11 @@ impl Mmu {
             ram: Memory::new_empty(RAM_SIZE, true, true),
             ..Self::default()
         }
+    }
+
+    /// Set an [Interrupt].
+    pub fn set_interrupt(&mut self, interrupt: Interrupt) {
+        self.interrupt_register ^= 1 << interrupt.into_byte();
     }
 
     /// Read a byte from a given address.
@@ -124,11 +129,61 @@ impl Default for Mmu {
     }
 }
 
+/// All the different interrupts recognised by the MFS-16. Lower number = higher priority.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Interrupt {
+    /// This interrupt is regularly activated after the amount of cycles in one frame have passed.
+    Frame,
+    /// This interrupt is activated if any keyboard keys are pressed.
+    Keyboard,
+}
+impl Interrupt {
+    /// Get the [Interrupt] matching the given byte, panicking if an invalid number is given.
+    pub fn from_byte(byte: u8) -> Self {
+        match byte {
+            0 => Self::Frame,
+            1 => Self::Keyboard,
+            _ => panic!("{byte} does not match a valid Interrupt variant."),
+        }
+    }
+
+    /// Get the byte matching the given [Interrupt].
+    pub fn into_byte(self) -> u8 {
+        match self {
+            Self::Frame => 0,
+            Self::Keyboard => 1,
+        }
+    }
+}
+impl Display for Interrupt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Frame => "Frame",
+                Self::Keyboard => "Keyboard",
+            }
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
 
     use super::*;
+
+    #[test]
+    fn test_set_interrupt() {
+        let mut mmu = Mmu::default();
+
+        assert_eq!(mmu.interrupt_register, 0b0000_0000);
+        mmu.set_interrupt(Interrupt::Frame);
+        assert_eq!(mmu.interrupt_register, 0b0000_0001);
+        mmu.set_interrupt(Interrupt::Keyboard);
+        assert_eq!(mmu.interrupt_register, 0b0000_0011);
+    }
 
     #[test]
     fn test_mmu() {

@@ -15,8 +15,9 @@ pub use instruction::{
 pub use register::{Reg, Reg16, Reg32, Reg8};
 
 use crate::{
+    computer::INTERRUPT_HANDLERS_OFFSET,
     mmu::{Mmu, IE_REGISTER_ADDR, INTERRUPT_REGISTER_ADDR},
-    RAM_OFFSET, RAM_SIZE,
+    Interrupt, RAM_OFFSET, RAM_SIZE, ROM_OFFSET,
 };
 use register::Registers;
 
@@ -95,8 +96,9 @@ impl Cpu {
             return false;
         }
 
-        let activated_interrupts =
-            mmu.read_byte(IE_REGISTER_ADDR as u32) & mmu.read_byte(INTERRUPT_REGISTER_ADDR as u32);
+        let ie_register_val = mmu.read_byte(IE_REGISTER_ADDR as u32);
+        let interrupt_register_val = mmu.read_byte(INTERRUPT_REGISTER_ADDR as u32);
+        let activated_interrupts = ie_register_val & interrupt_register_val;
         if activated_interrupts == 0 {
             return false;
         }
@@ -109,9 +111,18 @@ impl Cpu {
 
         // Prioritise lowest activated interrupt
         let offset = activated_interrupts.trailing_zeros();
-
-        // TODO
-        false
+        if self.debug {
+            println!("INTERRUPT: {}", Interrupt::from_byte(offset as u8));
+        }
+        mmu.write_byte(
+            INTERRUPT_REGISTER_ADDR as u32,
+            interrupt_register_val & !(1 << offset),
+        );
+        self.push_stack(mmu, self.pc.address());
+        self.pc = Addr::new_default_range(
+            ((ROM_OFFSET + INTERRUPT_HANDLERS_OFFSET) | ((offset as usize) << 3)) as u32,
+        );
+        true
     }
 
     /// Wrapper function for self.regs.reg(Reg16). Fetch the value of the given CPU register.
