@@ -232,6 +232,7 @@ pub fn step(cpu: &mut Cpu, mmu: &mut Mmu) {
         Rnp => cond_ret(cpu, mmu, Flag::Parity, false),
         Rtn => cond_ret(cpu, mmu, Flag::Negative, true),
         Rnn => cond_ret(cpu, mmu, Flag::Negative, false),
+        Reti => reti(cpu, mmu),
         ClzBra(bra) => cond_call_bra(cpu, mmu, bra, Flag::Zero, true),
         CnzBra(bra) => cond_call_bra(cpu, mmu, bra, Flag::Zero, false),
         ClcBra(bra) => cond_call_bra(cpu, mmu, bra, Flag::Carry, true),
@@ -246,6 +247,8 @@ pub fn step(cpu: &mut Cpu, mmu: &mut Mmu) {
         PopBra(bra) => pop_bra(cpu, mmu, bra),
         PeekBra(bra) => peek_bra(cpu, mmu, bra),
         PushImm32 => push_imm32(cpu, mmu),
+        Ei => set_interrupts(cpu, true),
+        Di => set_interrupts(cpu, false),
         Halt => halt(cpu),
     }
 }
@@ -1074,6 +1077,14 @@ fn cond_ret(cpu: &mut Cpu, mmu: &mut Mmu, flag: Flag, expected: bool) {
     }
 }
 
+fn reti(cpu: &mut Cpu, mmu: &mut Mmu) {
+    match cpu.step_num {
+        1 => cpu.pc = Addr::new_default_range(cpu.pop_stack(mmu)),
+        2 => cpu.interrupts_enabled = true,
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
 fn cond_call_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, flag: Flag, expected: bool) {
     match cpu.step_num {
         1 => cpu.check_conditional(flag, expected),
@@ -1120,6 +1131,13 @@ fn push_imm32(cpu: &mut Cpu, mmu: &mut Mmu) {
         1 => cpu.read_next_word(mmu),
         2 => cpu.read_next_word(mmu),
         3 => cpu.push_stack(mmu, get_dword_from_last(cpu)),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+fn set_interrupts(cpu: &mut Cpu, value: bool) {
+    match cpu.step_num {
+        1 => cpu.interrupts_enabled = value,
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }

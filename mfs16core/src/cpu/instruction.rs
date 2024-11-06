@@ -854,6 +854,9 @@ pub enum Instruction {
     /// 0x811D - RNN
     /// Return iff the Negative flag is reset.
     Rnn,
+    /// 0x811E - RETI
+    /// Return from subroutine then enable interrupts.
+    Reti,
     /// 0x812a - CLZ bra
     /// Call bra iff the Zero flag is set.
     ClzBra(Reg32),
@@ -896,6 +899,12 @@ pub enum Instruction {
     /// 0x8209 - PUSH imm32
     /// Push imm32 to the stack.
     PushImm32,
+    /// 0xFFFD - EI
+    /// Enable interrupts.
+    Ei,
+    /// 0xFFFE - DI
+    /// Disable interrupts.
+    Di,
     /// 0xFFFF - HALT
     /// Halt the CPU, stopping cycles until an external interrupt is received.
     Halt,

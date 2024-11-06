@@ -14,13 +14,57 @@ use pretty_assertions::assert_eq;
 
 mod helpers;
 
-use helpers::instr_test;
+use helpers::{instr_test, test_computer};
 
 const STACK_ZERO: u32 = RAM_OFFSET as u32;
 const STACK_END: u32 = (RAM_OFFSET + RAM_SIZE) as u32;
 
 const INTENDED_ADDR: u32 = 0x12_3456;
 const TRAP_ADDR: u32 = 0xFF_FFFF;
+
+#[test]
+fn test_reti() {
+    let mut c = test_computer();
+    c.cpu.interrupts_enabled = false;
+    c.mmu.write_word(0x00_0000, CallImm32.into_opcode());
+    c.mmu.write_dword(0x00_0002, 0x12_3456);
+    c.mmu.write_word(0x12_3456, 0x811E);
+
+    // CALL IMM32
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0002));
+    assert!(!c.cpu.interrupts_enabled);
+    // Read imm32
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0004));
+    assert!(!c.cpu.interrupts_enabled);
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0006));
+    assert!(!c.cpu.interrupts_enabled);
+    // Push addr to stack
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0006));
+    assert!(!c.cpu.interrupts_enabled);
+    // Jump
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x12_3456));
+    assert!(!c.cpu.interrupts_enabled);
+
+    // RETI
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x12_3458));
+    assert!(!c.cpu.interrupts_enabled);
+    // Pop addr off stack + return
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0006));
+    assert!(!c.cpu.interrupts_enabled);
+    // Enable interrupts
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0006));
+    assert!(c.cpu.interrupts_enabled);
+}
 
 #[test]
 fn test_call_ret() {

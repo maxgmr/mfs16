@@ -97,9 +97,12 @@ pub enum Operation {
     Rnp,
     Rtn,
     Rnn,
+    Reti,
     Push,
     Pop,
     Peek,
+    Ei,
+    Di,
     Halt,
 }
 impl FromStr for Operation {
@@ -193,9 +196,12 @@ impl FromStr for Operation {
             "rnp" => Ok(Operation::Rnp),
             "rtn" => Ok(Operation::Rtn),
             "rnn" => Ok(Operation::Rnn),
+            "reti" => Ok(Operation::Reti),
             "push" => Ok(Operation::Push),
             "pop" => Ok(Operation::Pop),
             "peek" => Ok(Operation::Peek),
+            "ei" => Ok(Operation::Ei),
+            "di" => Ok(Operation::Di),
             "halt" => Ok(Operation::Halt),
             _ => Err(eyre!(
                 "Input `{}` does not match an instruction operation.",
@@ -296,9 +302,12 @@ impl Display for Operation {
                 Operation::Rnp => "RNP",
                 Operation::Rtn => "RTN",
                 Operation::Rnn => "RNN",
+                Operation::Reti => "RETI",
                 Operation::Push => "PUSH",
                 Operation::Pop => "POP",
                 Operation::Peek => "PEEK",
+                Operation::Ei => "EI",
+                Operation::Di => "DI",
                 Operation::Halt => "HALT",
             }
         )
@@ -592,6 +601,7 @@ pub fn instr_to_bytes(
         (Operation::Rnp, None, None) => Ok(i2b(Rnp)),
         (Operation::Rtn, None, None) => Ok(i2b(Rtn)),
         (Operation::Rnn, None, None) => Ok(i2b(Rnn)),
+        (Operation::Reti, None, None) => Ok(i2b(Reti)),
         (Operation::Clz, Breg(bra), None) => Ok(i2b(ClzBra(*bra))),
         (Operation::Cnz, Breg(bra), None) => Ok(i2b(CnzBra(*bra))),
         (Operation::Clc, Breg(bra), None) => Ok(i2b(ClcBra(*bra))),
@@ -606,6 +616,8 @@ pub fn instr_to_bytes(
         (Operation::Pop, Breg(bra), None) => Ok(i2b(PopBra(*bra))),
         (Operation::Peek, Breg(bra), None) => Ok(i2b(PeekBra(*bra))),
         (Operation::Push, DWord(d), None) => Ok(i2b_imm32(PushImm32, *d)),
+        (Operation::Ei, None, None) => Ok(i2b(Ei)),
+        (Operation::Di, None, None) => Ok(i2b(Di)),
         (Operation::Halt, None, None) => Ok(i2b(Halt)),
         _ => Err(eyre!(
             "`{}, {}` are invalid operand(s) for {}.",

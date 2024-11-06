@@ -281,6 +281,7 @@ impl Instruction {
             (0x8, 0x1, 0x1, 0xB) => Rnp,
             (0x8, 0x1, 0x1, 0xC) => Rtn,
             (0x8, 0x1, 0x1, 0xD) => Rnn,
+            (0x8, 0x1, 0x1, 0xE) => Reti,
             (0x8, 0x1, 0x1, bra) => CallBra(Reg32::from_nib(bra)),
             (0x8, 0x1, 0x2, bra) => ClzBra(Reg32::from_nib(bra)),
             (0x8, 0x1, 0x3, bra) => CnzBra(Reg32::from_nib(bra)),
@@ -298,6 +299,8 @@ impl Instruction {
                 PopBra(Reg32::from_nib(bra - NUM_BREGS))
             }
             (0x8, 0x2, 0x0, bra) => PeekBra(Reg32::from_nib(bra - (NUM_BREGS * 2))),
+            (0xF, 0xF, 0xF, 0xD) => Ei,
+            (0xF, 0xF, 0xF, 0xE) => Di,
             (0xF, 0xF, 0xF, 0xF) => Halt,
             _ => panic!("Opcode {:#04X} has no corresponding instruction.", opcode),
         }
@@ -529,6 +532,7 @@ impl Instruction {
             Rnp => 0x811B,
             Rtn => 0x811C,
             Rnn => 0x811D,
+            Reti => 0x811E,
             ClzBra(bra) => opc_1arg(0x812_u16, bra),
             CnzBra(bra) => opc_1arg(0x813_u16, bra),
             ClcBra(bra) => opc_1arg(0x814_u16, bra),
@@ -543,6 +547,8 @@ impl Instruction {
             PopBra(bra) => opc_1arg_off(0x820_u16, bra, NUM_BREGS.into()),
             PeekBra(bra) => opc_1arg_off(0x820_u16, bra, (NUM_BREGS * 2).into()),
             PushImm32 => 0x8209,
+            Ei => 0xFFFD,
+            Di => 0xFFFE,
             Halt => 0xFFFF,
         }
     }
@@ -773,6 +779,7 @@ impl Instruction {
             Rnp => 3,
             Rtn => 3,
             Rnn => 3,
+            Reti => 3,
             ClzBra(..) => 4,
             CnzBra(..) => 4,
             ClcBra(..) => 4,
@@ -787,6 +794,8 @@ impl Instruction {
             PopBra(..) => 2,
             PeekBra(..) => 2,
             PushImm32 => 4,
+            Ei => 2,
+            Di => 2,
             Halt => 2,
         }
     }
@@ -1020,6 +1029,7 @@ impl Display for Instruction {
                 Rnp => String::from("RNP"),
                 Rtn => String::from("RTN"),
                 Rnn => String::from("RNN"),
+                Reti => String::from("RETI"),
                 ClzBra(bra) => format!("CLZ {bra}"),
                 CnzBra(bra) => format!("CNZ {bra}"),
                 ClcBra(bra) => format!("CLC {bra}"),
@@ -1034,6 +1044,8 @@ impl Display for Instruction {
                 PopBra(bra) => format!("POP {bra}"),
                 PeekBra(bra) => format!("PEEK {bra}"),
                 PushImm32 => String::from("PUSH imm32"),
+                Ei => String::from("EI"),
+                Di => String::from("DI"),
                 Halt => String::from("HALT"),
             }
         )

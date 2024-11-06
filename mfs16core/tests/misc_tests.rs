@@ -8,7 +8,32 @@ use pretty_assertions::assert_eq;
 
 mod helpers;
 
-use helpers::instr_test;
+use helpers::{instr_test, test_computer};
+
+#[test]
+fn test_ei_di() {
+    let mut c = test_computer();
+    c.cpu.interrupts_enabled = false;
+
+    c.mmu.write_word(0x00_0000, 0xFFFD);
+    c.mmu.write_word(0x00_0002, 0xFFFE);
+
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0002));
+    assert!(!c.cpu.interrupts_enabled);
+
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0002));
+    assert!(c.cpu.interrupts_enabled);
+
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0004));
+    assert!(c.cpu.interrupts_enabled);
+
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0004));
+    assert!(!c.cpu.interrupts_enabled);
+}
 
 #[test]
 fn test_rand() {

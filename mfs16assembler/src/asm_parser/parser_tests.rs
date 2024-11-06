@@ -829,3 +829,6 @@ to_bytes_test!(
     Byte(0xAB),
     vec![0xB0, 0x5C, 0xAB]
 );
+to_bytes_test!(reti, Reti, None, None, vec![0x1E, 0x81]);
+to_bytes_test!(ei, Ei, None, None, vec![0xFD, 0xFF]);
+to_bytes_test!(di, Di, None, None, vec![0xFE, 0xFF]);
