@@ -47,6 +47,7 @@ fn file_output(path: &Utf8Path, machine_code: Vec<u8>, replace: bool) -> eyre::R
     let mut file = OpenOptions::new()
         .write(true)
         .create(replace)
+        .truncate(replace)
         .create_new(!replace)
         .open(path)?;
     file.write_all(&machine_code)?;

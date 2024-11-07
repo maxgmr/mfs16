@@ -96,6 +96,11 @@ impl Cpu {
         self.step_num += 1;
     }
 
+    /// Check whether the current instruction is done or not.
+    pub fn instr_is_done(&self) -> bool {
+        self.step_num >= self.instr.num_steps()
+    }
+
     /// Handle interrupts, returning `true` iff any interrupts were handled.
     fn handle_interrupts(&mut self, mmu: &mut Mmu) -> bool {
         if !self.interrupts_enabled && !self.is_halted {

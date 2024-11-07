@@ -7,6 +7,7 @@ use mfs16core::{Addr, Computer};
 
 mod arg_parser;
 mod config;
+mod debug;
 mod emulator;
 mod palette;
 mod scancodes;

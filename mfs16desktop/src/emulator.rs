@@ -7,6 +7,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use camino::Utf8PathBuf;
 use color_eyre::eyre::{self, eyre};
 use crossbeam::channel;
 use mfs16core::{Computer, Interrupt, CLOCK_FREQ, DISPLAY_HEIGHT, DISPLAY_WIDTH};
@@ -18,7 +19,12 @@ use sdl2::{
     video::Window,
 };
 
-use crate::{arg_parser::Cli, config::UserConfig, palette::Rgb24Palette};
+use crate::{
+    arg_parser::Cli,
+    config::UserConfig,
+    debug::{BreakCriteria, Debugger, MemRange},
+    palette::Rgb24Palette,
+};
 
 const SCALE: u32 = 2;
 
@@ -33,11 +39,15 @@ const FPS_LIMIT: f32 = 60.0;
 const S_PER_FRAME: f32 = 1.0 / FPS_LIMIT;
 const CYCLES_PER_FRAME: u32 = (S_PER_FRAME * (CLOCK_FREQ as f32)) as u32;
 
+// TODO load from config
+const DEBUG_PATH_STR: &str = "./debug.log";
+
 /// Run the [Emulator].
 pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre::Result<()> {
     let frame_duration = Duration::from_secs_f32(S_PER_FRAME);
     let emu_frame_duration = frame_duration;
     let debug = args.debug;
+    let strong_debug = args.strong_debug;
 
     // Channel to send graphics data to the renderer thread
     let (vram_sender, vram_receiver) = channel::bounded(2);
@@ -53,9 +63,29 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
 
     // Start the emulation thread
     let emu_thread = std::thread::spawn(move || {
+        // Move the computer into the thread
+        let mut computer = computer;
+
         // Don't want to spam console if too slow
         let mut too_slow_printed = false;
-        let mut computer = computer;
+
+        // Set up debugger
+        // TODO: load mem ranges and criteria from config
+        let mut debugger = Debugger::new(
+            BreakCriteria {
+                pc_list: Some(vec![0x100]),
+            },
+            vec![
+                MemRange {
+                    start: 0x00_0000,
+                    end: 0x00_0010,
+                },
+                MemRange {
+                    start: 0x80_0000,
+                    end: 0x80_0010,
+                },
+            ],
+        );
 
         while !emu_should_quit.load(Ordering::SeqCst) {
             // Check if stopped
@@ -86,6 +116,18 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
             // Perform the CPU cycles for this frame
             for _ in 0..CYCLES_PER_FRAME {
                 computer.cycle();
+
+                // Do debugging stuff if the instruction is done
+                if debug && computer.cpu.instr_is_done() {
+                    debugger.add_state(&computer);
+                    if debugger.criteria.is_satisfied(&computer) {
+                        emu_should_quit.store(true, Ordering::SeqCst);
+                        break;
+                    }
+                    if strong_debug {
+                        println!("{}", computer.cpu)
+                    }
+                }
             }
 
             // Set the frame interrupt
@@ -98,11 +140,14 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
                 break;
             }
 
-            if (debug || !too_slow_printed) && (cycles_start.elapsed() >= emu_frame_duration) {
+            if !too_slow_printed && (cycles_start.elapsed() >= emu_frame_duration) {
                 println!("Warning: emulator is unable to keep up with FPS!\nTime limit for {} cycles: {:?}\nActual time: {:?}", CYCLES_PER_FRAME, emu_frame_duration, cycles_start.elapsed());
                 too_slow_printed = true;
             }
         }
+
+        // Execution done, send debug results (if any)
+        debugger
     });
 
     // Set up sdl2
@@ -203,9 +248,16 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
     let _ = frame_sender.send(None);
     should_quit.store(true, Ordering::SeqCst);
     drop(frame_sender);
-    if emu_thread.join().is_err() {
-        return Err(eyre!("Failed to join emulation thread."));
-    };
+    match emu_thread.join() {
+        Ok(debugger) => {
+            if args.debug {
+                debugger.write_to_file(Utf8PathBuf::from(DEBUG_PATH_STR))?;
+            }
+        }
+        Err(_) => return Err(eyre!("Failed to join emulation thread,")),
+    }
+
+    // Write debug logs to file
 
     Ok(())
 }
