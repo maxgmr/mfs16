@@ -1,0 +1,185 @@
+logo_size = 0x800:d;
+logo_height = 64:d;
+logo_width = 64:d;
+num_hl_incs_per_row = 32:d;
+
+logo_screen_row_len = 0x140:d;
+
+zz = 0x00:b;
+zr = 0x09:b;
+zb = 0x0C:b;
+zy = 0x0B:b;
+
+rr = 0x99:b;
+rz = 0x90:b;
+rb = 0x9C:b;
+ry = 0x9B:b;
+
+bb = 0xCC:b;
+bz = 0xC0:b;
+br = 0xC9:b;
+by = 0xCB:b;
+
+yy = 0xBB:b;
+yz = 0xB0:b;
+yr = 0xB9:b;
+yb = 0xBC:b;
+
+gg = 0xAA:b;
+zg = 0x0A:b;
+gz = 0xA0:b;
+
+logo_test:
+    // Draw logo in top-left corner of screen
+    ld HL,0x0100_0000:d;
+
+    // Set bit 0 of A to draw the logo instead of erasing it
+    stb A,0:b;
+
+    // Draw the logo!
+    call draw_logo;
+logo_test_end:
+    halt;
+jp logo_test_end;
+
+// Draw the MFS-16 logo.
+// The top-left corner of the draw location is denoted by HL.
+// Iff bit 0 of A is reset, this is an erase.
+draw_logo:
+    push BC;
+    push DE;
+    push HL;
+
+    // Set DE to starting location in ROM
+    ld DE,logo_data;
+
+    // Iff bit 0 of A is reset, this is an erase.
+    bit A,0:b;
+    jnz skip_erase_offset;
+    add DE,logo_size;
+    skip_erase_offset:
+
+    // For each row...
+    ld BC,logo_height;
+    draw_logo_row_loop:
+        pss BC;
+        jpz draw_logo_row_loop_end;
+
+        // ...draw that row.
+        call draw_logo_row;
+
+        // Move HL back to start of row.
+        sub HL,num_hl_incs_per_row;
+
+        // Go to the next row.
+        add HL,logo_screen_row_len;
+
+        dec BC;
+        jp draw_logo_row_loop;
+    draw_logo_row_loop_end:
+
+    pop HL;
+    pop DE;
+    pop BC;
+ret;
+
+// Draw a row of the MFS-16 logo.
+draw_logo_row:
+    push BC;
+
+    // For each group of 4 pixels in this row...
+    ld BC,logo_width;
+    push HL;
+    ld HL,BC;
+    divu HL,4:d;
+    ld BC,HL;
+    pop HL;
+    draw_logo_pixel_loop:
+        pss BC;
+        jpz draw_logo_pixel_loop_end;
+        push BC;
+
+        // ...read the next 4 pixels data from RAM
+        ldi C,[DE];
+        ldi [HL],C;
+
+        pop BC;
+        dec BC;
+        jp draw_logo_pixel_loop;
+    draw_logo_pixel_loop_end:
+
+    pop BC;
+ret;
+
+0x0000_0100:d:
+logo_data:
+[
+// black = 0
+// red = 9
+// blue = C
+// yellow = B
+rr rr rr rr zz zz zz zz bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb by yy yy yy yz zz zz zz zy
+zz rr rr rr rz zz zz zz zz bb bb bb bz zz zz rr rr rr rz zz zz yy bb bz zz zz zy yy yz zz zz zy
+zz zr rr rr rz zz zz zz zz zb bb bb zz zz zz rr rr rr zz zz zy yy zb bz zz zz zz zy yy yz zz yy
+zz zz rr rr rz zz zz zz zz zz bb bz zz zz zr rr rr rz zz zz yy zz zz bz zz zz zz zz zy yy yy yy
+zz zz rr rr rr zz zz zz zz zz bb bz zz zz zr rz rr rz zz zy yy zz zz bz zz zz zz zz zz yy yy yy
+zz zz rr zr rr zz zz zz zz zz bb bz zz zz zr zz rr rz zz zy yz zz zz zz zz zz zz zz zz zy yy yy
+zz zz rr zr rr zz zz zz zz zz bb bz zz zz rr zz rr rz zz yy zz zz zz zz zz zz zz zz zz zz yy yy
+zz zz rr zr rr rz zz zz zz zz bb bz zz zz rr zz rr rz zz yy zz zz zz zz zz zz zz zz zz zz zy yy
+zz zz rr zz rr rz zz zz zz zz bb bz zz zz rz zz rr rz zy yz zz zz zz zz zz zz zz zz zz zz zz yy
+zz zz rr zz rr rz zz zz zz zz bb bz zz zr rz zz rr rz yy zz zz zz zz zz zz zz zz zz zz zz zz zy
+zz zz rr zz rr rr zz zz zz zz bb bz zz zr rz zz rr rz yy zz zz zz zz zg zz zz zg gg gg zz zz zy
+zz zz rr zz zr rr zz zz zz zz bb bz zz zr zz zz rr rz yy zz zz zz zz zg zz zz gg zz zg gz zz zz
+zz zz rr zz zr rr zz zz zz zz bb bz zz rr zz zz rr ry yz zz zz zz zz gg zz zg gg zz zg gg zz zz
+zz zz rr zz zr rr rz zz zz zz bb bz zz rr zz zz rr ry yz zz zz zz zg gg zz zg gz zz zg gg zz zz
+zz zz rr zz zz rr rz zz zz zz bb bz zz rz zz zz rr ry yz zz zz zz gg gg zz zg gz zz zg gg zz zz
+zz zz rr zz zz rr rz zz zz zz bb bz zr rz zz zz rr yy yz bz zz zg gz gg zz gg gz zz zg gg zz zz
+zz zz rr zz zz rr rr zz zz zz bb bz zr rz zz zz rr yy yz bz zz zz zz gg zz gg gz zz zz gz zz zz
+zz zz rr zz zz zr rr zz zz zz bb bz zr zz zz zz rr yy yb bz zz zz zz gg zz gg gz zz zz zz zz zz
+zz zz rr zz zz zr rr zz zz zz bb bz rr zz zz zz rr yy bb bz zz zz zz gg zz gg gz zz zz zz zz zz
+zz zz rr zz zz zr rr rz zz zz bb bb bb bb bb bb bb bb bb bz zz zz zz gg zz gg gg gg gg gz zz zz
+zz zz rr zz zz zz rr rz zz zz bb bb bb bb bb bb bb bb bb bz zz zz zz gg zz gg gz zz zg gg zz zz
+zz zz rr zz zz zz rr rz zz zz bb br rz zz zz zz rr yy bb bz zz zz zz gg zz gg gz zz zz gg zz zz
+zz zz rr zz zz zz rr rr zz zz bb br rz zz zz zz rr yy yb bz zz zz zz gg zz zg gz zz zz gg zz zz
+zz zz rr zz zz zz zr rr zz zz bb br zz zz zz zz rr yy yz bz zz zz zz gg zz zg gz zz zz gg zz zz
+zz zz rr zz zz zz zr rr zz zz bb rr zz zz zz zz rr yy yz bz zz zz zz gg zz zg gz zz zz gg zz zz
+zz zz rr zz zz zz zr rr rz zz bb rr zz zz zz zz rr yy yz zz zz zz zz gg zz zz gg zz zg gz zz zz
+zz zz rr zz zz zz zz rr rz zz bb rz zz zz zz zz rr ry yz zz zz zz zg gg gz zz gg zz zg gz zz zz
+zz zz rr zz zz zz zz rr rz zz br rz zz zz zz zz rr ry yz zz zz zg gg gg gg gz zg gg gg zz zz zz
+zz zz rr zz zz zz zz rr rr zz br rz zz zz zz zz rr ry yy zz zz zz zz zz zz zz zz zz zz zz zz zz
+zz zz rr zz zz zz zz zr rr zz br bz zz zz zz zz rr rz yy yz zz zz zz zz zz zz zz zz zz zz zz zz
+zz zz rr zz zz zz zz zr rr zz rr bz zz zz zz zz rr rz yy yz zz zz zz zz zz zz zz zz zz zz zz zz
+zz zz rr zz zz zz zz zr rr rz rr bz zz zz zz zz rr rz zy yy zz zz zz zz zz zz zz zz zz zz zz zz
+zz zz rr zz zz zz zz zz rr rz rb bz zz zz zz zz rr rz zz yy yz zz zz zz zz zz zz zz zz zz zz zz
+zz zz rr zz zz zz zz zz rr rr rb bz zz zz zz zz rr rz zz yy yy yy zz zz zz zz zz zz zz zz zz zz
+zz zz rr zz zz zz zz zz rr rr rb bz zz zz zz zz rr rz zz zz yy yy yy yy yy yy yy yy yy zz zz zz
+zz zz rr zz zz zz zz zz zr rr bb bz zz zz zz zz rr rz zz zz zz zz zz zz zz zz zz yy yy yy zz zz
+zz zz rr zz zz zz zz zz zr rr bb bz zz zz zz zz rr rz zz zz zz zz zz zz zz zz zz zz zy yy zz zz
+zz zz rr zz zz zz zz zz zr rr bb bz zz zz zz zz rr rz zz zz zz zz zz zz zz zz zz zz zz yy yz zz
+zz zz rr zz zz zz zz zz zz rz bb bz zz zz zz zz rr rz zz zz zz zz zz zz zz zz zz zz zz zy yy zz
+zz zz rr zz zz zz zz zz zz rz bb bz zz zz zz zz rr rz zz zz zz zz zz zz zz zz zz zz zz zy yy zz
+zz zz rr zz zz zz zz zz zz rz bb bz zz zz zz zz rr rz zz zz zz zz zz zz zz zz zz zz zz zz yy yz
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr rz zz zz zz zz zz zz zz zz zz zz zz zz zy yz
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr rz zz zz zz zz zz zz zz zz zz zz zz zz zy yz
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr rz zz zz zz zz zz zz zz zz zz zz zz zz zy yy
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr rz zz zz zz zz zz zz zz zz zz zz zz zz zy yy
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr rz zz zz zz zz zz zz zz zz zz zz zz zz zy yy
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr rz zz zz zz zz zz zz zz zz zz zz zz zz zy yy
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr rz zz zz zz zz zz zz zz zz zz zz zz zz zy yy
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr rz zz zz zz zz zz zz zz zz zz zz zz zz zy yy
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr rz zz zz zz zz zz zz zz zz zz zz zz zz zy yy
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr rz zz zz zz zz zz zz zz zz zz zz zz zz zy yy
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr rz zz zz zz zz zz zz zz zz zz zz zz zz zy yy
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr rz zz zz zz zz zz zz zz zz zz zz zz zz zy yy
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr yz zz zz zz zz zz zz zz zz zz zz zz zz zy yy
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr yz zz zz zz zz zz zz zz zz zz zz zz zz zy yz
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr yy zz zz zz zz zz zz zz zz zz zz zz zz zy yz
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr yy yz zz zz zz zz zz zz zz zz zz zz zz zy yz
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr yy yy zz zz zz zz zz zz zz zz zz zz zz yy zz
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr yy yy yz zz zz zz zz zz zz zz zz zz zz yy zz
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr yy yy yy zz zz zz zz zz zz zz zz zz zy yy zz
+zz zz rr zz zz zz zz zz zz zz bb bz zz zz zz zz rr yy yy yy yz zz zz zz zz zz zz zz zz yy yz zz
+zz zr rr rz zz zz zz zz zz zb bb bb zz zz zz zr rr yy zz zy yy yz zz zz zz zz zz zy yy yz zz zz
+zz rr rr rr zz zz zz zz zz bb bb bb bz zz zz rr rr yr rz zz zy yy yz zz zz zz yy yy yz zz zz zz
+rr rr rr rr rr zz zz zz bb bb bb bb bb bz rr rr rr yr rr rz zz zy yy yy yy yy yy zz zz zz zz zz
+]
