@@ -1,0 +1,299 @@
+jp entry_point;
+
+vram_start = 0x0100_0000:d;
+vram_size = 0x0002_5800:d;
+vram_end = 0x0102_5800:d;
+
+ie_register_addr = 0xFFFF_FFFE:d;
+
+row_len = 0x140:d; // 320 bytes (640 pixels)
+col_len = 0xF0:d; // 240 bytes (480 pixels)
+
+logo_index_width = 32:d;
+
+up_left = 0:b;
+up_right = 1:b;
+down_left = 2:b;
+down_right = 3:b;
+
+entry_point:
+    
+// Enable only frame interrupts.
+call enable_only_frame_interrupts;
+
+// Set HL = random starting location.
+call random_starting_location;
+
+// Set A1 = random starting direction.
+call random_starting_direction;
+
+// Enable interrupts.
+ei;
+
+
+// Start bouncing!
+main_loop:
+    // Clear the old logo
+    rsb A,0;
+    call draw_logo;
+
+    // Check if collision with wall & change direction accordingly
+    call check_bounce;
+
+    // Move the logo anchor point (HL)
+    call move_logo;
+
+    // Draw the new logo
+    stb A,0;
+    call draw_logo;
+
+    // Wait 2 frames
+    halt;
+    halt;
+jp main_loop;
+
+// Change the current direction of the logo if necessary
+// Arg HL = current top-left anchor point of logo
+// Arg A1 = current direction
+//          0 = up+left
+//          1 = up+right
+//          2 = down+left
+//          3 = down+right
+check_bounce:
+    push BC;
+    push HL;
+
+    cmp A1,up_left;
+    jpz bounce_up_left;
+    cmp A1,up_right;
+    jpz bounce_up_right;
+    cmp A1,down_left;
+    jpz bounce_down_left;
+
+    bounce_down_right:
+        // if HL + logo_index_width > end of row, set direction = down_left
+        call get_row_end;
+        add HL,logo_index_width;
+        cmp BC,HL;
+        jpn set_down_left;
+
+        // if HL + logo_height + 1 >= end of vram, set direction = up_right
+        pop HL;
+        push HL;
+        ld BC,logo_height;
+        inc BC;
+        mulu BC,row_len;
+        add HL,BC;
+        cmp HL,vram_end;
+        jnn set_up_right;
+
+    jp finish_bounce_switch;
+
+    bounce_down_left:
+        // if HL <= start of row, set direction = down_right
+        call get_row_start;
+        dec HL;
+        cmp HL,BC;
+        jpn set_down_right;
+
+        // if HL + logo_height + 1 >= end of vram, set direction = up_left
+        pop HL;
+        push HL;
+        ld BC,logo_height;
+        inc BC;
+        mulu BC,row_len;
+        add HL,BC;
+        cmp HL,vram_end;
+        jnn set_up_left;
+    jp finish_bounce_switch;
+
+    bounce_up_right:
+        // if HL + logo_index_width > end of row, set direction = up_left
+        call get_row_end;
+        add HL,logo_index_width;
+        cmp BC,HL;
+        jpn set_up_left;
+
+        // if HL <= start of vram, set direction = down_right
+        pop HL;
+        push HL;
+        dec HL;
+        cmp HL,vram_start;
+        jpn set_down_right;
+    jp finish_bounce_switch;
+
+    bounce_up_left:
+        // if HL <= start of row, set direction = up_right
+        call get_row_start;
+        dec HL;
+        cmp HL,BC;
+        jpn set_up_right;
+
+        // if HL <= start of vram, set direction = down_left
+        pop HL;
+        push HL;
+        dec HL;
+        cmp HL,vram_start;
+        jpn set_down_left;
+    jp finish_bounce_switch;
+
+    set_down_left:
+        ld A1,down_left;
+    jp finish_bounce_switch;
+
+    set_down_right:
+        ld A1,down_right;
+    jp finish_bounce_switch;
+
+    set_up_right:
+        ld A1,up_right;
+    jp finish_bounce_switch;
+
+    set_up_left:
+        ld A1,up_left;
+    jp finish_bounce_switch;
+
+    finish_bounce_switch:
+
+    pop HL;
+    pop BC;
+ret;
+
+// Move HL according to the current direction
+// Arg HL = current top-left corner of logo
+// Arg A1 = current direction
+move_logo:
+    cmp A1,up_left;
+    jpz mv_up_left;
+    cmp A1,up_right;
+    jpz mv_up_right;
+    cmp A1,down_left;
+    jpz mv_down_left;
+
+    mv_down_right:
+        add HL,row_len;
+        inc HL;
+    jp finish_move_hl_switch;
+
+    mv_down_left:
+        add HL,row_len;
+        dec HL;
+    jp finish_move_hl_switch;
+
+    mv_up_right:
+        sub HL,row_len;
+        inc HL;
+    jp finish_move_hl_switch;
+
+    mv_up_left:
+        sub HL,row_len;
+        dec HL;
+    jp finish_move_hl_switch;
+
+    finish_move_hl_switch:
+ret;
+
+// Enable only frame interrupts.
+// Does not affect any registers.
+enable_only_frame_interrupts:
+    push BC;
+    push HL;
+
+    ld B0,0x01:b;
+    ld HL,ie_register_addr;
+    ld C,[HL];
+    or C0,B0;
+    ld [HL],C;
+
+    pop HL;
+    pop BC;
+ret;
+
+// Set HL to a random starting location within the frame.
+// Only affects HL.
+random_starting_location:
+    push BC;
+    push DE;
+
+    // Pick a random starting X-coord in range 0..(row_len - logo_width)
+    // Set DE to upper bound
+    ld DE,row_len;
+    sub DE,logo_width;
+
+    rand H;
+    divu H,E;
+    ld H,E;
+
+    // Pick a random starting Y-coord in range 0..(col_len - logo_height)
+    ld DE,col_len;
+    sub DE,logo_height;
+
+    rand L;
+    divu L,E;
+    ld L,E;
+
+    pop DE;
+    pop BC;
+
+    call coords_to_index;
+ret;
+
+// Set A1 to a random starting direction.
+// Only affects A.
+random_starting_direction:
+    rand A0;
+    ld A1,4:b;
+    divu A0,A1;
+ret;
+
+// Convert H = X-coord, L = Y-coord to a location within VRAM frame
+coords_to_index:
+    push BC;
+    push DE;
+
+    ld BC,0:d;
+    
+    // Add L * row_len to BC
+    ld DE,0:d;
+    ld E,L;
+    mulu DE,row_len;
+    add BC,DE;
+
+    // Add H to BC
+    ld DE,0:d;
+    ld E,H;
+    add BC,DE;
+
+    ld HL,BC;
+
+    add HL,vram_start;
+
+    pop DE;
+    pop BC;
+ret;
+
+// Get the start of the row HL is on.
+// Set BC = start of row
+get_row_start:
+    push HL;
+
+    ld BC,HL;
+    sub BC,vram_start;
+    divu BC,row_len;
+    sub HL,BC;
+    ld BC,HL;
+
+    pop HL;
+ret;
+
+// Get the end of the row HL is on.
+// Set BC = end of row
+get_row_end:
+    push HL;
+
+    add HL,row_len;
+    call get_row_start;
+    dec BC;
+
+    pop HL;
+ret;
