@@ -21,3 +21,5 @@ A 16-bit virtual computer.
 - Boot program, hard-coded to be loaded at the start of memory, sets up everything else then frees up the space it took up.
 
 - Merge CLI tools into one with different subcommands
+
+- Sprite data format and converter
