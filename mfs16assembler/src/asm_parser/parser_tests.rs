@@ -25,7 +25,6 @@ macro_rules! parser_test {
         #[test]
         fn $test_name() {
             let tokens = lex($data).unwrap();
-            println!("{:?}", tokens);
             let _ = parse(tokens, $data, 0, true).unwrap_err();
         }
     };
@@ -73,6 +72,12 @@ macro_rules! parser_test {
     };
 }
 
+parser_test!(
+    FULL: raw_bytes,
+    "// raw bytes.\nINC B;\n0x4:d:[\n0x0A:b, 1, 2, 3, 4 5 6 7 0xFF]\n"
+    =>
+    vec![0x31, 0x1D, 0x00, 0x00, 0x0A, 0x01, 0x02, 0x03, 0x04, 5, 6, 7, 0xFF]
+);
 parser_test!(
     FULL: abslabelzero,
     "// abslabelzero test.\n0:d:"

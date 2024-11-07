@@ -118,6 +118,16 @@ impl<'a> Parser<'a> {
             return Ok(None);
         }
 
+        // Attempt to parse an array of raw bytes.
+        match self.parse_raw_bytes() {
+            Ok(Some(bytes)) => {
+                self.bytes_parsed += bytes.len();
+                return Ok(Some(bytes));
+            }
+            Ok(None) => {}
+            Err(e) => return self.parsing_error(e.to_string()),
+        }
+
         // Attempt to parse an absolute label assignment.
         match self.parse_absolute_label() {
             Ok(Some(padding)) => {
@@ -303,7 +313,7 @@ impl<'a> Parser<'a> {
     /// Parse an absolute label, returning empty bytes padding up to the given memory location.
     fn parse_absolute_label(&mut self) -> eyre::Result<Option<Vec<u8>>> {
         let label_addr = match self.peek() {
-            Some(DWord(addr)) => *addr,
+            Some(&DWord(addr)) => addr,
             // Not an absolute label.
             _ => return Ok(None),
         };
@@ -371,6 +381,36 @@ impl<'a> Parser<'a> {
         }
 
         Ok(Some(self.bytes_parsed))
+    }
+
+    /// Add an array of raw bytes to the output.
+    fn parse_raw_bytes(&mut self) -> eyre::Result<Option<Vec<u8>>> {
+        match self.peek() {
+            Some(OpenBracket) => {}
+            // Not a raw bytes array.
+            _ => return Ok(None),
+        };
+        get_next_expected!(self, "`[`", OpenBracket);
+
+        let mut bytes = Vec::new();
+
+        'consume_bytes: loop {
+            match self.peek() {
+                Some(&Byte(b)) => {
+                    bytes.push(b);
+                    get_next_expected!(self, "byte", Byte(_));
+                }
+                Some(&Comma) => {
+                    get_next_expected!(self, "`,`", Comma);
+                }
+                Some(CloseBracket) => break 'consume_bytes,
+                _ => return Err(eyre!("Expected `]` to close raw byte array.")),
+            }
+        }
+
+        get_next_expected!(self, "`]`", CloseBracket);
+
+        Ok(Some(bytes))
     }
 
     /// Parse an instruction into a vector of bytes.

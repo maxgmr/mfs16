@@ -134,6 +134,21 @@ fn test_skip_not_comment() {
 }
 
 #[test]
+fn test_lex_raw_bytes() {
+    let expr = "[3:b, 0x1, 02]";
+    let expect = vec![
+        Token::new(0, 1, OpenBracket),
+        Token::new(1, 4, Byte(3)),
+        Token::new(4, 5, Comma),
+        Token::new(6, 9, Byte(1)),
+        Token::new(9, 10, Comma),
+        Token::new(11, 13, Byte(2)),
+        Token::new(13, 14, CloseBracket),
+    ];
+    assert_eq!(lex(expr).unwrap(), expect);
+}
+
+#[test]
 fn test_lex_full_expr() {
     let expr = "LD(A0, A1);";
     let expect = vec![
