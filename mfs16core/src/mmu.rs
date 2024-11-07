@@ -87,6 +87,8 @@ impl Mmu {
             ROM_OFFSET..ROM_END => self.rom.read_word(address - ROM_OFFSET as u32),
             RAM_OFFSET..RAM_END => self.ram.read_word(address - RAM_OFFSET as u32),
             VRAM_OFFSET..VRAM_END => self.gpu.read_word(address - VRAM_OFFSET as u32),
+            IE_REGISTER_ADDR => self.ie_register as u16,
+            INTERRUPT_REGISTER_ADDR => self.interrupt_register as u16,
             _ => combine_u8_le(self.read_byte(address), self.read_byte(address + 1)),
         }
     }
@@ -97,6 +99,8 @@ impl Mmu {
             ROM_OFFSET..ROM_END => self.rom.write_word(address - ROM_OFFSET as u32, value),
             RAM_OFFSET..RAM_END => self.ram.write_word(address - RAM_OFFSET as u32, value),
             VRAM_OFFSET..VRAM_END => self.gpu.write_word(address - VRAM_OFFSET as u32, value),
+            IE_REGISTER_ADDR => self.ie_register = value as u8,
+            INTERRUPT_REGISTER_ADDR => self.interrupt_register = value as u8,
             _ => {
                 print_warning_message("write a word", address, self.debug);
             }
@@ -109,6 +113,8 @@ impl Mmu {
             ROM_OFFSET..ROM_END => self.rom.read_dword(address - ROM_OFFSET as u32),
             RAM_OFFSET..RAM_END => self.ram.read_dword(address - RAM_OFFSET as u32),
             VRAM_OFFSET..VRAM_END => self.gpu.read_dword(address - VRAM_OFFSET as u32),
+            IE_REGISTER_ADDR => self.ie_register as u32,
+            INTERRUPT_REGISTER_ADDR => self.interrupt_register as u32,
             _ => combine_u16_le(
                 combine_u8_le(self.read_byte(address), self.read_byte(address + 1)),
                 combine_u8_le(self.read_byte(address + 2), self.read_byte(address + 3)),
@@ -122,6 +128,8 @@ impl Mmu {
             ROM_OFFSET..ROM_END => self.rom.write_dword(address - ROM_OFFSET as u32, value),
             RAM_OFFSET..RAM_END => self.ram.write_dword(address - RAM_OFFSET as u32, value),
             VRAM_OFFSET..VRAM_END => self.gpu.write_dword(address - VRAM_OFFSET as u32, value),
+            IE_REGISTER_ADDR => self.ie_register = value as u8,
+            INTERRUPT_REGISTER_ADDR => self.interrupt_register = value as u8,
             _ => {
                 print_warning_message("write a double word", address, self.debug);
             }
