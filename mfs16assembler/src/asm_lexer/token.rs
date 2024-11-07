@@ -1,4 +1,8 @@
+use std::fmt::Display;
+
 use mfs16core::{Reg16, Reg32, Reg8};
+
+use TokenKind::*;
 
 /// An MFS-16 assembly code token.
 #[derive(Clone, Debug, PartialEq)]
@@ -88,6 +92,41 @@ pub enum TokenKind {
     StackPointer,
     /// The program counter.
     ProgramCounter,
+}
+impl Display for TokenKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Byte(b) => format!("{b}:b"),
+                Word(w) => format!("{w}:w"),
+                DWord(d) => format!("{d}:d"),
+                QWord(q) => format!("{q}:q"),
+                Identifier(s) => String::from(s),
+                Equals => String::from("="),
+                Pound => String::from("#"),
+                Ampersand => String::from("&"),
+                OpenBracket => String::from("["),
+                CloseBracket => String::from("]"),
+                OpenParen => String::from("("),
+                CloseParen => String::from(")"),
+                Plus => String::from("+"),
+                Minus => String::from("-"),
+                Asterisk => String::from("*"),
+                Slash => String::from("/"),
+                Backslash => String::from("\\"),
+                Comma => String::from(","),
+                Semicolon => String::from(";"),
+                Colon => String::from(":"),
+                Reg(ra) => format!("{ra}"),
+                Breg(bra) => format!("{bra}"),
+                Vreg(vra) => format!("{vra}"),
+                StackPointer => String::from("SP"),
+                ProgramCounter => String::from("PC"),
+            }
+        )
+    }
 }
 
 macro_rules! from_impl {

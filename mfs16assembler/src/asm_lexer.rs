@@ -238,8 +238,6 @@ fn tokenise_number(data: &str) -> eyre::Result<(TokenKind, usize)> {
         false
     })
     .unwrap_or(("", 0));
-    println!("TYPE SUFFIX = <{type_suffix}>");
-    println!("TYPE SUFFIX LEN = {}", type_suffix.len());
 
     // Parse string as a numerical token
     let token_type = match type_suffix {

@@ -400,11 +400,18 @@ impl<'a> Parser<'a> {
                     bytes.push(b);
                     get_next_expected!(self, "byte", Byte(_));
                 }
+                Some(&Identifier(_)) => match self.parse_variable()? {
+                    Variable::Byte(b) => {
+                        bytes.push(b);
+                    }
+                    _ => return Err(eyre!("Raw byte arrays can only contain bytes.")),
+                },
                 Some(&Comma) => {
                     get_next_expected!(self, "`,`", Comma);
                 }
                 Some(CloseBracket) => break 'consume_bytes,
-                _ => return Err(eyre!("Expected `]` to close raw byte array.")),
+                Some(tk) => return Err(eyre!("Unexpected value `{tk}` in raw byte array.")),
+                _ => return Err(eyre!("Unexpected end of file.")),
             }
         }
 

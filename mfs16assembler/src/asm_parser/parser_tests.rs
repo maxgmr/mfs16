@@ -73,6 +73,12 @@ macro_rules! parser_test {
 }
 
 parser_test!(
+    FULL: raw_bytes_vars,
+    "my_byte = 0xAB;\n[0xCD,my_byte]"
+    =>
+    vec![0xCD, 0xAB]
+);
+parser_test!(
     FULL: raw_bytes,
     "// raw bytes.\nINC B;\n0x4:d:[\n0x0A:b, 1, 2, 3, 4 5 6 7 0xFF]\n"
     =>
