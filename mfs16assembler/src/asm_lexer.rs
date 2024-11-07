@@ -17,7 +17,6 @@ pub use token::{
 };
 
 const PREFIX_SIZE: usize = 2;
-const SUFFIX_SIZE: usize = 2;
 
 const HEX_PREFIX_CHAR: char = 'x';
 const OCT_PREFIX_CHAR: char = 'o';
@@ -217,12 +216,34 @@ fn tokenise_number(data: &str) -> eyre::Result<(TokenKind, usize)> {
         is_number_char(c, radix)
     })?;
 
-    // Get type suffix
-    let (type_suffix, suffix_bytes) = consume_n_chars(&data[contents_bytes..], SUFFIX_SIZE)?;
+    // Get type suffix (if any)
+    // let (type_suffix, suffix_bytes) = consume_n_chars(&data[contents_bytes..], SUFFIX_SIZE)?;
+    let mut counter = 0;
+    let (type_suffix, suffix_bytes) = consume_chars_while(&data[contents_bytes..], |c| {
+        if counter >= 2 {
+            return false;
+        }
+
+        if counter == 0 && c == ':' {
+            counter += 1;
+            return true;
+        }
+
+        if counter == 1 && is_type_suffix_letter(c) {
+            counter += 1;
+            return true;
+        }
+
+        counter += 1;
+        true
+    })
+    .unwrap_or(("", 0));
+    println!("{type_suffix}");
+    println!("{}", type_suffix.len());
 
     // Parse string as a numerical token
     let token_type = match type_suffix {
-        BYTE_SUFFIX => Byte(<u8>::from_str_radix(&clean(contents, has_prefix), radix)?),
+        BYTE_SUFFIX | "" => Byte(<u8>::from_str_radix(&clean(contents, has_prefix), radix)?),
         WORD_SUFFIX => Word(<u16>::from_str_radix(&clean(contents, has_prefix), radix)?),
         DWORD_SUFFIX => DWord(<u32>::from_str_radix(&clean(contents, has_prefix), radix)?),
         QWORD_SUFFIX => QWord(<u64>::from_str_radix(&clean(contents, has_prefix), radix)?),
@@ -271,15 +292,6 @@ fn skip_comment(data: &str) -> usize {
 }
 
 // ------- HELPERS -------
-
-/// Consume n chars.
-fn consume_n_chars(data: &str, n: usize) -> eyre::Result<(&str, usize)> {
-    let mut count = 0;
-    consume_chars_while(data, |_| {
-        count += 1;
-        count <= n
-    })
-}
 
 /// Consume chars until a given predicate is no longer true, returning the consumed chars and the
 /// number of bytes consumed.
@@ -344,6 +356,17 @@ fn get_prefix_radix(c: char) -> u32 {
 /// Return true iff the given char is a valid numerical char given the radix.
 fn is_number_char(c: char, radix: u32) -> bool {
     c.is_digit(radix) || (c == '_')
+}
+
+/// Return true iff the given char matches the letter portion of any type suffix.
+fn is_type_suffix_letter(c: char) -> bool {
+    _is_type_suffix_letter(c, BYTE_SUFFIX)
+        || _is_type_suffix_letter(c, WORD_SUFFIX)
+        || _is_type_suffix_letter(c, DWORD_SUFFIX)
+        || _is_type_suffix_letter(c, QWORD_SUFFIX)
+}
+fn _is_type_suffix_letter(c: char, type_suffix: &'static str) -> bool {
+    c == type_suffix.chars().last().unwrap()
 }
 
 /// Clean up a number string slice.
