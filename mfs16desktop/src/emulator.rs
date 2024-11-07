@@ -1,8 +1,7 @@
 use std::{
-    collections::VecDeque,
     sync::{
         atomic::{AtomicBool, Ordering},
-        Arc, Mutex,
+        Arc,
     },
     thread,
     time::{Duration, Instant},
@@ -34,8 +33,6 @@ const FPS_LIMIT: f32 = 60.0;
 const S_PER_FRAME: f32 = 1.0 / FPS_LIMIT;
 const CYCLES_PER_FRAME: u32 = (S_PER_FRAME * (CLOCK_FREQ as f32)) as u32;
 
-const NUM_SNAPSHOTS: usize = 60;
-
 /// Run the [Emulator].
 pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre::Result<()> {
     let frame_duration = Duration::from_secs_f32(S_PER_FRAME);
@@ -53,10 +50,6 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
     // Atomic flag to signal program quit
     let should_quit = Arc::new(AtomicBool::new(false));
     let emu_should_quit = Arc::clone(&should_quit);
-
-    // CPU snapshot log
-    let snapshots = Arc::new(Mutex::new(VecDeque::with_capacity(NUM_SNAPSHOTS)));
-    let emu_snapshots = snapshots.clone();
 
     // Start the emulation thread
     let emu_thread = std::thread::spawn(move || {
@@ -103,17 +96,6 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
                 emu_should_quit.store(true, Ordering::SeqCst);
                 eprintln!("{}", eyre!("{e}"));
                 break;
-            }
-
-            // Take CPU state snapshot partway through
-            if debug {
-                if emu_snapshots.lock().unwrap().len() >= NUM_SNAPSHOTS {
-                    emu_snapshots.lock().unwrap().pop_front();
-                }
-                emu_snapshots
-                    .lock()
-                    .unwrap()
-                    .push_back(format!("{}", computer.cpu));
             }
 
             if (debug || !too_slow_printed) && (cycles_start.elapsed() >= emu_frame_duration) {
@@ -217,17 +199,10 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
         }
     }
 
-    if args.debug {
-        while snapshots.lock().unwrap().len() > 0 {
-            println!("{}", snapshots.lock().unwrap().pop_front().unwrap());
-        }
-    }
-
     // Cleanup
     let _ = frame_sender.send(None);
     should_quit.store(true, Ordering::SeqCst);
     drop(frame_sender);
-    drop(snapshots);
     if emu_thread.join().is_err() {
         return Err(eyre!("Failed to join emulation thread."));
     };
