@@ -20,14 +20,17 @@ pub struct Debugger {
     pub history: VecDeque<ComputerState>,
     /// The ranges of memory to log.
     mem_ranges: Vec<MemRange>,
+    /// If true, only collect data on the CPU state.
+    cpu_only: bool,
 }
 impl Debugger {
     /// Create a new [Debugger] with the given [BreakCriteria] and [MemRange]s.
-    pub fn new(criteria: BreakCriteria, mem_ranges: Vec<MemRange>) -> Self {
+    pub fn new(criteria: BreakCriteria, mem_ranges: Vec<MemRange>, cpu_only: bool) -> Self {
         Self {
             criteria,
             history: VecDeque::with_capacity(HISTORY_SIZE),
             mem_ranges,
+            cpu_only,
         }
     }
 
@@ -36,8 +39,11 @@ impl Debugger {
         if self.history.len() >= HISTORY_SIZE {
             self.history.pop_front();
         }
-        self.history
-            .push_back(ComputerState::from_computer(computer, &self.mem_ranges));
+        self.history.push_back(ComputerState::from_computer(
+            computer,
+            &self.mem_ranges,
+            self.cpu_only,
+        ));
     }
 
     /// Write the debugger results to the given [Utf8Path].
@@ -58,9 +64,9 @@ impl Display for Debugger {
             "{}",
             self.history
                 .iter()
-                .map(|cs| cs.into())
+                .map(|cs| format!("{}", cs))
                 .collect::<Vec<String>>()
-                .join("\n\n\n")
+                .join(if self.cpu_only { "\n" } else { "\n\n\n" })
         )
     }
 }
@@ -83,7 +89,6 @@ impl BreakCriteria {
                 }
             }
         }
-
         false
     }
 }
@@ -111,22 +116,35 @@ impl MemRange {
 #[derive(Debug, Clone)]
 pub struct ComputerState {
     /// The total number of completed cycles.
-    num_cycles: u128,
-    /// The string showing the CPU state.
-    cpu_string: String,
+    num_cycles: Option<u128>,
+    /// The CPU state.
+    cpu_state: mfs16core::Cpu,
     /// The bytes at and after the PC.
-    pc_bytes: [u8; PC_BYTES_SIZE],
+    pc_bytes: Option<[u8; PC_BYTES_SIZE]>,
     /// User-defined ranges of memory.
-    memory_ranges: Vec<(MemRange, Vec<u8>)>,
+    memory_ranges: Option<Vec<(MemRange, Vec<u8>)>>,
+    /// Whether only the CPU string should be printed or not.
+    cpu_only: bool,
 }
 impl ComputerState {
     /// Create a new [ComputerState] from a given [Computer] and [MemRange]s.
-    fn from_computer(computer: &Computer, mem_ranges: &[MemRange]) -> Self {
-        Self {
-            num_cycles: computer.cycles,
-            cpu_string: format!("{}", computer.cpu),
-            pc_bytes: Self::read_pc_bytes(computer),
-            memory_ranges: mem_ranges.iter().map(|mr| mr.grab(computer)).collect(),
+    fn from_computer(computer: &Computer, mem_ranges: &[MemRange], cpu_only: bool) -> Self {
+        if cpu_only {
+            Self {
+                num_cycles: None,
+                cpu_state: computer.cpu.clone(),
+                pc_bytes: None,
+                memory_ranges: None,
+                cpu_only,
+            }
+        } else {
+            Self {
+                num_cycles: Some(computer.cycles),
+                cpu_state: computer.cpu.clone(),
+                pc_bytes: Some(Self::read_pc_bytes(computer)),
+                memory_ranges: Some(mem_ranges.iter().map(|mr| mr.grab(computer)).collect()),
+                cpu_only,
+            }
         }
     }
 
@@ -142,33 +160,45 @@ impl ComputerState {
         result
     }
 }
-impl From<ComputerState> for String {
-    fn from(value: ComputerState) -> Self {
-        let formatted_pc_bytes = value
-            .pc_bytes
-            .into_iter()
-            .map(|byte| format!("{:#04X}", byte))
-            .collect::<Vec<String>>()
-            .join(",");
-        let formatted_memory_ranges = value
-            .memory_ranges
-            .into_iter()
-            .map(|(mr, bytes)| {
-                format!(
-                    "\t-------{:#010X}..{:#010X}-------
+impl Display for ComputerState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.cpu_only {
+            return write!(f, "{}", self.cpu_state);
+        }
+
+        let formatted_pc_bytes = if let Some(pc_bytes) = self.pc_bytes {
+            pc_bytes
+                .into_iter()
+                .map(|byte| format!("{:#04X}", byte))
+                .collect::<Vec<String>>()
+                .join(",")
+        } else {
+            String::new()
+        };
+
+        let formatted_memory_ranges = if let Some(memory_ranges) = &self.memory_ranges {
+            memory_ranges
+                .iter()
+                .map(|(mr, bytes)| {
+                    format!(
+                        "\t-------{:#010X}..{:#010X}-------
 \t\t{}",
-                    mr.start,
-                    mr.end,
-                    bytes
-                        .into_iter()
-                        .map(|b| format!("{:#04X}", b))
-                        .collect::<Vec<String>>()
-                        .join(",")
-                )
-            })
-            .collect::<Vec<String>>()
-            .join("\n\n");
-        format!(
+                        mr.start,
+                        mr.end,
+                        bytes
+                            .iter()
+                            .map(|b| format!("{:#04X}", b))
+                            .collect::<Vec<String>>()
+                            .join(",")
+                    )
+                })
+                .collect::<Vec<String>>()
+                .join("\n\n")
+        } else {
+            String::new()
+        };
+        write!(
+            f,
             "=======CYCLE {} START=======
 
 \tBYTES: [<PC>,{}]
@@ -176,17 +206,10 @@ impl From<ComputerState> for String {
 \tCPU:   [{}]
 
 {}",
-            value.num_cycles, formatted_pc_bytes, value.cpu_string, formatted_memory_ranges,
+            self.num_cycles.unwrap_or(0),
+            formatted_pc_bytes,
+            self.cpu_state,
+            formatted_memory_ranges,
         )
-    }
-}
-impl From<&ComputerState> for String {
-    fn from(value: &ComputerState) -> Self {
-        <ComputerState as Into<String>>::into(value.clone())
-    }
-}
-impl Display for ComputerState {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", <&Self as Into<String>>::into(self))
     }
 }

@@ -23,6 +23,7 @@ use register::Registers;
 
 const BYTES_IN_DWORD: usize = 4;
 
+/// The virtual CPU of the MFS-16 computer.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Cpu {
     /// The CPU [Registers].

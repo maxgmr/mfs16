@@ -46,8 +46,10 @@ const DEBUG_PATH_STR: &str = "./debug.log";
 pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre::Result<()> {
     let frame_duration = Duration::from_secs_f32(S_PER_FRAME);
     let emu_frame_duration = frame_duration;
+
     let debug = args.debug;
     let strong_debug = args.strong_debug;
+    let cpu_debug = args.cpu_debug;
 
     // Channel to send graphics data to the renderer thread
     let (vram_sender, vram_receiver) = channel::bounded(2);
@@ -73,18 +75,11 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
         // TODO: load mem ranges and criteria from config
         let mut debugger = Debugger::new(
             BreakCriteria {
-                pc_list: Some(vec![0x100]),
+                pc_list: None,
+                // pc_list: Some(vec![0x100]),
             },
-            vec![
-                MemRange {
-                    start: 0x00_0000,
-                    end: 0x00_0010,
-                },
-                MemRange {
-                    start: 0x80_0000,
-                    end: 0x80_0010,
-                },
-            ],
+            vec![MemRange { start: 0, end: 16 }],
+            cpu_debug,
         );
 
         while !emu_should_quit.load(Ordering::SeqCst) {
@@ -118,7 +113,7 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
                 computer.cycle();
 
                 // Do debugging stuff if the instruction is done
-                if debug && computer.cpu.instr_is_done() {
+                if (debug || cpu_debug) && computer.cpu.instr_is_done() {
                     debugger.add_state(&computer);
                     if debugger.criteria.is_satisfied(&computer) {
                         emu_should_quit.store(true, Ordering::SeqCst);
@@ -250,14 +245,12 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
     drop(frame_sender);
     match emu_thread.join() {
         Ok(debugger) => {
-            if args.debug {
+            if args.debug || args.cpu_debug {
                 debugger.write_to_file(Utf8PathBuf::from(DEBUG_PATH_STR))?;
             }
         }
         Err(_) => return Err(eyre!("Failed to join emulation thread,")),
     }
-
-    // Write debug logs to file
 
     Ok(())
 }

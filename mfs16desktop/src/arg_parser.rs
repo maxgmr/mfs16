@@ -14,10 +14,14 @@ pub struct Cli {
     pub bin: Utf8PathBuf,
 
     /// The debug flag. Set this flag to print debug messages.
-    #[clap(short = 'd', conflicts_with = "strong_debug")]
+    #[clap(short = 'd', long = "debug", group = "dbg")]
     pub debug: bool,
 
     /// The strong debug flag. Set this flag to print even more debug messages.
-    #[clap(short = 'D', conflicts_with = "debug")]
+    #[clap(short = 'D', long = "strongdebug", group = "dbg")]
     pub strong_debug: bool,
+
+    /// The CPU-only debug flag. Set this to ensure the debugger only records CPU states.
+    #[clap(short = 'c', long = "cpudebug", group = "dbg")]
+    pub cpu_debug: bool,
 }
