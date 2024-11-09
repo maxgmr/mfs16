@@ -35,9 +35,6 @@ fn main() -> eyre::Result<()> {
     // Set up data directory
     let data_dir = utils::data_dir_setup(&config)?;
 
-    dbg!(&config);
-    dbg!(&data_dir);
-
     // Create a new computer
     let mut computer = Computer::new(args.strong_debug);
     // Load the binary into RAM
