@@ -27,9 +27,6 @@ call random_starting_location;
 // Set A1 = random starting direction.
 call random_starting_direction;
 
-// Enable interrupts.
-ei;
-
 
 // Start bouncing!
 main_loop:
@@ -47,9 +44,15 @@ main_loop:
     stb A,0;
     call draw_logo;
 
+    // Enable interrupts
+    ei;
+
     // Wait 2 frames
     halt;
     halt;
+
+    // Disable interrupts
+    di;
 jp main_loop;
 
 // Change the current direction of the logo if necessary
