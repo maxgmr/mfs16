@@ -15,12 +15,16 @@ pub struct Debugger {
     pub criteria: BreakCriteria,
     /// The different states of the computer over the last [HISTORY_SIZE] cycles.
     pub history: VecDeque<ComputerState>,
+    /// The different states of the computer after the break.
+    pub after_break_history: VecDeque<ComputerState>,
     /// The ranges of memory to log.
     mem_ranges: Vec<MemRange>,
     /// If true, only collect data on the CPU state.
     cpu_only: bool,
     /// The number of cycles to store in the history.
     history_size: usize,
+    /// The number of cycles to store after the breakpoint.
+    cycles_after_break: usize,
 }
 impl Debugger {
     /// Create a new [Debugger] with the given [BreakCriteria] and [MemRange]s.
@@ -29,14 +33,32 @@ impl Debugger {
         mem_ranges: Vec<MemRange>,
         cpu_only: bool,
         history_size: usize,
+        cycles_after_break: usize,
     ) -> Self {
         Self {
             criteria,
             history: VecDeque::with_capacity(history_size),
+            after_break_history: VecDeque::with_capacity(cycles_after_break),
             mem_ranges,
             cpu_only,
             history_size,
+            cycles_after_break,
         }
+    }
+
+    /// Add the given [Computer]'s current state to history after the breakpoint was reached.
+    /// Returns false if should stop.
+    pub fn add_state_after_breakpoint(&mut self, computer: &Computer) -> bool {
+        if self.after_break_history.len() >= self.cycles_after_break {
+            return false;
+        }
+        self.after_break_history
+            .push_back(ComputerState::from_computer(
+                computer,
+                &self.mem_ranges,
+                self.cpu_only,
+            ));
+        true
     }
 
     /// Add the given [Computer]'s current state to history.
@@ -59,6 +81,7 @@ impl Debugger {
             .truncate(true)
             .open(file_path.as_ref())?;
         file.write_all(format!("{self}").as_bytes())?;
+        println!("Wrote to debug log at `{}`.", file_path.as_ref());
         Ok(())
     }
 }
@@ -66,8 +89,13 @@ impl Display for Debugger {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}",
+            "{}\n\n===================\n=======BREAK=======\n===================\n\n{}",
             self.history
+                .iter()
+                .map(|cs| format!("{}", cs))
+                .collect::<Vec<String>>()
+                .join(if self.cpu_only { "\n" } else { "\n\n\n" }),
+            self.after_break_history
                 .iter()
                 .map(|cs| format!("{}", cs))
                 .collect::<Vec<String>>()

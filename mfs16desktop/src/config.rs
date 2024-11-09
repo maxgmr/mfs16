@@ -35,6 +35,7 @@ pub struct DebuggerSettings {
     pub break_criteria: BreakCriteria,
     pub mem_ranges: Vec<MemRange>,
     pub history_size: usize,
+    pub cycles_after_break: usize,
 }
 
 /// The user configuration settings.
@@ -111,6 +112,7 @@ impl Default for UserConfig {
                 },
                 mem_ranges: Vec::new(),
                 history_size: 16,
+                cycles_after_break: 16,
             },
         }
     }

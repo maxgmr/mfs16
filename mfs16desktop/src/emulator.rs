@@ -51,6 +51,7 @@ pub fn run_emulator(
     let break_criteria = config.debugger_settings.break_criteria.clone();
     let mem_ranges = config.debugger_settings.mem_ranges.clone();
     let history_size = config.debugger_settings.history_size;
+    let after_break_size = config.debugger_settings.cycles_after_break;
 
     // Channel to send graphics data to the renderer thread
     let (vram_sender, vram_receiver) = channel::bounded(2);
@@ -73,7 +74,15 @@ pub fn run_emulator(
         let mut too_slow_printed = false;
 
         // Set up debugger
-        let mut debugger = Debugger::new(break_criteria, mem_ranges, cpu_debug, history_size);
+        let mut debugger = Debugger::new(
+            break_criteria,
+            mem_ranges,
+            cpu_debug,
+            history_size,
+            after_break_size,
+        );
+
+        let mut hit_breakpoint = false;
 
         while !emu_should_quit.load(Ordering::SeqCst) {
             // Check if stopped
@@ -107,11 +116,18 @@ pub fn run_emulator(
 
                 // Do debugging stuff if the instruction is done
                 if (debug || cpu_debug) && computer.cpu.instr_is_done() {
-                    debugger.add_state(&computer);
-                    if debugger.criteria.is_satisfied(&computer) {
-                        emu_should_quit.store(true, Ordering::SeqCst);
-                        break;
+                    if hit_breakpoint {
+                        if !debugger.add_state_after_breakpoint(&computer) {
+                            emu_should_quit.store(true, Ordering::SeqCst);
+                            break;
+                        }
+                    } else {
+                        debugger.add_state(&computer);
+                        if debugger.criteria.is_satisfied(&computer) {
+                            hit_breakpoint = true;
+                        }
                     }
+
                     if strong_debug {
                         println!("{}", computer.cpu)
                     }
