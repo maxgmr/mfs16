@@ -1,6 +1,6 @@
 use std::{env, fs, io::Write};
 
-use camino::Utf8PathBuf;
+use camino::{Utf8Path, Utf8PathBuf};
 use color_eyre::eyre::{self, eyre};
 use directories::ProjectDirs;
 
@@ -38,6 +38,17 @@ Total Memory:\t\t\t{}",
     )
 }
 
+/// Ensure the data directory is properly set up, returning the path to the directory.
+pub fn data_dir_setup(config: &UserConfig) -> eyre::Result<Utf8PathBuf> {
+    let dir = data_dir(config)?;
+
+    if fs::metadata(&dir).is_err() {
+        fs::create_dir_all(&dir)?;
+    }
+
+    Ok(dir)
+}
+
 /// Ensure the config directory is properly set up, returning the path to the directory.
 pub fn config_dir_setup() -> eyre::Result<Utf8PathBuf> {
     // Create the directory where configuration data is stored if it doesn't already exist.
@@ -70,6 +81,26 @@ pub fn config_dir_setup() -> eyre::Result<Utf8PathBuf> {
     Ok(dir)
 }
 
+fn data_dir(config: &UserConfig) -> eyre::Result<Utf8PathBuf> {
+    if let Some(path) = get_env_var_path("DATA") {
+        // Prioritise environment variables.
+        Ok(expand_path(path)?)
+    } else if let Some(path) = &config.path_settings.data_path {
+        // Second priority: config file.
+        Ok(path.clone())
+    } else if let Some(proj_dirs) = project_dir() {
+        // Last priority: XDG-standardised local directory.
+        match Utf8PathBuf::from_path_buf(proj_dirs.data_dir().to_path_buf()) {
+            Ok(utf8_path_buf) => Ok(utf8_path_buf),
+            Err(_) => Err(eyre!(
+                "Path to config directory is not a valid UTF-8 sequence."
+            )),
+        }
+    } else {
+        Err(eyre!("No data directory found."))
+    }
+}
+
 fn config_dir() -> eyre::Result<Utf8PathBuf> {
     if let Some(path) = get_env_var_path("CONFIG") {
         // Prioritise environment variables.
@@ -83,7 +114,7 @@ fn config_dir() -> eyre::Result<Utf8PathBuf> {
             )),
         }
     } else {
-        Err(eyre!("No config file found."))
+        Err(eyre!("No config directory found."))
     }
 }
 
@@ -101,7 +132,7 @@ fn pkg_name_constant_case() -> String {
     env!("CARGO_PKG_NAME").to_uppercase().to_string()
 }
 
-// /// Expand the given file path.
-// pub fn expand_path<P: AsRef<Utf8Path>>(path: P) -> eyre::Result<Utf8PathBuf> {
-//     Ok(Utf8PathBuf::from(&shellexpand::full(&path.as_ref())?))
-// }
+/// Expand the given file path.
+pub fn expand_path<P: AsRef<Utf8Path>>(path: P) -> eyre::Result<Utf8PathBuf> {
+    Ok(Utf8PathBuf::from(&shellexpand::full(&path.as_ref())?))
+}

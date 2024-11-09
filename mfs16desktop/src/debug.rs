@@ -5,9 +5,6 @@ use serde::{Deserialize, Serialize};
 use std::{collections::VecDeque, fmt::Display};
 use std::{fs::OpenOptions, io::Write};
 
-/// The number of cycles stored in the history.
-pub const HISTORY_SIZE: usize = 32;
-
 /// The number of bytes at and after program counter to store in the history.
 pub const PC_BYTES_SIZE: usize = 16;
 
@@ -22,21 +19,29 @@ pub struct Debugger {
     mem_ranges: Vec<MemRange>,
     /// If true, only collect data on the CPU state.
     cpu_only: bool,
+    /// The number of cycles to store in the history.
+    history_size: usize,
 }
 impl Debugger {
     /// Create a new [Debugger] with the given [BreakCriteria] and [MemRange]s.
-    pub fn new(criteria: BreakCriteria, mem_ranges: Vec<MemRange>, cpu_only: bool) -> Self {
+    pub fn new(
+        criteria: BreakCriteria,
+        mem_ranges: Vec<MemRange>,
+        cpu_only: bool,
+        history_size: usize,
+    ) -> Self {
         Self {
             criteria,
-            history: VecDeque::with_capacity(HISTORY_SIZE),
+            history: VecDeque::with_capacity(history_size),
             mem_ranges,
             cpu_only,
+            history_size,
         }
     }
 
     /// Add the given [Computer]'s current state to history.
     pub fn add_state(&mut self, computer: &Computer) {
-        if self.history.len() >= HISTORY_SIZE {
+        if self.history.len() >= self.history_size {
             self.history.pop_front();
         }
         self.history.push_back(ComputerState::from_computer(

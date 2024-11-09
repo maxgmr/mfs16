@@ -26,11 +26,17 @@ fn main() -> eyre::Result<()> {
         args.debug = true;
     }
 
-    // Set up directories
+    // Set up config directory
     let config_dir = utils::config_dir_setup()?;
 
     // Load config
     let config = UserConfig::new(&config_dir)?;
+
+    // Set up data directory
+    let data_dir = utils::data_dir_setup(&config)?;
+
+    dbg!(&config);
+    dbg!(&data_dir);
 
     // Create a new computer
     let mut computer = Computer::new(args.strong_debug);
@@ -46,7 +52,7 @@ fn main() -> eyre::Result<()> {
     }
 
     // Run the emulator
-    run_emulator(computer, &args, &config)?;
+    run_emulator(computer, &args, &config, &data_dir)?;
 
     Ok(())
 }

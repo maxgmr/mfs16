@@ -7,7 +7,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use camino::Utf8PathBuf;
+use camino::{Utf8Path, Utf8PathBuf};
 use color_eyre::eyre::{self, eyre};
 use crossbeam::channel;
 use mfs16core::{Computer, Interrupt, CLOCK_FREQ, DISPLAY_HEIGHT, DISPLAY_WIDTH};
@@ -19,12 +19,7 @@ use sdl2::{
     video::Window,
 };
 
-use crate::{
-    arg_parser::Cli,
-    config::UserConfig,
-    debug::{BreakCriteria, Debugger, MemRange},
-    palette::Rgb24Palette,
-};
+use crate::{arg_parser::Cli, config::UserConfig, debug::Debugger, palette::Rgb24Palette};
 
 const SCALE: u32 = 2;
 
@@ -35,11 +30,15 @@ const BYTES_PER_RGB24_PIXEL: usize = 3;
 const PIXELS_PER_VRAM_INDEX: usize = 2;
 const BYTES_PER_VRAM_INDEX: usize = BYTES_PER_RGB24_PIXEL * PIXELS_PER_VRAM_INDEX;
 
-// TODO load from config
-const DEBUG_PATH_STR: &str = "./debug.log";
+const DEBUG_LOG_NAME: &str = "debug.log";
 
 /// Run the [Emulator].
-pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre::Result<()> {
+pub fn run_emulator(
+    computer: Computer,
+    args: &Cli,
+    config: &UserConfig,
+    data_dir: &Utf8Path,
+) -> eyre::Result<()> {
     let s_per_frame = 1.0 / args.fps;
     let cycles_per_frame: u32 = (s_per_frame * (CLOCK_FREQ as f32)) as u32;
     let frame_duration = Duration::from_secs_f32(s_per_frame);
@@ -48,6 +47,10 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
     let debug = args.debug;
     let strong_debug = args.strong_debug;
     let cpu_debug = args.cpu_debug;
+
+    let break_criteria = config.debugger_settings.break_criteria.clone();
+    let mem_ranges = config.debugger_settings.mem_ranges.clone();
+    let history_size = config.debugger_settings.history_size;
 
     // Channel to send graphics data to the renderer thread
     let (vram_sender, vram_receiver) = channel::bounded(2);
@@ -70,15 +73,7 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
         let mut too_slow_printed = false;
 
         // Set up debugger
-        // TODO: load mem ranges and criteria from config
-        let mut debugger = Debugger::new(
-            BreakCriteria {
-                // pc_list: Some(vec![0x98FF_F7F3]),
-                pc_list: None,
-            },
-            vec![MemRange { start: 0, end: 16 }],
-            cpu_debug,
-        );
+        let mut debugger = Debugger::new(break_criteria, mem_ranges, cpu_debug, history_size);
 
         while !emu_should_quit.load(Ordering::SeqCst) {
             // Check if stopped
@@ -250,7 +245,9 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
     match emu_thread.join() {
         Ok(debugger) => {
             if args.debug || args.cpu_debug {
-                debugger.write_to_file(Utf8PathBuf::from(DEBUG_PATH_STR))?;
+                let mut debug_log_path = Utf8PathBuf::from(data_dir);
+                debug_log_path.push(DEBUG_LOG_NAME);
+                debugger.write_to_file(debug_log_path)?;
             }
         }
         Err(_) => return Err(eyre!("Failed to join emulation thread,")),
