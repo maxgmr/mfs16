@@ -1,6 +1,6 @@
 use camino::Utf8Path;
 use color_eyre::eyre;
-use mfs16core::{Computer, Instruction};
+use mfs16core::{Computer, Instruction, Reg16};
 use serde::{Deserialize, Serialize};
 use std::{collections::VecDeque, fmt::Display};
 use std::{fs::OpenOptions, io::Write};
@@ -76,21 +76,87 @@ impl Display for Debugger {
     }
 }
 
+/// A register-value pair.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RegValPair {
+    pub reg: Reg16,
+    pub val: u16,
+}
+
 /// Responsible for debugger breakpoint criteria.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BreakCriteria {
     // The list of program counter addresses which will satisfy the criteria.
     pub pc_list: Vec<u32>,
+    // If the program counter is greater than this value, break.
+    pub pc_upper_bound: Option<u32>,
+    // If the program counter is less than this value, break.
+    pub pc_lower_bound: Option<u32>,
     // The list of instructions which will satisfy the criteria.
     pub instr_list: Vec<Instruction>,
+    // If any register is greater than its corresponding value, break.
+    pub reg_upper_bounds: Vec<RegValPair>,
+    // If any register is less than its corresponding value, break.
+    pub reg_lower_bounds: Vec<RegValPair>,
 }
 impl BreakCriteria {
     /// Check to see whether the given [Computer]'s state satisfies the break criteria.
     pub fn is_satisfied(&self, computer: &Computer) -> bool {
-        if self.pc_list.is_empty() && self.instr_list.is_empty() {
+        if self.pc_list.is_empty()
+            && self.instr_list.is_empty()
+            && self.pc_lower_bound.is_none()
+            && self.pc_upper_bound.is_none()
+            && self.reg_lower_bounds.is_empty()
+            && self.reg_upper_bounds.is_empty()
+        {
             return false;
         }
-        self.pc_satisfied(computer) && self.instr_satisfied(computer)
+        self.pc_bound_satisfied(computer, true)
+            && self.pc_bound_satisfied(computer, false)
+            && self.pc_satisfied(computer)
+            && self.instr_satisfied(computer)
+            && self.reg_bounds_satisfied(computer, true)
+            && self.reg_bounds_satisfied(computer, false)
+    }
+
+    fn pc_bound_satisfied(&self, computer: &Computer, is_upper_bound: bool) -> bool {
+        if is_upper_bound {
+            if let Some(ub) = self.pc_upper_bound {
+                computer.cpu.pc.address() > ub
+            } else {
+                true
+            }
+        } else if let Some(lb) = self.pc_lower_bound {
+            computer.cpu.pc.address() < lb
+        } else {
+            true
+        }
+    }
+
+    fn reg_bounds_satisfied(&self, computer: &Computer, is_upper_bound: bool) -> bool {
+        if is_upper_bound {
+            if self.reg_upper_bounds.is_empty() {
+                return true;
+            }
+
+            for rvp in &self.reg_upper_bounds {
+                if computer.cpu.reg(rvp.reg) > rvp.val {
+                    return true;
+                }
+            }
+            false
+        } else {
+            if self.reg_lower_bounds.is_empty() {
+                return true;
+            }
+
+            for rvp in &self.reg_lower_bounds {
+                if computer.cpu.reg(rvp.reg) < rvp.val {
+                    return true;
+                }
+            }
+            false
+        }
     }
 
     fn pc_satisfied(&self, computer: &Computer) -> bool {

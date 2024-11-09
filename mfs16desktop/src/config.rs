@@ -103,7 +103,11 @@ impl Default for UserConfig {
             debugger_settings: DebuggerSettings {
                 break_criteria: BreakCriteria {
                     pc_list: Vec::new(),
+                    pc_upper_bound: None,
+                    pc_lower_bound: None,
                     instr_list: Vec::new(),
+                    reg_upper_bounds: Vec::new(),
+                    reg_lower_bounds: Vec::new(),
                 },
                 mem_ranges: Vec::new(),
                 history_size: 16,
