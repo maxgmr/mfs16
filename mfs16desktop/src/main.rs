@@ -48,6 +48,10 @@ fn main() -> eyre::Result<()> {
         computer.mmu.rom.debug = true;
     }
 
+    if args.debug {
+        dbg!(&config);
+    }
+
     // Run the emulator
     run_emulator(computer, &args, &config, &data_dir)?;
 
