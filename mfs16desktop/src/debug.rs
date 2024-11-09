@@ -1,6 +1,6 @@
 use camino::Utf8Path;
 use color_eyre::eyre;
-use mfs16core::Computer;
+use mfs16core::{Computer, Instruction};
 use serde::{Deserialize, Serialize};
 use std::{collections::VecDeque, fmt::Display};
 use std::{fs::OpenOptions, io::Write};
@@ -80,18 +80,38 @@ impl Display for Debugger {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BreakCriteria {
     // The list of program counter addresses which will satisfy the criteria.
-    pub pc_list: Option<Vec<u32>>,
-    // TODO add more options
+    pub pc_list: Vec<u32>,
+    // The list of instructions which will satisfy the criteria.
+    pub instr_list: Vec<Instruction>,
 }
 impl BreakCriteria {
     /// Check to see whether the given [Computer]'s state satisfies the break criteria.
     pub fn is_satisfied(&self, computer: &Computer) -> bool {
-        // Check whether computer program counter matches any PC options in the list
-        if let Some(pc_list) = &self.pc_list {
-            for pc in pc_list {
-                if pc == &computer.cpu.pc.address() {
-                    return true;
-                }
+        if self.pc_list.is_empty() && self.instr_list.is_empty() {
+            return false;
+        }
+        self.pc_satisfied(computer) && self.instr_satisfied(computer)
+    }
+
+    fn pc_satisfied(&self, computer: &Computer) -> bool {
+        if self.pc_list.is_empty() {
+            return true;
+        }
+        for pc in &self.pc_list {
+            if pc == &computer.cpu.pc.address() {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn instr_satisfied(&self, computer: &Computer) -> bool {
+        if self.instr_list.is_empty() {
+            return true;
+        }
+        for instr in &self.instr_list {
+            if instr == &computer.cpu.instr {
+                return true;
             }
         }
         false

@@ -1,6 +1,7 @@
 //! All functionality related to the CPU registers.
-
 use std::{default::Default, fmt::Display};
+
+use serde::{Deserialize, Serialize};
 
 use super::Cpu;
 use crate::helpers::{combine_u16_be, combine_u8_be, split_dword, split_word};
@@ -10,7 +11,7 @@ use Reg32::*;
 use Reg8::*;
 
 /// Enum to access the individual 16-bit CPU registers.
-#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Reg16 {
     /// Register A.
     #[default]
@@ -81,7 +82,7 @@ impl Into<u16> for Reg16 {
 }
 
 /// Enum to access the 32-bit "big" virtual CPU registers.
-#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Reg32 {
     /// Register B & C.
     #[default]
@@ -132,7 +133,7 @@ impl Into<u16> for Reg32 {
 }
 
 /// Enum to access the 8-bit virtual CPU registers.
-#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Reg8 {
     /// High bit of register A.
     #[default]
@@ -238,7 +239,7 @@ impl Into<u16> for Reg8 {
 }
 
 /// The registers of the CPU.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Registers {
     /// High bit of register A.
     a1: u8,

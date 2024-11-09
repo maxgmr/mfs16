@@ -6,6 +6,8 @@
 //! cn = [ConditionKind] n
 use std::fmt::Display;
 
+use serde::{Deserialize, Serialize};
+
 #[cfg(test)]
 use strum_macros::EnumIter;
 
@@ -48,7 +50,7 @@ const NUM_BREGS: u8 = 3;
 // - [parser_tests.rs]          (OPTIONAL) Add a parser_test
 
 /// Enum for accessing the different CPU instructions.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(test, derive(EnumIter))]
 pub enum Instruction {
     /// 0x0000 - NOP

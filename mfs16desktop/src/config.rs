@@ -101,7 +101,10 @@ impl Default for UserConfig {
                 exit: Scancode::Escape,
             },
             debugger_settings: DebuggerSettings {
-                break_criteria: BreakCriteria { pc_list: None },
+                break_criteria: BreakCriteria {
+                    pc_list: Vec::new(),
+                    instr_list: Vec::new(),
+                },
                 mem_ranges: Vec::new(),
                 history_size: 16,
             },
