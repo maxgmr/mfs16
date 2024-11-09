@@ -24,4 +24,8 @@ pub struct Cli {
     /// The CPU-only debug flag. Set this to ensure the debugger only records CPU states.
     #[clap(short = 'c', long = "cpudebug", group = "dbg")]
     pub cpu_debug: bool,
+
+    /// Set the desired FPS. 60 FPS by default.
+    #[clap(default_value_t = 60.0, short = 'f', long = "fps")]
+    pub fps: f32,
 }

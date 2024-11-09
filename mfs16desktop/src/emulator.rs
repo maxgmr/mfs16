@@ -35,16 +35,14 @@ const BYTES_PER_RGB24_PIXEL: usize = 3;
 const PIXELS_PER_VRAM_INDEX: usize = 2;
 const BYTES_PER_VRAM_INDEX: usize = BYTES_PER_RGB24_PIXEL * PIXELS_PER_VRAM_INDEX;
 
-const FPS_LIMIT: f32 = 60.0;
-const S_PER_FRAME: f32 = 1.0 / FPS_LIMIT;
-const CYCLES_PER_FRAME: u32 = (S_PER_FRAME * (CLOCK_FREQ as f32)) as u32;
-
 // TODO load from config
 const DEBUG_PATH_STR: &str = "./debug.log";
 
 /// Run the [Emulator].
 pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre::Result<()> {
-    let frame_duration = Duration::from_secs_f32(S_PER_FRAME);
+    let s_per_frame = 1.0 / args.fps;
+    let cycles_per_frame: u32 = (s_per_frame * (CLOCK_FREQ as f32)) as u32;
+    let frame_duration = Duration::from_secs_f32(s_per_frame);
     let emu_frame_duration = frame_duration;
 
     let debug = args.debug;
@@ -75,8 +73,8 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
         // TODO: load mem ranges and criteria from config
         let mut debugger = Debugger::new(
             BreakCriteria {
+                // pc_list: Some(vec![0x98FF_F7F3]),
                 pc_list: None,
-                // pc_list: Some(vec![0x100]),
             },
             vec![MemRange { start: 0, end: 16 }],
             cpu_debug,
@@ -109,7 +107,7 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
             let cycles_start = Instant::now();
 
             // Perform the CPU cycles for this frame
-            for _ in 0..CYCLES_PER_FRAME {
+            for _ in 0..cycles_per_frame {
                 computer.cycle();
 
                 // Do debugging stuff if the instruction is done
@@ -136,7 +134,13 @@ pub fn run_emulator(computer: Computer, args: &Cli, config: &UserConfig) -> eyre
             }
 
             if !too_slow_printed && (cycles_start.elapsed() >= emu_frame_duration) {
-                println!("Warning: emulator is unable to keep up with FPS!\nTime limit for {} cycles: {:?}\nActual time: {:?}", CYCLES_PER_FRAME, emu_frame_duration, cycles_start.elapsed());
+                println!(
+                    "Warning: emulator is unable to keep up with FPS!\nTime limit \
+                    for {} cycles: {:?}\nActual time: {:?}",
+                    cycles_per_frame,
+                    emu_frame_duration,
+                    cycles_start.elapsed()
+                );
                 too_slow_printed = true;
             }
         }
