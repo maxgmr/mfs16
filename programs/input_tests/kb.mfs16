@@ -1,5 +1,36 @@
 // CONSTANTS
 ie_register_addr = 0xFFFF_FFFE:d;
+kb_register_start = 0xFFFF_FFBE:d;
+screen_start = 0x0100_0000:d;
+row_len = 0x140:d;
+half_row_len = 0xA0:d;
+
+q = 20:w;
+w = 26:w;
+e = 8:w;
+r = 21:w;
+t = 23:w;
+y = 28:w;
+u = 24:w;
+i = 12:w;
+o = 18:w;
+p = 19:w;
+a = 4:w;
+s = 22:w;
+d = 7:w;
+f = 9:w;
+g = 10:w;
+h = 11:w;
+j = 13:w;
+k = 14:w;
+l = 15:w;
+z = 29:w;
+x = 27:w;
+c = 6:w;
+v = 25:w;
+b = 5:w;
+n = 17:w;
+m = 16:w;
 
 jp entry_point;
 
@@ -9,13 +40,12 @@ jp entry_point;
 reti;
 // Keyboard interrupt handler
 0x200:d:
-    stop;
+    call update_graphics;
 reti;
 
 entry_point:
     // Enable only keyboard interrupts
     call enable_only_kbi;
-
     // Enable interrupts
     ei;
 
@@ -27,5 +57,46 @@ enable_only_kbi:
     push BC;
     ld BC,ie_register_addr;
     ld [BC],0x02:w;
+    pop BC;
+ret;
+
+update_graphics:
+    push BC;
+    push HL;
+    
+    ld HL,screen_start;
+
+    ld A,q;
+    call update_a;
+
+    pop HL;
+    pop BC;
+ret;
+
+update_a:
+    push BC;
+    push DE;
+
+    ld B,8:w;
+    divu A,B;
+
+    ld DE,kb_register_start;
+    add E,A;
+
+    ld C,[DE];
+    // bit C,B0;
+    bit C,4;
+    jpz px_off;
+
+    px_on:
+        ld D,0xFF:w;
+    jp px_done;
+    px_off:
+        ld D,0x00:w;
+    px_done:
+
+    ldi [HL],D;
+
+    pop DE;
     pop BC;
 ret;
