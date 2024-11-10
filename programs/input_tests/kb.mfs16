@@ -7,33 +7,6 @@ col_len = 0xF0:d;
 half_row_len = 0xA0:d;
 half_col_len = 0x78:d;
 
-q = 20:w;
-w = 26:w;
-e = 8:w;
-r = 21:w;
-t = 23:w;
-y = 28:w;
-u = 24:w;
-i = 12:w;
-o = 18:w;
-p = 19:w;
-a = 4:w;
-s = 22:w;
-d = 7:w;
-f = 9:w;
-g = 10:w;
-h = 11:w;
-j = 13:w;
-k = 14:w;
-l = 15:w;
-z = 29:w;
-x = 27:w;
-c = 6:w;
-v = 25:w;
-b = 5:w;
-n = 17:w;
-m = 16:w;
-
 jp entry_point;
 
 // Frame interrupt handler
@@ -68,105 +41,82 @@ update_graphics:
     
     ld HL,screen_start;
 
-    ld A,q;
-    call update_a;
-    ld A,w;
-    call update_a;
-    ld A,e;
-    call update_a;
-    ld A,r;
-    call update_a;
-    ld A,t;
-    call update_a;
-    ld A,y;
-    call update_a;
-    ld A,u;
-    call update_a;
-    ld A,i;
-    call update_a;
-    ld A,o;
-    call update_a;
-    ld A,p;
-    call update_a;
+    ld C,q;
+    call update_key;
+    ld C,w;
+    call update_key;
+    ld C,e;
+    call update_key;
+    ld C,r;
+    call update_key;
+    ld C,t;
+    call update_key;
+    ld C,y;
+    call update_key;
+    ld C,u;
+    call update_key;
+    ld C,i;
+    call update_key;
+    ld C,o;
+    call update_key;
+    ld C,p;
+    call update_key;
 
     call next_row;
 
-    ld A,a;
-    call update_a;
-    ld A,s;
-    call update_a;
-    ld A,d;
-    call update_a;
-    ld A,f;
-    call update_a;
-    ld A,g;
-    call update_a;
-    ld A,h;
-    call update_a;
-    ld A,j;
-    call update_a;
-    ld A,k;
-    call update_a;
-    ld A,l;
-    call update_a;
+    ld C,a;
+    call update_key;
+    ld C,s;
+    call update_key;
+    ld C,d;
+    call update_key;
+    ld C,f;
+    call update_key;
+    ld C,g;
+    call update_key;
+    ld C,h;
+    call update_key;
+    ld C,j;
+    call update_key;
+    ld C,k;
+    call update_key;
+    ld C,l;
+    call update_key;
 
     call next_row;
 
-    ld A,z;
-    call update_a;
-    ld A,x;
-    call update_a;
-    ld A,c;
-    call update_a;
-    ld A,v;
-    call update_a;
-    ld A,b;
-    call update_a;
-    ld A,n;
-    call update_a;
-    ld A,m;
-    call update_a;
+    ld C,z;
+    call update_key;
+    ld C,x;
+    call update_key;
+    ld C,c;
+    call update_key;
+    ld C,v;
+    call update_key;
+    ld C,b;
+    call update_key;
+    ld C,n;
+    call update_key;
+    ld C,m;
+    call update_key;
 
     pop HL;
     pop BC;
 ret;
 
-update_a:
-    push BC;
-    push DE;
+update_key:
+    call check_scancode;
 
-    ld B,8:w;
-    divu A,B;
-
-    ld DE,kb_register_start;
-    add E,A;
-
-    ld C,[DE];
-
-    shift_loop:
-    pss B0;
-    jpz shift_loop_end;
-
-    lsr C,1;
-
-    dec B0;
-    jp shift_loop;
-    shift_loop_end:
-
-    and C,1:w;
     jpz px_off;
 
     px_on:
-        ld D,0xFF:w;
+        ld D,0x00FF:w;
     jp px_done;
     px_off:
-        ld D,0x00:w;
+        ld D,0x0000:w;
     px_done:
 
     ldi [HL],D;
-
-    pop DE;
-    pop BC;
 ret;
 
 next_row:
