@@ -36,6 +36,7 @@ main_loop:
 
     // Check if collision with wall & change direction accordingly
     call check_bounce;
+    call check_bounce;
 
     // Move the logo anchor point (HL)
     call move_logo;
@@ -120,7 +121,7 @@ check_bounce:
         // if HL <= start of vram, set direction = down_right
         pop HL;
         push HL;
-        dec HL;
+        sub HL,row_len;
         cmp HL,vram_start;
         jpn set_down_right;
     jp finish_bounce_switch;
@@ -135,7 +136,7 @@ check_bounce:
         // if HL <= start of vram, set direction = down_left
         pop HL;
         push HL;
-        dec HL;
+        sub HL,row_len;
         cmp HL,vram_start;
         jpn set_down_left;
     jp finish_bounce_switch;
