@@ -161,7 +161,7 @@ impl Default for Mmu {
             ram: Memory::new_empty(RAM_SIZE, true, true),
             gpu: Gpu::default(),
             kb_reg: KbReg::default(),
-            ie_register: 0xFF,
+            ie_register: 0x00,
             interrupt_register: 0x00,
             debug: false,
         }

@@ -56,10 +56,9 @@ pub fn run_emulator(
     // Channel to send graphics data to the renderer thread
     let (vram_sender, vram_receiver) = channel::bounded(2);
     // Channel to signal frame updates to the emulation thread
-    let (frame_sender, frame_receiver): (
-        channel::Sender<Option<()>>,
-        channel::Receiver<Option<()>>,
-    ) = channel::bounded(2);
+    let (frame_sender, frame_receiver) = channel::bounded(2);
+    // Channel to send keyboard updates to the emulation thread
+    let (kb_sender, kb_receiver) = channel::unbounded();
 
     // Atomic flag to signal program quit
     let should_quit = Arc::new(AtomicBool::new(false));
@@ -113,6 +112,14 @@ pub fn run_emulator(
             // Perform the CPU cycles for this frame
             for _ in 0..cycles_per_frame {
                 computer.cycle();
+
+                // Check for input
+                match kb_receiver.try_recv() {
+                    // Key down
+                    Ok(KeyEvent::KeyDown(code)) => computer.key_down(code),
+                    Ok(KeyEvent::KeyUp(code)) => computer.key_up(code),
+                    _ => {}
+                }
 
                 // Do debugging stuff if the instruction is done
                 if (debug || cpu_debug) && computer.cpu.instr_is_done() {
@@ -222,10 +229,15 @@ pub fn run_emulator(
                     let _ = event_pump.poll_iter();
                     break;
                 }
+                Event::KeyUp {
+                    scancode: Some(sc), ..
+                } => {
+                    // Send keyboard input to MFS-16
+                    let _ = kb_sender.send(KeyEvent::KeyUp(sc as i32 as u16));
+                }
                 Event::KeyDown {
                     scancode: Some(sc), ..
                 } => {
-                    // TODO match keypress
                     if &sc == config.exit_scancode() {
                         let _ = frame_sender.send(None);
                         should_quit.store(true, Ordering::SeqCst);
@@ -233,6 +245,9 @@ pub fn run_emulator(
                         let _ = event_pump.poll_iter();
                         break;
                     }
+
+                    // Send keyboard input to MFS-16
+                    let _ = kb_sender.send(KeyEvent::KeyDown(sc as i32 as u16));
                 }
                 _ => {}
             }
@@ -310,4 +325,9 @@ fn render_graphics(
     sdl_canvas.clear();
     sdl_canvas.copy(texture, None, Some(dest_rect)).unwrap();
     sdl_canvas.present();
+}
+
+enum KeyEvent {
+    KeyUp(u16),
+    KeyDown(u16),
 }

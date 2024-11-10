@@ -1,4 +1,9 @@
-use crate::{cpu::Cpu, mmu::Mmu, Addr};
+use crate::{
+    cpu::Cpu,
+    keyboard::KbCode,
+    mmu::{Interrupt, Mmu},
+    Addr,
+};
 
 /// System clock frequency: 8_388_608 Hz (~8.4 MHz)
 pub const CLOCK_FREQ: u32 = 2_u32.pow(23);
@@ -86,5 +91,18 @@ impl Computer {
     /// existing data in that range.
     pub fn direct_write(&mut self, start: Addr, bytes: &[u8]) {
         self.mmu.rom.direct_write(start.into(), bytes);
+    }
+
+    /// Handle a pressed keyboard key.
+    pub fn key_down<C: Into<u16> + Copy>(&mut self, code: C) {
+        if !self.mmu.kb_reg.key(code) {
+            self.mmu.set_interrupt(Interrupt::Keyboard);
+        }
+        self.mmu.kb_reg.key_down(code);
+    }
+
+    /// Handle a released keyboard key.
+    pub fn key_up<C: Into<u16> + Copy>(&mut self, code: C) {
+        self.mmu.kb_reg.key_up(code);
     }
 }
