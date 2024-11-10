@@ -1419,6 +1419,19 @@ tilde:
     call charline_top;
     ret;
 
+unknown:
+    call write_11111;
+    call write_11111;
+    call write_11111;
+    call write_11111;
+    call write_11111;
+    call write_11111;
+    call write_11111;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
     
 // ------- END OF LETTERS -------
 
