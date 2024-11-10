@@ -56,6 +56,14 @@ impl Mmu {
         }
     }
 
+    /// Enable debug mode.
+    pub fn enable_debug(&mut self) {
+        self.debug = true;
+        self.rom.debug = true;
+        self.ram.debug = true;
+        self.kb_reg.debug = true;
+    }
+
     /// Set an [Interrupt].
     pub fn set_interrupt(&mut self, interrupt: Interrupt) {
         self.interrupt_register |= 1 << interrupt.into_byte();
@@ -67,6 +75,7 @@ impl Mmu {
             ROM_OFFSET..ROM_END => self.rom.read_byte(address - ROM_OFFSET as u32),
             RAM_OFFSET..RAM_END => self.ram.read_byte(address - RAM_OFFSET as u32),
             VRAM_OFFSET..VRAM_END => self.gpu.read_byte(address - VRAM_OFFSET as u32),
+            KB_REG_START..KB_REG_END => self.kb_reg.read_byte(address - KB_REG_START as u32),
             IE_REGISTER_ADDR => self.ie_register,
             INTERRUPT_REGISTER_ADDR => self.interrupt_register,
             _ => {

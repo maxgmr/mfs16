@@ -64,14 +64,15 @@ impl Computer {
     /// The display width in pixels.
     pub const DISPLAY_WIDTH: usize = DISPLAY_WIDTH;
 
-    /// Create a new [Computer] with empty [Ram].
+    /// Create a new [Computer] with empty memory.
     pub fn new(debug: bool) -> Self {
-        let mut cpu = Cpu::default();
-        cpu.debug = debug;
         Self {
-            cpu,
+            cpu: Cpu {
+                debug,
+                ..Default::default()
+            },
             debug,
-            ..Self::default()
+            ..Default::default()
         }
     }
 

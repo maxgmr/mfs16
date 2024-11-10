@@ -43,9 +43,7 @@ fn main() -> eyre::Result<()> {
 
     if args.debug {
         // Enable memory debug
-        computer.mmu.debug = true;
-        computer.mmu.ram.debug = true;
-        computer.mmu.rom.debug = true;
+        computer.mmu.enable_debug();
     }
 
     if args.debug {

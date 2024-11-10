@@ -1,6 +1,11 @@
 use std::default::Default;
 
-use super::mmu::{Interrupt, Mmu};
+use crate::{
+    helpers::{combine_u16_le, combine_u8_le, split_dword, split_word},
+    mmu::NOT_READABLE_BYTE,
+};
+
+use super::mmu::{print_warning_message, Interrupt, Mmu};
 
 /// Size of the keyboard register.
 pub const KB_REG_SIZE: usize = 0x0000_0040;
@@ -11,11 +16,62 @@ pub const KB_REG_SIZE: usize = 0x0000_0040;
 pub struct KbReg {
     /// The raw byte contents of the keyboard register.
     bytes: [u8; KB_REG_SIZE],
+    /// If true, will print warning messages to stderr.
+    pub debug: bool,
 }
 impl KbReg {
     /// Create a new [KbReg].
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(debug: bool) -> Self {
+        Self {
+            debug,
+            ..Default::default()
+        }
+    }
+
+    /// Read a raw byte from the KbReg bytes.
+    pub fn read_byte(&self, address: u32) -> u8 {
+        match address {
+            i if (i as usize) < KB_REG_SIZE => self.bytes[i as usize],
+            _ => {
+                print_warning_message("read from keyboard register", address, self.debug);
+                NOT_READABLE_BYTE
+            }
+        }
+    }
+
+    /// Write a raw byte to the KbReg.
+    pub fn write_byte(&mut self, address: u32, value: u8) {
+        match address {
+            i if (i as usize) < KB_REG_SIZE => self.bytes[i as usize] = value,
+            _ => print_warning_message("read from keyboard register", address, self.debug),
+        }
+    }
+
+    /// Write a double word from the KbReg starting at the given address.
+    pub fn write_dword(&mut self, address: u32, value: u32) {
+        let (high_word, low_word) = split_dword(value);
+        self.write_word(address, low_word);
+        self.write_word(address + 2, high_word);
+    }
+
+    /// Read a double word from the KbReg starting at the given address.
+    pub fn read_dword(&self, address: u32) -> u32 {
+        combine_u16_le(
+            combine_u8_le(self.read_byte(address), self.read_byte(address + 1)),
+            combine_u8_le(self.read_byte(address + 2), self.read_byte(address + 3)),
+        )
+    }
+
+    /// Write a word to the KbReg starting at the given address.
+    pub fn write_word(&mut self, address: u32, word: u16) {
+        let (high_byte, low_byte) = split_word(word);
+        self.write_byte(address, low_byte);
+        self.write_byte(address + 1, high_byte);
+    }
+
+    /// Read a word from the KbReg starting at the given address.
+    pub fn read_word(&self, address: u32) -> u16 {
+        combine_u8_le(self.read_byte(address), self.read_byte(address + 1))
     }
 
     /// Get the status of the bit corresponding to the given [KbCode] or index.
@@ -59,6 +115,7 @@ impl Default for KbReg {
     fn default() -> Self {
         Self {
             bytes: [0; KB_REG_SIZE],
+            debug: false,
         }
     }
 }
@@ -335,7 +392,7 @@ mod tests {
 
     #[test]
     fn test_get_set() {
-        let mut kbr = KbReg::new();
+        let mut kbr = KbReg::new(true);
         let mut mmu = Mmu::new();
 
         let mut i: u16 = 0;
@@ -358,7 +415,7 @@ mod tests {
 
     #[test]
     fn test_press_codes() {
-        let mut kbr = KbReg::new();
+        let mut kbr = KbReg::new(true);
         let mut mmu = Mmu::new();
 
         assert!(!kbr.key(A));
