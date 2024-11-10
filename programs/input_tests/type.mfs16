@@ -1,0 +1,96 @@
+// CONSTANTS
+ie_register_addr = 0xFFFF_FFFE:d;
+screen_start = 0x0100_0000:d;
+row_len = 0x140:d;
+col_len = 0xF0:d;
+half_row_len = 0xA0:d;
+half_col_len = 0x78:d;
+colour = 0xFFFF:w;
+
+jp entry_point;
+
+// Keyboard interrupt handler
+0x200:d:
+    call handle_input;
+reti;
+
+entry_point:
+    // Move HL to start of screen
+    ld HL,screen_start;
+    // Enable only keyboard interrupts
+    call enable_only_kbi;
+    // Enable interrupts
+    ei;
+
+main_loop:
+    halt;
+jp main_loop;
+
+handle_input:
+    // MAYBE A BETTER WAY! Iterate through kb register, if 1 then write to RAM.
+    // To draw, iterate through RAM bytes. Write byte to screen.
+    ld C,kb_q;
+    call check_scancode;
+    jpz skip_q;
+    call adjust_char;
+    call font_prep;
+    call q;
+    skip_q:
+
+    ld C,kb_m;
+    call check_scancode;
+    jpz skip_m;
+    call adjust_char;
+    call font_prep;
+    call m;
+    skip_m:
+
+    ld C,kb_space;
+    call check_scancode;
+    jpz skip_space;
+    call adjust_char;
+    call font_prep;
+    call space;
+    skip_space:
+
+    ld C,kb_backspace;
+    call check_scancode;
+    jpz skip_backspace;
+    call adjust_backspace;
+    call font_prep;
+    call backspace;
+    skip_backspace:
+    
+    ld C,kb_return;
+    call check_scancode;
+    jpz skip_newline;
+    call font_prep;
+    call newline;
+    skip_newline:
+
+ret;
+
+// Adjust HL if char would go out of bounds.
+adjust_char:
+    // TODO
+ret;
+// Adjust HL if backspace would go out of bounds.
+adjust_backspace:
+    // TODO
+ret;
+// Adjust HL if newline would go out of bounds.
+adjust_newline:
+    // TODO
+ret;
+
+font_prep:
+    ld BC,row_len;
+    ld D,colour;
+ret;
+
+enable_only_kbi:
+    push BC;
+    ld BC,ie_register_addr;
+    ld [BC],0x02:w;
+    pop BC;
+ret;
