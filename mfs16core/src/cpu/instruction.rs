@@ -923,14 +923,10 @@ pub enum Instruction {
     // Push/pop ra,vra onto/from stack
     // Push/pop BC,DE,HL onto/from stack
     // Shift/test bit based on register
-    // Load imm16 into [bra]
     // Absolute value
     // Min/Max
-    // Random number generator
     // Get clock count
-    // Disable interrupts
-    // Enable interrupts
-    // Modulo
+    // Set FPS
 }
 
 #[cfg(test)]

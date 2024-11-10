@@ -3,6 +3,8 @@ use clap::Parser;
 
 use crate::utils;
 
+const DEFAULT_FPS: f32 = 30.0;
+
 /// The CLI parser.
 #[derive(Parser, Debug)]
 #[command(name = "mfs16")]
@@ -29,7 +31,7 @@ pub struct Cli {
     #[clap(short = 'k', long = "keyboard")]
     pub kb_debug: bool,
 
-    /// Set the desired FPS. 60 FPS by default.
-    #[clap(default_value_t = 60.0, short = 'f', long = "fps")]
+    /// Set the desired FPS.
+    #[clap(default_value_t = DEFAULT_FPS, short = 'f', long = "fps")]
     pub fps: f32,
 }
