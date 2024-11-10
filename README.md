@@ -23,3 +23,5 @@ A 16-bit virtual computer.
 - Merge CLI tools into one with different subcommands
 
 - Sprite data format and converter
+
+- Add offset argument to parsing error for more accurate errors

@@ -1,5 +1,6 @@
 use crate::{
     cpu::Cpu,
+    keyboard::KbCode,
     mmu::{Interrupt, Mmu},
     Addr,
 };
@@ -39,6 +40,8 @@ pub struct Computer {
     pub cycles: u128,
     /// Will print debug messages to stdout when true.
     pub debug: bool,
+    /// Will print keyboard debug messages to stdout when true.
+    pub kb_debug: bool,
 }
 impl Computer {
     /// The system clock frequency in Hz.
@@ -98,10 +101,20 @@ impl Computer {
             self.mmu.set_interrupt(Interrupt::Keyboard);
         }
         self.mmu.kb_reg.key_down(code);
+        if self.kb_debug {
+            if let Some(kbc) = KbCode::try_from_u16(code.into()) {
+                println!("`{}` pressed", kbc);
+            }
+        }
     }
 
     /// Handle a released keyboard key.
     pub fn key_up<C: Into<u16> + Copy>(&mut self, code: C) {
         self.mmu.kb_reg.key_up(code);
+        if self.kb_debug {
+            if let Some(kbc) = KbCode::try_from_u16(code.into()) {
+                println!("`{}` released", kbc);
+            }
+        }
     }
 }

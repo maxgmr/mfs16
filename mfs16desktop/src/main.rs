@@ -46,6 +46,10 @@ fn main() -> eyre::Result<()> {
         computer.mmu.enable_debug();
     }
 
+    if args.kb_debug {
+        computer.kb_debug = true;
+    }
+
     if args.debug {
         dbg!(&config);
     }

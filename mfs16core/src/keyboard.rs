@@ -9,6 +9,8 @@ mod kb_code;
 
 use super::mmu::print_warning_message;
 
+pub use kb_code::KbCode;
+
 /// Size of the keyboard register.
 pub const KB_REG_SIZE: usize = 0x0000_0040;
 

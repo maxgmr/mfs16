@@ -132,7 +132,7 @@ impl Cpu {
         );
         self.push_stack(mmu, self.pc.address());
         self.pc = Addr::new_default_range(
-            ((ROM_OFFSET + INTERRUPT_HANDLERS_OFFSET) | ((offset as usize) << 3)) as u32,
+            ((ROM_OFFSET + INTERRUPT_HANDLERS_OFFSET) + ((offset as usize) * 0x100)) as u32,
         );
         true
     }

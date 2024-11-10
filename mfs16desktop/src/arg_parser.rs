@@ -25,6 +25,10 @@ pub struct Cli {
     #[clap(short = 'c', long = "cpudebug", group = "dbg")]
     pub cpu_debug: bool,
 
+    /// The keyboard debug flag. Set this to print pressed and released keys to the console.
+    #[clap(short = 'k', long = "keyboard")]
+    pub kb_debug: bool,
+
     /// Set the desired FPS. 60 FPS by default.
     #[clap(default_value_t = 60.0, short = 'f', long = "fps")]
     pub fps: f32,
