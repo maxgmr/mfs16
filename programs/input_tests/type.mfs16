@@ -1,86 +1,203 @@
 // CONSTANTS
-ie_register_addr = 0xFFFF_FFFE:d;
+data_start_addr = 0x80_0000:d;
 screen_start = 0x0100_0000:d;
+ie_register_addr = 0xFFFF_FFFE:d;
+
 row_len = 0x140:d;
 col_len = 0xF0:d;
 half_row_len = 0xA0:d;
 half_col_len = 0x78:d;
+
+num_rows = 53:d; // 480 pixels / 9 pixels per row
+num_chars = 106:d; // 640 pixels / 6 pixels per char
+
 colour = 0xFFFF:w;
 
 jp entry_point;
 
-// Keyboard interrupt handler
-0x200:d:
+// Frame interrupt handler
+0x100:d:
     call handle_input;
+    call draw_screen;
 reti;
 
 entry_point:
-    // Move HL to start of screen
-    ld HL,screen_start;
-    // Enable only keyboard interrupts
-    call enable_only_kbi;
+    // Enable only frame interrupts
+    call enable_only_fi;
     // Enable interrupts
     ei;
+
+    // TODO testing only. write hello world to RAM for draw_screen.
+    ld DE,data_start_addr;
+    // He
+    ld C,0x6548:w;
+    ldi [DE],C;
+    // ll
+    ld C,0x6C6C:w;
+    ldi [DE],C;
+    // o,
+    ld C,0x2C6F:w;
+    ldi [DE],C;
+    //  W 
+    ld C,0x5720:w;
+    ldi [DE],C;
+    // or 
+    ld C,0x726F:w;
+    ldi [DE],C;
+    // ld 
+    ld C,0x646C:w;
+    ldi [DE],C;
+    ld C,0x2121:w;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    ldi [DE],C;
+    // !\0
+    ld C,0x0021:w;
+    ldi [DE],C;
 
 main_loop:
     halt;
 jp main_loop;
 
+// Detect input and write to the data in RAM.
 handle_input:
-    // MAYBE A BETTER WAY! Iterate through kb register, if 1 then write to RAM.
-    // To draw, iterate through RAM bytes. Write byte to screen.
-    ld C,kb_q;
-    call check_scancode;
-    jpz skip_q;
-    call adjust_char;
-    call font_prep;
-    call q;
-    skip_q:
+ret;
 
-    ld C,kb_m;
-    call check_scancode;
-    jpz skip_m;
-    call adjust_char;
-    call font_prep;
-    call m;
-    skip_m:
+// Read the data from RAM and draw it to the screen.
+draw_screen:
+    push BC;
+    push DE;
+    push HL;
 
-    ld C,kb_space;
-    call check_scancode;
-    jpz skip_space;
-    call adjust_char;
-    call font_prep;
-    call space;
-    skip_space:
+    // HL = current screen write address.
+    // DE = current RAM data address.
+    ld HL,screen_start;
+    ld DE,data_start_addr;
 
-    ld C,kb_backspace;
-    call check_scancode;
-    jpz skip_backspace;
-    call adjust_backspace;
-    call font_prep;
-    call backspace;
-    skip_backspace:
-    
-    ld C,kb_return;
-    call check_scancode;
-    jpz skip_newline;
-    call font_prep;
+    // Read + print ASCII data, two bytes at a time, until null character    
+    rzf;
+    read_loop:
+    jpz read_loop_end;
+
+        ldi C,[DE];
+        // Handle first char
+        pss C0;
+        jpz read_loop_end;
+        call draw_byte;
+
+        // Handle second char
+        ld C0,C1;
+        pss C0;
+        jpz read_loop_end;
+        call draw_byte;
+
+
+    jp read_loop;
+    read_loop_end:
+
+    pop HL;
+    pop DE;
+    pop BC;
+ret;
+
+// Do newline if at end of line.
+prep_bounded_char:
+    push BC;
+
+    // Set BC to row end
+    push HL;
+    call hl_row_end;
+    ld BC, HL;
+    pop HL;
+
+    // Check if adding char would put HL past row end
+    push HL;
+    add HL,3:d;
+    cmp BC,HL;
+    // If HL > BC, do newline
+    jpn do_newline;
+
+    // Else, return HL to starting pos
+    no_newline:
+    pop HL;
+    jp newline_done;
+
+    // Do newline
+    do_newline:
+    ld BC,row_len;
     call newline;
-    skip_newline:
+    pop BC;
+    newline_done:
 
-ret;
-
-// Adjust HL if char would go out of bounds.
-adjust_char:
-    // TODO
-ret;
-// Adjust HL if backspace would go out of bounds.
-adjust_backspace:
-    // TODO
-ret;
-// Adjust HL if newline would go out of bounds.
-adjust_newline:
-    // TODO
+    pop BC;
 ret;
 
 font_prep:
@@ -88,9 +205,669 @@ font_prep:
     ld D,colour;
 ret;
 
-enable_only_kbi:
+enable_only_fi:
     push BC;
     ld BC,ie_register_addr;
-    ld [BC],0x02:w;
+    ld [BC],0x01:w;
     pop BC;
 ret;
+
+// Move HL to the start of this row.
+hl_row_start:
+    push BC;
+
+    ld BC,HL;
+    sub BC,screen_start;
+    divu BC,row_len;
+    sub HL,BC;
+
+    pop BC;
+ret;
+
+// Move HL to the end of this row.
+hl_row_end:
+    add HL,row_len;
+    call hl_row_start;
+    dec HL;
+ret;
+
+// Draw the byte in C0 onto the screen.
+draw_byte: 
+    push BC;
+    push DE;
+
+    ld E0,C0;
+    call font_prep;
+
+    // Special case for newline
+    cmp E0,10;
+    jnz end_newline;
+    call newline;
+    jp done_byte;
+    end_newline:
+
+    // Else, is a char. Do a newline if at end of line.
+    call prep_bounded_char;
+
+    // Match ASCII with font character
+    cmp E0,32;
+    jnz end_space;
+    call space;
+    jp done_byte;
+    end_space:
+
+    cmp E0,33;
+    jnz end_bang;
+    call bang;
+    jp done_byte;
+    end_bang:
+
+    cmp E0,34;
+    jnz end_dbl_quote;
+    call dbl_quote;
+    jp done_byte;
+    end_dbl_quote:
+
+    cmp E0,35;
+    jnz end_pound;
+    call pound;
+    jp done_byte;
+    end_pound:
+
+    cmp E0,36;
+    jnz end_dollar;
+    call dollar;
+    jp done_byte;
+    end_dollar:
+
+    cmp E0,37;
+    jnz end_percent;
+    call percent;
+    jp done_byte;
+    end_percent:
+
+    cmp E0,38;
+    jnz end_ampersand;
+    call ampersand;
+    jp done_byte;
+    end_ampersand:
+
+    cmp E0,39;
+    jnz end_single_quote;
+    call single_quote;
+    jp done_byte;
+    end_single_quote:
+
+    cmp E0,40;
+    jnz end_open_paren;
+    call open_paren;
+    jp done_byte;
+    end_open_paren:
+
+    cmp E0,41;
+    jnz end_close_paren;
+    call close_paren;
+    jp done_byte;
+    end_close_paren:
+
+    cmp E0,42;
+    jnz end_asterisk;
+    call asterisk;
+    jp done_byte;
+    end_asterisk:
+
+    cmp E0,43;
+    jnz end_plus;
+    call plus;
+    jp done_byte;
+    end_plus:
+
+    cmp E0,44;
+    jnz end_comma;
+    call comma;
+    jp done_byte;
+    end_comma:
+
+    cmp E0,45;
+    jnz end_hyphen;
+    call hyphen;
+    jp done_byte;
+    end_hyphen:
+
+    cmp E0,46;
+    jnz end_period;
+    call period;
+    jp done_byte;
+    end_period:
+
+    cmp E0,47;
+    jnz end_slash;
+    call slash;
+    jp done_byte;
+    end_slash:
+
+    cmp E0,48;
+    jnz end_zero;
+    call zero;
+    jp done_byte;
+    end_zero:
+
+    cmp E0,49;
+    jnz end_one;
+    call one;
+    jp done_byte;
+    end_one:
+
+    cmp E0,50;
+    jnz end_two;
+    call two;
+    jp done_byte;
+    end_two:
+
+    cmp E0,51;
+    jnz end_three;
+    call three;
+    jp done_byte;
+    end_three:
+
+    cmp E0,52;
+    jnz end_four;
+    call four;
+    jp done_byte;
+    end_four:
+
+    cmp E0,53;
+    jnz end_five;
+    call five;
+    jp done_byte;
+    end_five:
+
+    cmp E0,54;
+    jnz end_six;
+    call six;
+    jp done_byte;
+    end_six:
+
+    cmp E0,55;
+    jnz end_seven;
+    call seven;
+    jp done_byte;
+    end_seven:
+
+    cmp E0,56;
+    jnz end_eight;
+    call eight;
+    jp done_byte;
+    end_eight:
+
+    cmp E0,57;
+    jnz end_nine;
+    call nine;
+    jp done_byte;
+    end_nine:
+
+    cmp E0,58;
+    jnz end_colon;
+    call colon;
+    jp done_byte;
+    end_colon:
+
+    cmp E0,59;
+    jnz end_semicolon;
+    call semicolon;
+    jp done_byte;
+    end_semicolon:
+
+    cmp E0,60;
+    jnz end_less_than;
+    call less_than;
+    jp done_byte;
+    end_less_than:
+
+    cmp E0,61;
+    jnz end_equals;
+    call equals;
+    jp done_byte;
+    end_equals:
+
+    cmp E0,62;
+    jnz end_greater_than;
+    call greater_than;
+    jp done_byte;
+    end_greater_than:
+
+    cmp E0,63;
+    jnz end_question;
+    call question;
+    jp done_byte;
+    end_question:
+
+    cmp E0,64;
+    jnz end_at_sign;
+    call at_sign;
+    jp done_byte;
+    end_at_sign:
+
+    cmp E0,65;
+    jnz end_cap_a;
+    call cap_a;
+    jp done_byte;
+    end_cap_a:
+
+    cmp E0,66;
+    jnz end_cap_b;
+    call cap_b;
+    jp done_byte;
+    end_cap_b:
+
+    cmp E0,67;
+    jnz end_cap_c;
+    call cap_c;
+    jp done_byte;
+    end_cap_c:
+
+    cmp E0,68;
+    jnz end_cap_d;
+    call cap_d;
+    jp done_byte;
+    end_cap_d:
+
+    cmp E0,69;
+    jnz end_cap_e;
+    call cap_e;
+    jp done_byte;
+    end_cap_e:
+
+    cmp E0,70;
+    jnz end_cap_f;
+    call cap_f;
+    jp done_byte;
+    end_cap_f:
+
+    cmp E0,71;
+    jnz end_cap_g;
+    call cap_g;
+    jp done_byte;
+    end_cap_g:
+
+    cmp E0,72;
+    jnz end_cap_h;
+    call cap_h;
+    jp done_byte;
+    end_cap_h:
+
+    cmp E0,73;
+    jnz end_cap_i;
+    call cap_i;
+    jp done_byte;
+    end_cap_i:
+
+    cmp E0,74;
+    jnz end_cap_j;
+    call cap_j;
+    jp done_byte;
+    end_cap_j:
+
+    cmp E0,75;
+    jnz end_cap_k;
+    call cap_k;
+    jp done_byte;
+    end_cap_k:
+
+    cmp E0,76;
+    jnz end_cap_l;
+    call cap_l;
+    jp done_byte;
+    end_cap_l:
+
+    cmp E0,77;
+    jnz end_cap_m;
+    call cap_m;
+    jp done_byte;
+    end_cap_m:
+
+    cmp E0,78;
+    jnz end_cap_n;
+    call cap_n;
+    jp done_byte;
+    end_cap_n:
+
+    cmp E0,79;
+    jnz end_cap_o;
+    call cap_o;
+    jp done_byte;
+    end_cap_o:
+
+    cmp E0,80;
+    jnz end_cap_p;
+    call cap_p;
+    jp done_byte;
+    end_cap_p:
+
+    cmp E0,81;
+    jnz end_cap_q;
+    call cap_q;
+    jp done_byte;
+    end_cap_q:
+
+    cmp E0,82;
+    jnz end_cap_r;
+    call cap_r;
+    jp done_byte;
+    end_cap_r:
+
+    cmp E0,83;
+    jnz end_cap_s;
+    call cap_s;
+    jp done_byte;
+    end_cap_s:
+
+    cmp E0,84;
+    jnz end_cap_t;
+    call cap_t;
+    jp done_byte;
+    end_cap_t:
+
+    cmp E0,85;
+    jnz end_cap_u;
+    call cap_u;
+    jp done_byte;
+    end_cap_u:
+
+    cmp E0,86;
+    jnz end_cap_v;
+    call cap_v;
+    jp done_byte;
+    end_cap_v:
+
+    cmp E0,87;
+    jnz end_cap_w;
+    call cap_w;
+    jp done_byte;
+    end_cap_w:
+
+    cmp E0,88;
+    jnz end_cap_x;
+    call cap_x;
+    jp done_byte;
+    end_cap_x:
+
+    cmp E0,89;
+    jnz end_cap_y;
+    call cap_y;
+    jp done_byte;
+    end_cap_y:
+
+    cmp E0,90;
+    jnz end_cap_z;
+    call cap_z;
+    jp done_byte;
+    end_cap_z:
+
+    cmp E0,91;
+    jnz end_open_bracket;
+    call open_bracket;
+    jp done_byte;
+    end_open_bracket:
+
+    cmp E0,92;
+    jnz end_backslash;
+    call backslash;
+    jp done_byte;
+    end_backslash:
+
+    cmp E0,93;
+    jnz end_close_bracket;
+    call close_bracket;
+    jp done_byte;
+    end_close_bracket:
+
+    cmp E0,94;
+    jnz end_caret;
+    call caret;
+    jp done_byte;
+    end_caret:
+
+    cmp E0,95;
+    jnz end_underscore;
+    call underscore;
+    jp done_byte;
+    end_underscore:
+
+    cmp E0,96;
+    jnz end_backtick;
+    call backtick;
+    jp done_byte;
+    end_backtick:
+
+    cmp E0,97;
+    jnz end_a;
+    call a;
+    jp done_byte;
+    end_a:
+
+    cmp E0,98;
+    jnz end_b;
+    call b;
+    jp done_byte;
+    end_b:
+
+    cmp E0,99;
+    jnz end_c;
+    call c;
+    jp done_byte;
+    end_c:
+
+    cmp E0,100;
+    jnz end_d;
+    call d;
+    jp done_byte;
+    end_d:
+
+    cmp E0,101;
+    jnz end_e;
+    call e;
+    jp done_byte;
+    end_e:
+
+    cmp E0,102;
+    jnz end_f;
+    call f;
+    jp done_byte;
+    end_f:
+
+    cmp E0,103;
+    jnz end_g;
+    call g;
+    jp done_byte;
+    end_g:
+
+    cmp E0,104;
+    jnz end_h;
+    call h;
+    jp done_byte;
+    end_h:
+
+    cmp E0,105;
+    jnz end_i;
+    call i;
+    jp done_byte;
+    end_i:
+
+    cmp E0,106;
+    jnz end_j;
+    call j;
+    jp done_byte;
+    end_j:
+
+    cmp E0,107;
+    jnz end_k;
+    call k;
+    jp done_byte;
+    end_k:
+
+    cmp E0,108;
+    jnz end_l;
+    call l;
+    jp done_byte;
+    end_l:
+
+    cmp E0,109;
+    jnz end_m;
+    call m;
+    jp done_byte;
+    end_m:
+
+    cmp E0,110;
+    jnz end_n;
+    call n;
+    jp done_byte;
+    end_n:
+
+    cmp E0,111;
+    jnz end_o;
+    call o;
+    jp done_byte;
+    end_o:
+
+    cmp E0,112;
+    jnz end_p;
+    call p;
+    jp done_byte;
+    end_p:
+
+    cmp E0,113;
+    jnz end_q;
+    call q;
+    jp done_byte;
+    end_q:
+
+    cmp E0,114;
+    jnz end_r;
+    call r;
+    jp done_byte;
+    end_r:
+
+    cmp E0,115;
+    jnz end_s;
+    call s;
+    jp done_byte;
+    end_s:
+
+    cmp E0,116;
+    jnz end_t;
+    call t;
+    jp done_byte;
+    end_t:
+
+    cmp E0,117;
+    jnz end_u;
+    call u;
+    jp done_byte;
+    end_u:
+
+    cmp E0,118;
+    jnz end_v;
+    call v;
+    jp done_byte;
+    end_v:
+
+    cmp E0,119;
+    jnz end_w;
+    call w;
+    jp done_byte;
+    end_w:
+
+    cmp E0,120;
+    jnz end_x;
+    call x;
+    jp done_byte;
+    end_x:
+
+    cmp E0,121;
+    jnz end_y;
+    call y;
+    jp done_byte;
+    end_y:
+
+    cmp E0,122;
+    jnz end_z;
+    call z;
+    jp done_byte;
+    end_z:
+
+    cmp E0,123;
+    jnz end_open_brace;
+    call open_brace;
+    jp done_byte;
+    end_open_brace:
+
+    cmp E0,124;
+    jnz end_bar;
+    call bar;
+    jp done_byte;
+    end_bar:
+
+    cmp E0,125;
+    jnz end_close_brace;
+    call close_brace;
+    jp done_byte;
+    end_close_brace:
+
+    cmp E0,126;
+    jnz end_tilde;
+    call tilde;
+    jp done_byte;
+    end_tilde:
+
+    // Unknown character
+    call unknown;
+
+    done_byte:
+    pop DE;
+    pop BC;
+ret;
+
+// handle_input_old:
+//     // MAYBE A BETTER WAY! Iterate through kb register, if 1 then write to RAM.
+//     // To draw, iterate through RAM bytes. Write byte to screen.
+//     ld C,kb_q;
+//     call check_scancode;
+//     jpz skip_q;
+//     call adjust_char;
+//     call font_prep;
+//     call q;
+//     skip_q:
+// 
+//     ld C,kb_m;
+//     call check_scancode;
+//     jpz skip_m;
+//     call adjust_char;
+//     call font_prep;
+//     call m;
+//     skip_m:
+// 
+//     ld C,kb_space;
+//     call check_scancode;
+//     jpz skip_space;
+//     call adjust_char;
+//     call font_prep;
+//     call space;
+//     skip_space:
+// 
+//     ld C,kb_backspace;
+//     call check_scancode;
+//     jpz skip_backspace;
+//     call adjust_backspace;
+//     call font_prep;
+//     call backspace;
+//     skip_backspace:
+//     
+//     ld C,kb_return;
+//     call check_scancode;
+//     jpz skip_newline;
+//     call font_prep;
+//     call newline;
+//     skip_newline:
+// 
+// ret;
