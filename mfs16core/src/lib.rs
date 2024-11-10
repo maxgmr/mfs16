@@ -5,6 +5,7 @@ mod computer;
 mod cpu;
 mod gpu;
 pub mod helpers;
+mod keyboard;
 mod memory;
 mod mmu;
 

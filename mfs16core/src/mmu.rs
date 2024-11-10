@@ -5,6 +5,7 @@ use std::{default::Default, fmt::Display};
 use crate::{
     gpu::Gpu,
     helpers::{combine_u16_le, combine_u8_le},
+    keyboard::{KbReg, KB_REG_SIZE},
     memory::Memory,
     RAM_OFFSET, RAM_SIZE, ROM_OFFSET, ROM_SIZE, VRAM_OFFSET, VRAM_SIZE,
 };
@@ -15,6 +16,11 @@ pub const NOT_READABLE_BYTE: u8 = 0xFF;
 const ROM_END: usize = ROM_OFFSET + ROM_SIZE;
 const RAM_END: usize = RAM_OFFSET + RAM_SIZE;
 const VRAM_END: usize = VRAM_OFFSET + VRAM_SIZE;
+
+/// Start address of the keyboard register.
+pub const KB_REG_START: usize = 0xFFFF_FFBE;
+
+const KB_REG_END: usize = KB_REG_START + KB_REG_SIZE;
 
 /// Address of the interrupt enable register.
 pub const IE_REGISTER_ADDR: usize = 0xFFFF_FFFE;
@@ -30,6 +36,9 @@ pub struct Mmu {
     pub ram: Memory,
     /// The graphics processing unit of the computer.
     pub gpu: Gpu,
+    /// The keyboard I/O register. 256 bits. Bits are toggled on/off then their respective keys are
+    /// pressed/released.
+    pub kb_reg: KbReg,
     /// The interrupt enable register. Serves as a bitmask for the interrupt register.
     pub ie_register: u8,
     /// The interrupt register. Denotes which interrupts have been triggered.
@@ -142,6 +151,7 @@ impl Default for Mmu {
             rom: Memory::new_empty(ROM_SIZE, true, false),
             ram: Memory::new_empty(RAM_SIZE, true, true),
             gpu: Gpu::default(),
+            kb_reg: KbReg::default(),
             ie_register: 0xFF,
             interrupt_register: 0x00,
             debug: false,
