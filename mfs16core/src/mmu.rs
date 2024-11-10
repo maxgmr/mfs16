@@ -58,7 +58,7 @@ impl Mmu {
 
     /// Set an [Interrupt].
     pub fn set_interrupt(&mut self, interrupt: Interrupt) {
-        self.interrupt_register ^= 1 << interrupt.into_byte();
+        self.interrupt_register |= 1 << interrupt.into_byte();
     }
 
     /// Read a byte from a given address.

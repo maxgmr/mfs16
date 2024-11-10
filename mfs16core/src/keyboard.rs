@@ -1,5 +1,7 @@
 use std::default::Default;
 
+use super::mmu::{Interrupt, Mmu};
+
 /// Size of the keyboard register.
 pub const KB_REG_SIZE: usize = 0x0000_0040;
 
@@ -22,8 +24,12 @@ impl KbReg {
         (self.bytes[byte_index as usize] & (1 << bit_index)) != 0
     }
 
-    /// Set the register bit corresponding to the given [KbCode] or index.
-    pub fn key_down<C: Into<u16> + Copy>(&mut self, code: C) {
+    /// Set the register bit corresponding to the given [KbCode] or index. Also sets the
+    /// [Interrupt::Keyboard] [Interrupt] if the key was not already pressed.
+    pub fn key_down<C: Into<u16> + Copy>(&mut self, code: C, mmu: &mut Mmu) {
+        if !self.key(code) {
+            mmu.set_interrupt(Interrupt::Keyboard);
+        }
         self.change_bit(code, true);
     }
 
@@ -36,7 +42,7 @@ impl KbReg {
         let (byte_index, bit_index) = Self::byte_and_bit_indicies(code);
 
         if value {
-            self.bytes[byte_index as usize] ^= 1 << bit_index;
+            self.bytes[byte_index as usize] |= 1 << bit_index;
         } else {
             self.bytes[byte_index as usize] &= !(1 << bit_index);
         }
@@ -330,6 +336,7 @@ mod tests {
     #[test]
     fn test_get_set() {
         let mut kbr = KbReg::new();
+        let mut mmu = Mmu::new();
 
         let mut i: u16 = 0;
         for byte in 0..KB_REG_SIZE {
@@ -337,11 +344,11 @@ mod tests {
                 let cmp_val: u16 = (1 << (bit + 1)) - 1;
 
                 assert_eq!(kbr.key(i), false);
-                kbr.key_down(i);
+                kbr.key_down(i, &mut mmu);
                 assert_eq!(kbr.key(i), true);
                 kbr.key_up(i);
                 assert_eq!(kbr.key(i), false);
-                kbr.key_down(i);
+                kbr.key_down(i, &mut mmu);
                 assert_eq!(cmp_val, kbr.bytes[byte] as u16);
 
                 i += 1;
@@ -351,14 +358,26 @@ mod tests {
 
     #[test]
     fn test_press_codes() {
-        let mut kbc = KbReg::new();
-        assert!(!kbc.key(A));
-        kbc.key_down(A);
-        assert!(kbc.key(A));
-        kbc.key_down(Z);
-        assert!(kbc.key(A));
-        assert!(kbc.key(Z));
-        kbc.key_up(A);
-        assert!(!kbc.key(A));
+        let mut kbr = KbReg::new();
+        let mut mmu = Mmu::new();
+
+        assert!(!kbr.key(A));
+        assert_eq!(mmu.interrupt_register, 0b0000_0000);
+
+        kbr.key_down(A, &mut mmu);
+        assert_eq!(mmu.interrupt_register, 0b0000_0010);
+        assert!(kbr.key(A));
+
+        mmu.interrupt_register = 0;
+        kbr.key_down(A, &mut mmu);
+        assert!(kbr.key(A));
+        assert_eq!(mmu.interrupt_register, 0b0000_0000);
+
+        kbr.key_down(Z, &mut mmu);
+        assert!(kbr.key(A));
+        assert!(kbr.key(Z));
+
+        kbr.key_up(A);
+        assert!(!kbr.key(A));
     }
 }
