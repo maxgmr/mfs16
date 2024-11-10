@@ -9,8 +9,6 @@ mod kb_code;
 
 use super::mmu::print_warning_message;
 
-pub use kb_code::KbCode;
-
 /// Size of the keyboard register.
 pub const KB_REG_SIZE: usize = 0x0000_0040;
 
@@ -125,7 +123,8 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use super::*;
-    use KbCode::*;
+
+    use super::kb_code::KbCode::*;
 
     #[test]
     fn test_kb_code() {
