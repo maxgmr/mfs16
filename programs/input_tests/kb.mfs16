@@ -41,63 +41,63 @@ update_graphics:
     
     ld HL,screen_start;
 
-    ld C,q;
+    ld C,kb_q;
     call update_key;
-    ld C,w;
+    ld C,kb_w;
     call update_key;
-    ld C,e;
+    ld C,kb_e;
     call update_key;
-    ld C,r;
+    ld C,kb_r;
     call update_key;
-    ld C,t;
+    ld C,kb_t;
     call update_key;
-    ld C,y;
+    ld C,kb_y;
     call update_key;
-    ld C,u;
+    ld C,kb_u;
     call update_key;
-    ld C,i;
+    ld C,kb_i;
     call update_key;
-    ld C,o;
+    ld C,kb_o;
     call update_key;
-    ld C,p;
-    call update_key;
-
-    call next_row;
-
-    ld C,a;
-    call update_key;
-    ld C,s;
-    call update_key;
-    ld C,d;
-    call update_key;
-    ld C,f;
-    call update_key;
-    ld C,g;
-    call update_key;
-    ld C,h;
-    call update_key;
-    ld C,j;
-    call update_key;
-    ld C,k;
-    call update_key;
-    ld C,l;
+    ld C,kb_p;
     call update_key;
 
     call next_row;
 
-    ld C,z;
+    ld C,kb_a;
     call update_key;
-    ld C,x;
+    ld C,kb_s;
     call update_key;
-    ld C,c;
+    ld C,kb_d;
     call update_key;
-    ld C,v;
+    ld C,kb_f;
     call update_key;
-    ld C,b;
+    ld C,kb_g;
     call update_key;
-    ld C,n;
+    ld C,kb_h;
     call update_key;
-    ld C,m;
+    ld C,kb_j;
+    call update_key;
+    ld C,kb_k;
+    call update_key;
+    ld C,kb_l;
+    call update_key;
+
+    call next_row;
+
+    ld C,kb_z;
+    call update_key;
+    ld C,kb_x;
+    call update_key;
+    ld C,kb_c;
+    call update_key;
+    ld C,kb_v;
+    call update_key;
+    ld C,kb_b;
+    call update_key;
+    ld C,kb_n;
+    call update_key;
+    ld C,kb_m;
     call update_key;
 
     pop HL;
