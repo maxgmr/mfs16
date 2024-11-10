@@ -3,7 +3,9 @@ ie_register_addr = 0xFFFF_FFFE:d;
 kb_register_start = 0xFFFF_FFBE:d;
 screen_start = 0x0100_0000:d;
 row_len = 0x140:d;
+col_len = 0xF0:d;
 half_row_len = 0xA0:d;
+half_col_len = 0x78:d;
 
 q = 20:w;
 w = 26:w;
@@ -68,6 +70,62 @@ update_graphics:
 
     ld A,q;
     call update_a;
+    ld A,w;
+    call update_a;
+    ld A,e;
+    call update_a;
+    ld A,r;
+    call update_a;
+    ld A,t;
+    call update_a;
+    ld A,y;
+    call update_a;
+    ld A,u;
+    call update_a;
+    ld A,i;
+    call update_a;
+    ld A,o;
+    call update_a;
+    ld A,p;
+    call update_a;
+
+    call next_row;
+
+    ld A,a;
+    call update_a;
+    ld A,s;
+    call update_a;
+    ld A,d;
+    call update_a;
+    ld A,f;
+    call update_a;
+    ld A,g;
+    call update_a;
+    ld A,h;
+    call update_a;
+    ld A,j;
+    call update_a;
+    ld A,k;
+    call update_a;
+    ld A,l;
+    call update_a;
+
+    call next_row;
+
+    ld A,z;
+    call update_a;
+    ld A,x;
+    call update_a;
+    ld A,c;
+    call update_a;
+    ld A,v;
+    call update_a;
+    ld A,b;
+    call update_a;
+    ld A,n;
+    call update_a;
+    ld A,m;
+    call update_a;
 
     pop HL;
     pop BC;
@@ -84,8 +142,18 @@ update_a:
     add E,A;
 
     ld C,[DE];
-    // bit C,B0;
-    bit C,4;
+
+    shift_loop:
+    pss B0;
+    jpz shift_loop_end;
+
+    lsr C,1;
+
+    dec B0;
+    jp shift_loop;
+    shift_loop_end:
+
+    and C,1:w;
     jpz px_off;
 
     px_on:
@@ -96,6 +164,22 @@ update_a:
     px_done:
 
     ldi [HL],D;
+
+    pop DE;
+    pop BC;
+ret;
+
+next_row:
+    push BC;
+    push DE;
+
+    ld DE,HL;
+    sub DE,screen_start;
+    divu DE,row_len;
+    sub HL,BC;
+
+    add HL,row_len;
+    add HL,row_len;
 
     pop DE;
     pop BC;

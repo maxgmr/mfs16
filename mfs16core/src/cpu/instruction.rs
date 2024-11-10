@@ -921,6 +921,7 @@ pub enum Instruction {
     Halt,
     // TODO
     // Push/pop ra,vra onto/from stack
+    // Shift/test bit based on register
     // Load imm16 into [bra]
     // Absolute value
     // Min/Max
