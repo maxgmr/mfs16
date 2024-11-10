@@ -1,6 +1,5 @@
 use crate::{
     cpu::Cpu,
-    keyboard::KbCode,
     mmu::{Interrupt, Mmu},
     Addr,
 };
