@@ -178,6 +178,21 @@ newline:
 
     ret;
 
+backspace:
+    // Go to previous char
+    call back_char;
+    // Overwrite with blank
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call charline_top;
+    ret;
+
 cap_a:
     call write_00100;
     call write_01010;
@@ -1426,7 +1441,19 @@ next_char:
     add HL,char_width;
     ret;
 
+back_char:
+    sub HL,char_width;
+    ret;
+
 write_00000:
+    ld A,0x0000:w;
+    and A,D;
+    ld [HL],A;
+    inc HL;
+    ld A,0x0000:w;
+    and A,D;
+    ld [HL],A;
+    dec HL;
     call next_line;
     ret;
 
