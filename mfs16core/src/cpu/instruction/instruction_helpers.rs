@@ -412,8 +412,10 @@ fn ldi_bra_rb(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, rb: Reg16) {
     match cpu.step_num {
         1 => cpu.update_last_word(cpu.reg(rb)),
         2 => {
-            mmu.write_word(cpu.breg(bra), cpu.last_word);
-            dbl_inc_addr(cpu, bra);
+            let mut breg_val = cpu.breg(bra);
+            mmu.write_word(breg_val, cpu.last_word);
+            breg_val = breg_val.wrapping_add(2);
+            cpu.set_breg(bra, breg_val);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -423,8 +425,10 @@ fn ldd_bra_rb(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, rb: Reg16) {
     match cpu.step_num {
         1 => cpu.update_last_word(cpu.reg(rb)),
         2 => {
+            let mut breg_val = cpu.breg(bra);
             mmu.write_word(cpu.breg(bra), cpu.last_word);
-            dbl_dec_addr(cpu, bra);
+            breg_val = breg_val.wrapping_sub(2);
+            cpu.set_breg(bra, breg_val);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -434,8 +438,10 @@ fn ldi_ra_brb(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32) {
     match cpu.step_num {
         1 => cpu.read_word_at_addr(mmu, cpu.breg(brb)),
         2 => {
+            let mut breg_val = cpu.breg(brb);
             cpu.set_reg(ra, cpu.last_word);
-            dbl_inc_addr(cpu, brb);
+            breg_val = breg_val.wrapping_add(2);
+            cpu.set_breg(brb, breg_val);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -445,8 +451,10 @@ fn ldd_ra_brb(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32) {
     match cpu.step_num {
         1 => cpu.read_word_at_addr(mmu, cpu.breg(brb)),
         2 => {
+            let mut breg_val = cpu.breg(brb);
             cpu.set_reg(ra, cpu.last_word);
-            dbl_dec_addr(cpu, brb);
+            breg_val = breg_val.wrapping_sub(2);
+            cpu.set_breg(brb, breg_val);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -456,12 +464,14 @@ fn ldid_bra_imm16(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, is_inc: bool) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
         2 => {
+            let mut breg_val = cpu.breg(bra);
             mmu.write_word(cpu.breg(bra), cpu.last_word);
-            if is_inc {
-                dbl_inc_addr(cpu, bra);
+            breg_val = if is_inc {
+                breg_val.wrapping_add(2)
             } else {
-                dbl_dec_addr(cpu, bra);
-            }
+                breg_val.wrapping_sub(2)
+            };
+            cpu.set_breg(bra, breg_val);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }

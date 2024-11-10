@@ -49,13 +49,13 @@ pub struct Cpu {
     /// The total number of CPU cycles performed.
     pub total_cycles: u128,
     /// The byte last read by the CPU.
-    last_byte: u8,
+    pub last_byte: u8,
     /// The word last read by the CPU.
-    last_word: u16,
+    pub last_word: u16,
     /// The second-last word read by the CPU.
-    second_last_word: u16,
+    pub second_last_word: u16,
     /// Whether the most recently-checked conditional was satisfied or not.
-    last_conditional_satisfied: bool,
+    pub last_conditional_satisfied: bool,
 }
 impl Cpu {
     /// Create a new [Cpu] with the given [Registers] and [Flags] values.
