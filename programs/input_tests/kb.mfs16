@@ -1,0 +1,31 @@
+// CONSTANTS
+ie_register_addr = 0xFFFF_FFFE:d;
+
+jp entry_point;
+
+// Frame interrupt handler
+0x100:d:
+    stop;
+reti;
+// Keyboard interrupt handler
+0x200:d:
+    stop;
+reti;
+
+entry_point:
+    // Enable only keyboard interrupts
+    call enable_only_kbi;
+
+    // Enable interrupts
+    ei;
+
+main_loop:
+    halt;
+jp main_loop;
+
+enable_only_kbi:
+    push BC;
+    ld BC,ie_register_addr;
+    ld [BC],0x02:w;
+    pop BC;
+ret;
