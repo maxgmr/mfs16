@@ -116,6 +116,8 @@ pub struct RegValPair {
 pub struct BreakCriteria {
     // The list of program counter addresses which will satisfy the criteria.
     pub pc_list: Vec<u32>,
+    // If interrupts get enabled, break.
+    pub ei: bool,
     // If the program counter is greater than this value, break.
     pub pc_upper_bound: Option<u32>,
     // If the program counter is less than this value, break.
@@ -136,6 +138,7 @@ impl BreakCriteria {
             && self.pc_upper_bound.is_none()
             && self.reg_lower_bounds.is_empty()
             && self.reg_upper_bounds.is_empty()
+            && !self.ei
         {
             return false;
         }
@@ -145,6 +148,14 @@ impl BreakCriteria {
             && self.instr_satisfied(computer)
             && self.reg_bounds_satisfied(computer, true)
             && self.reg_bounds_satisfied(computer, false)
+            && self.ei_satisfied(computer)
+    }
+
+    fn ei_satisfied(&self, computer: &Computer) -> bool {
+        if !self.ei {
+            return true;
+        }
+        computer.cpu.interrupts_enabled
     }
 
     fn pc_bound_satisfied(&self, computer: &Computer, is_upper_bound: bool) -> bool {
@@ -236,6 +247,12 @@ impl MemRange {
 pub struct ComputerState {
     /// The total number of completed cycles.
     num_cycles: Option<u128>,
+    /// Interrupts enabled/disabled.
+    are_interrupts_enabled: Option<bool>,
+    /// Interrupt register state.
+    interrupt_register: Option<u8>,
+    /// IE register state.
+    ie_register: Option<u8>,
     /// The CPU state.
     cpu_state: mfs16core::Cpu,
     /// The bytes at and after the PC.
@@ -251,6 +268,9 @@ impl ComputerState {
         if cpu_only {
             Self {
                 num_cycles: None,
+                are_interrupts_enabled: None,
+                interrupt_register: None,
+                ie_register: None,
                 cpu_state: computer.cpu.clone(),
                 pc_bytes: None,
                 memory_ranges: None,
@@ -259,6 +279,9 @@ impl ComputerState {
         } else {
             Self {
                 num_cycles: Some(computer.cycles),
+                are_interrupts_enabled: Some(computer.cpu.interrupts_enabled),
+                interrupt_register: Some(computer.mmu.interrupt_register),
+                ie_register: Some(computer.mmu.ie_register),
                 cpu_state: computer.cpu.clone(),
                 pc_bytes: Some(Self::read_pc_bytes(computer)),
                 memory_ranges: Some(mem_ranges.iter().map(|mr| mr.grab(computer)).collect()),
@@ -295,6 +318,16 @@ impl Display for ComputerState {
             String::new()
         };
 
+        let formatted_interrupts_enabled = if let Some(ie) = self.are_interrupts_enabled {
+            if ie {
+                "EI"
+            } else {
+                "DI"
+            }
+        } else {
+            ""
+        };
+
         let formatted_memory_ranges = if let Some(memory_ranges) = &self.memory_ranges {
             memory_ranges
                 .iter()
@@ -324,10 +357,15 @@ impl Display for ComputerState {
 
 \tCPU:   [{}]
 
+INTERRUPTS={}; IREG:{:#010b} IEREG:{:#010b}
+
 {}",
             self.num_cycles.unwrap_or(0),
             formatted_pc_bytes,
             self.cpu_state,
+            formatted_interrupts_enabled,
+            self.interrupt_register.unwrap_or(0),
+            self.ie_register.unwrap_or(0),
             formatted_memory_ranges,
         )
     }

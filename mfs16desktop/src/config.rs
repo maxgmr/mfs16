@@ -104,6 +104,7 @@ impl Default for UserConfig {
             debugger_settings: DebuggerSettings {
                 break_criteria: BreakCriteria {
                     pc_list: Vec::new(),
+                    ei: false,
                     pc_upper_bound: None,
                     pc_lower_bound: None,
                     instr_list: Vec::new(),
