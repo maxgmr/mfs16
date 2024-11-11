@@ -215,8 +215,7 @@ impl Cpu {
     /// accordingly.
     fn read_next_word(&mut self, mmu: &Mmu) {
         self.update_last_word(mmu.read_word(self.pc.address()));
-        self.pc.wrapping_inc();
-        self.pc.wrapping_inc();
+        self.pc.wrapping_add(2);
     }
 
     /// Read a single word from MMU pointed to by the provided address.

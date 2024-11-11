@@ -66,10 +66,9 @@ impl TryFrom<&str> for Reg16 {
         }
     }
 }
-#[allow(clippy::from_over_into)]
-impl Into<u16> for Reg16 {
-    fn into(self) -> u16 {
-        match self {
+impl From<Reg16> for u16 {
+    fn from(value: Reg16) -> Self {
+        match value {
             A => 0,
             B => 1,
             C => 2,
@@ -121,10 +120,9 @@ impl TryFrom<&str> for Reg32 {
         }
     }
 }
-#[allow(clippy::from_over_into)]
-impl Into<u16> for Reg32 {
-    fn into(self) -> u16 {
-        match self {
+impl From<Reg32> for u16 {
+    fn from(value: Reg32) -> u16 {
+        match value {
             BC => 0,
             DE => 1,
             HL => 2,
@@ -216,10 +214,9 @@ impl TryFrom<&str> for Reg8 {
         }
     }
 }
-#[allow(clippy::from_over_into)]
-impl Into<u16> for Reg8 {
-    fn into(self) -> u16 {
-        match self {
+impl From<Reg8> for u16 {
+    fn from(value: Reg8) -> Self {
+        match value {
             A1 => 0,
             A0 => 1,
             B1 => 2,

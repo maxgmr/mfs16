@@ -1,7 +1,6 @@
 use std::default::Default;
 
 use crate::{
-    helpers::{combine_u16_le, combine_u8_le, split_dword, split_word},
     mmu::{print_warning_message, NOT_READABLE_BYTE},
     Instruction,
 };
@@ -56,51 +55,78 @@ impl Memory {
 
     /// Read a byte from memory at the given address. If not readable, return default value.
     pub fn read_byte(&self, address: u32) -> u8 {
-        self.check_addr(address, "read");
         if !self.readable {
             print_warning_message("read from unreadable memory", address, self.debug);
             return NOT_READABLE_BYTE;
         }
+
+        self.check_addr(address, address, "read");
+
         self.contents[address as usize]
     }
 
     /// Write a byte to memory at the given address. Do nothing if not writable.
     pub fn write_byte(&mut self, address: u32, value: u8) {
-        self.check_addr(address, "write");
-        if self.writable {
-            self.contents[address as usize] = value;
-        } else {
-            print_warning_message("read from unreadable memory", address, self.debug);
-        }
+        self.write_helper(address, address, &value.to_le_bytes());
     }
 
     /// Read a word from memory starting at the given address. If not readable, return default
     /// value.
     pub fn read_word(&self, address: u32) -> u16 {
-        combine_u8_le(self.read_byte(address), self.read_byte(address + 1))
+        if !self.readable {
+            print_warning_message("read from unreadable memory", address, self.debug);
+            return ((NOT_READABLE_BYTE as u16) << 8) | (NOT_READABLE_BYTE as u16);
+        }
+
+        let end = address + 1;
+        self.check_addr(address, end, "read");
+
+        <u16>::from_le_bytes(
+            self.contents[(address as usize)..=(end as usize)]
+                .try_into()
+                .expect("Failed to read word: slice with incorrect length."),
+        )
     }
 
     /// Write a word to memory starting at the given address. Do nothing if not writable.
     pub fn write_word(&mut self, address: u32, value: u16) {
-        let (high_byte, low_byte) = split_word(value);
-        self.write_byte(address, low_byte);
-        self.write_byte(address + 1, high_byte);
+        self.write_helper(address, address + 1, &value.to_le_bytes());
     }
 
     /// Read a double word from memory starting at the given address. If not readable, return
     /// default value.
     pub fn read_dword(&self, address: u32) -> u32 {
-        combine_u16_le(
-            combine_u8_le(self.read_byte(address), self.read_byte(address + 1)),
-            combine_u8_le(self.read_byte(address + 2), self.read_byte(address + 3)),
+        if !self.readable {
+            print_warning_message("read from unreadable memory", address, self.debug);
+            return ((NOT_READABLE_BYTE as u32) << 24)
+                | ((NOT_READABLE_BYTE as u32) << 12)
+                | ((NOT_READABLE_BYTE as u32) << 8)
+                | (NOT_READABLE_BYTE as u32);
+        }
+
+        let end = address + 3;
+        self.check_addr(address, end, "read");
+
+        <u32>::from_le_bytes(
+            self.contents[(address as usize)..=(end as usize)]
+                .try_into()
+                .expect("Failed to read dword: slice with incorrect length."),
         )
     }
 
     /// Write a double word from memory starting at the given address. Do nothing if not writable.
     pub fn write_dword(&mut self, address: u32, value: u32) {
-        let (high_word, low_word) = split_dword(value);
-        self.write_word(address, low_word);
-        self.write_word(address + 2, high_word);
+        self.write_helper(address, address + 3, &value.to_le_bytes());
+    }
+
+    fn write_helper(&mut self, address: u32, end: u32, le_bytes: &[u8]) {
+        if !self.writable {
+            print_warning_message("write to unwritable memory", address, self.debug);
+            return;
+        }
+
+        self.check_addr(address, end, "write");
+        self.contents[(address as usize)..=(end as usize)].copy_from_slice(le_bytes);
     }
 
     /// Load a slice of bytes directly into memory starting at the given address, overwriting any
@@ -109,9 +135,11 @@ impl Memory {
         self.contents[(start as usize)..((start as usize) + bytes.len())].copy_from_slice(bytes);
     }
 
-    fn check_addr(&self, address: u32, verb: &'static str) {
-        if (address as usize) >= self.contents.len() {
-            panic!("Illegal memory {verb} at address {:#X}.", address);
+    fn check_addr(&self, first_address: u32, last_address: u32, verb: &'static str) {
+        for address in first_address..=last_address {
+            if (address) as usize >= self.contents.len() {
+                panic!("Illegal memory {verb} at address {:#X}.", address);
+            }
         }
     }
 }
@@ -272,11 +300,11 @@ mod tests {
 
         assert_eq!(
             mem.read_word(addr_start as u32),
-            combine_u8_le(val_start, 0x00)
+            <u16>::from_le_bytes([val_start, 0x00])
         );
         assert_eq!(
             mem.read_word((addr_end as u32) - 1),
-            combine_u8_le(0x00, val_end)
+            <u16>::from_le_bytes([0x00, val_end])
         );
         assert_eq!(mem.read_word(addr_word_start as u32), val_word);
 
