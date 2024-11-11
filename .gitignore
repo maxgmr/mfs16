@@ -28,3 +28,8 @@ Cargo.lock
 
 # data
 data/
+
+# Performance stuff
+flamegraph.svg
+perf.data
+perf.data.old
