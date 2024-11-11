@@ -1,9 +1,9 @@
 // CONSTANTS
 data_start_addr = 0x80_0000:d;
 screen_start = 0x0100_0000:d;
+screen_end = 0x0102_5800:d;
+last_row_end = 0x0102_4CBD:d;
 ie_register_addr = 0xFFFF_FFFE:d;
-screen_bytes_num = 0x25800:d;
-half_screen_bytes = 0x3264:d;
 
 row_len = 0x140:d;
 col_len = 0xF0:d;
@@ -17,20 +17,16 @@ colour = 0xFFFF:w;
 
 jp entry_point;
 
-// Frame interrupt handler
-0x100:d:
+// Keyboard interrupt handler
+0x200:d:
+    call handle_input;
     call clear_screen;
     call draw_screen;
 reti;
 
-// Keyboard interrupt handler
-0x200:d:
-    call handle_input;
-reti;
-
 entry_point:
-    // Enable only frame and keyboard interrupts
-    call enable_only_kbfi;
+    // Enable only keyboard interrupts
+    call enable_only_kbi;
     // Enable interrupts
     ei;
     // Set DE to start of data
@@ -73,26 +69,25 @@ ret;
 
 // Clear the screen.
 clear_screen:
-    push HL;
     push BC;
     push DE;
+    push HL;
 
     ld HL,screen_start;
-    ld BC,half_screen_bytes;
-    ld D,0:w;
-    pss BC;
-    clear_screen_loop:
-        jpz clear_screen_loop_end;
+    ld C,0:w;
+    ld DE,screen_end;
+    cl_scr_loop:
+    cmp HL,DE;
+    jnn cl_scr_loop_end;
 
-        ldi [HL],D;
-        
-        dec BC;
-        jp clear_screen_loop;
-    clear_screen_loop_end:
+    ldi [HL],C;
 
+    jp cl_scr_loop;
+    cl_scr_loop_end:
+
+    pop HL;
     pop DE;
     pop BC;
-    pop HL;
 ret;
 
 // Read the data from RAM and draw it to the screen.
@@ -129,8 +124,11 @@ draw_screen:
 
     // Draw cursor at end
     push BC;
+    push DE;
+    // Set C0 to unknown character to make cursor
     ld C0,0xFF;
     call draw_byte;
+    pop DE;
     pop BC;
 
     pop HL;
@@ -175,10 +173,10 @@ font_prep:
     ld D,colour;
 ret;
 
-enable_only_kbfi:
+enable_only_kbi:
     push BC;
     ld BC,ie_register_addr;
-    ld [BC],0b0000_0011:w;
+    ld [BC],0b0000_0010:w;
     pop BC;
 ret;
 
@@ -199,11 +197,6 @@ hl_row_end:
     add HL,row_len;
     call hl_row_start;
     dec HL;
-ret;
-
-// Erase the screen at this character.
-erase_byte:
-    call space;
 ret;
 
 // Draw the byte in C0 onto the screen.
@@ -805,6 +798,19 @@ ret;
 
 // Match kb register and append the resulting ASCII to RAM at cursor location DE.
 modify_data:
+    ld C,kb_return;
+    call check_scancode;
+    jpz skip_return;
+    call de_wb;
+    skip_return:
+
+    ld C,kb_return2;
+    call check_scancode;
+    jpz skip_return2;
+    call de_wb;
+    skip_return2:
+
+
     ld C,kb_backspace;
     call check_scancode;
     jpz skip_backspace;
