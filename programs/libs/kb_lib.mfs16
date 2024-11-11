@@ -510,6 +510,12 @@ scancode_to_ascii:
     ret;
     kb_end_9:
 
+    cmp C,kb_space;
+    jnz kb_end_space;
+    ld C0,32;
+    ret;
+    kb_end_space:
+
     // Unknown scancode
     ld C0,0xFF;
 ret;

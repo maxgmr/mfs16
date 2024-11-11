@@ -2,6 +2,8 @@
 data_start_addr = 0x80_0000:d;
 screen_start = 0x0100_0000:d;
 ie_register_addr = 0xFFFF_FFFE:d;
+screen_bytes_num = 0x25800:d;
+half_screen_bytes = 0x3264:d;
 
 row_len = 0x140:d;
 col_len = 0xF0:d;
@@ -17,6 +19,7 @@ jp entry_point;
 
 // Frame interrupt handler
 0x100:d:
+    call clear_screen;
     call draw_screen;
 reti;
 
@@ -68,6 +71,30 @@ handle_input:
     pop BC;
 ret;
 
+// Clear the screen.
+clear_screen:
+    push HL;
+    push BC;
+    push DE;
+
+    ld HL,screen_start;
+    ld BC,half_screen_bytes;
+    ld D,0:w;
+    pss BC;
+    clear_screen_loop:
+        jpz clear_screen_loop_end;
+
+        ldi [HL],D;
+        
+        dec BC;
+        jp clear_screen_loop;
+    clear_screen_loop_end:
+
+    pop DE;
+    pop BC;
+    pop HL;
+ret;
+
 // Read the data from RAM and draw it to the screen.
 draw_screen:
     push BC;
@@ -99,6 +126,12 @@ draw_screen:
 
     jp read_loop;
     read_loop_end:
+
+    // Draw cursor at end
+    push BC;
+    ld C0,0xFF;
+    call draw_byte;
+    pop BC;
 
     pop HL;
     pop DE;
@@ -166,6 +199,11 @@ hl_row_end:
     add HL,row_len;
     call hl_row_start;
     dec HL;
+ret;
+
+// Erase the screen at this character.
+erase_byte:
+    call space;
 ret;
 
 // Draw the byte in C0 onto the screen.
@@ -988,6 +1026,12 @@ modify_data:
     jpz skip_num9;
     call de_wb;
     skip_num9:
+
+    ld C,kb_space;
+    call check_scancode;
+    jpz skip_space;
+    call de_wb;
+    skip_space:
 ret;
 
 // Decrement DE and delete the byte at that location.
@@ -996,7 +1040,7 @@ de_db:
 
     dec DE;
     ld B,[DE];
-    ld B1,0;
+    ld B0,0;
     ld [DE],B;
 
     pop BC;
