@@ -10,6 +10,11 @@ license-file = "LICENSE"
 serde = { version = "1", features = ["derive"] }
 
 [dev-dependencies]
+criterion = "0"
 pretty_assertions = "1.4"
 strum = "0.26"
 strum_macros = "0.26"
+
+[[bench]]
+name = "cpu_cycle_bench"
+harness = false
