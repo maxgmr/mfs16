@@ -120,6 +120,7 @@ impl Cpu {
         if !self.interrupts_enabled {
             return false;
         }
+        self.interrupts_enabled = false;
 
         // Prioritise lowest activated interrupt
         let offset = activated_interrupts.trailing_zeros();
