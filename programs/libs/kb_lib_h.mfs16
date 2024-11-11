@@ -1,42 +1,6 @@
-jp lib_end;
 /*
-    Library for keyboard input. Provides constants for easy scancode referencing and a
-    set of functions which check if the keys of the keyboard are pressed or not.
+    Header file for kb_lib defining all its constants.
 */
-kb_register_start = 0xFFFF_FFBE:d;
-
-/*
-    Set the Z flag based on the kb register bit pointed to by scancode C.
-*/
-check_scancode:
-    push BC;
-    push DE;
-
-    // C = byte index, B = bit index
-    ld B,8:w;
-    divu C,B;
-
-    // Get the KB register byte associated with the given scancode
-    ld DE,kb_register_start;
-    add E,C;
-    ld D,[DE];
-
-    // Get the KB register bit associated with the given scancode
-    shift_loop:
-        pss B0;
-        jpz shift_loop_end;
-
-        lsr D,1;
-
-        dec B0;
-        jp shift_loop;
-    shift_loop_end:
-    // Set zero flag to the value of that KB register bit
-    and D,1:w;
-
-    pop DE;
-    pop BC;
-ret;
 
 // SCANCODE CONSTANTS
 kb_a = 4:w;
@@ -280,5 +244,3 @@ kb_sleep = 282:w;
 kb_app1 = 283:w;
 kb_app2 = 284:w;
 kb_num = 512:w;
-
-lib_end:

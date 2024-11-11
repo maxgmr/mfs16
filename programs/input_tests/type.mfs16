@@ -17,111 +17,21 @@ jp entry_point;
 
 // Frame interrupt handler
 0x100:d:
-    call handle_input;
     call draw_screen;
 reti;
 
+// Keyboard interrupt handler
+0x200:d:
+    call handle_input;
+reti;
+
 entry_point:
-    // Enable only frame interrupts
-    call enable_only_fi;
+    // Enable only frame and keyboard interrupts
+    call enable_only_kbfi;
     // Enable interrupts
     ei;
-
-    // TODO testing only. write hello world to RAM for draw_screen.
+    // Set DE to start of data
     ld DE,data_start_addr;
-    // He
-    ld C,0x6548:w;
-    ldi [DE],C;
-    // ll
-    ld C,0x6C6C:w;
-    ldi [DE],C;
-    // o,
-    ld C,0x2C6F:w;
-    ldi [DE],C;
-    //  W 
-    ld C,0x5720:w;
-    ldi [DE],C;
-    // or 
-    ld C,0x726F:w;
-    ldi [DE],C;
-    // ld 
-    ld C,0x646C:w;
-    ldi [DE],C;
-    ld C,0x2121:w;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    ldi [DE],C;
-    // !\0
-    ld C,0x0021:w;
-    ldi [DE],C;
 
 main_loop:
     halt;
@@ -129,6 +39,33 @@ jp main_loop;
 
 // Detect input and write to the data in RAM.
 handle_input:
+    push BC;
+    push DE;
+    push HL;
+
+    // Set DE to end of data
+    ld DE,data_start_addr;
+    cursor_pos_loop:
+        ld C,[DE];
+        // Check first byte for end of data
+        pss C0;
+        jpz cursor_pos_loop_end;
+        inc DE;
+
+        // Check second byte for end of data
+        ld C0,C1;
+        pss C0;
+        jpz cursor_pos_loop_end;
+        inc DE;
+    jp cursor_pos_loop;
+    cursor_pos_loop_end:
+
+    // Add/subtract input bytes to data
+    call modify_data;
+
+    pop HL;
+    pop DE;
+    pop BC;
 ret;
 
 // Read the data from RAM and draw it to the screen.
@@ -205,10 +142,10 @@ font_prep:
     ld D,colour;
 ret;
 
-enable_only_fi:
+enable_only_kbfi:
     push BC;
     ld BC,ie_register_addr;
-    ld [BC],0x01:w;
+    ld [BC],0b0000_0011:w;
     pop BC;
 ret;
 
@@ -828,46 +765,253 @@ draw_byte:
     pop BC;
 ret;
 
-// handle_input_old:
-//     // MAYBE A BETTER WAY! Iterate through kb register, if 1 then write to RAM.
-//     // To draw, iterate through RAM bytes. Write byte to screen.
-//     ld C,kb_q;
-//     call check_scancode;
-//     jpz skip_q;
-//     call adjust_char;
-//     call font_prep;
-//     call q;
-//     skip_q:
-// 
-//     ld C,kb_m;
-//     call check_scancode;
-//     jpz skip_m;
-//     call adjust_char;
-//     call font_prep;
-//     call m;
-//     skip_m:
-// 
-//     ld C,kb_space;
-//     call check_scancode;
-//     jpz skip_space;
-//     call adjust_char;
-//     call font_prep;
-//     call space;
-//     skip_space:
-// 
-//     ld C,kb_backspace;
-//     call check_scancode;
-//     jpz skip_backspace;
-//     call adjust_backspace;
-//     call font_prep;
-//     call backspace;
-//     skip_backspace:
-//     
-//     ld C,kb_return;
-//     call check_scancode;
-//     jpz skip_newline;
-//     call font_prep;
-//     call newline;
-//     skip_newline:
-// 
-// ret;
+// Match kb register and append the resulting ASCII to RAM at cursor location DE.
+modify_data:
+    ld C,kb_backspace;
+    call check_scancode;
+    jpz skip_backspace;
+    call de_db;
+    skip_backspace:
+
+    ld C,kb_a;
+    call check_scancode;
+    jpz skip_a;
+    call de_wb;
+    skip_a:
+
+    ld C,kb_b;
+    call check_scancode;
+    jpz skip_b;
+    call de_wb;
+    skip_b:
+
+    ld C,kb_c;
+    call check_scancode;
+    jpz skip_c;
+    call de_wb;
+    skip_c:
+
+    ld C,kb_d;
+    call check_scancode;
+    jpz skip_d;
+    call de_wb;
+    skip_d:
+
+    ld C,kb_e;
+    call check_scancode;
+    jpz skip_e;
+    call de_wb;
+    skip_e:
+
+    ld C,kb_f;
+    call check_scancode;
+    jpz skip_f;
+    call de_wb;
+    skip_f:
+
+    ld C,kb_g;
+    call check_scancode;
+    jpz skip_g;
+    call de_wb;
+    skip_g:
+
+    ld C,kb_h;
+    call check_scancode;
+    jpz skip_h;
+    call de_wb;
+    skip_h:
+
+    ld C,kb_i;
+    call check_scancode;
+    jpz skip_i;
+    call de_wb;
+    skip_i:
+
+    ld C,kb_j;
+    call check_scancode;
+    jpz skip_j;
+    call de_wb;
+    skip_j:
+
+    ld C,kb_k;
+    call check_scancode;
+    jpz skip_k;
+    call de_wb;
+    skip_k:
+
+    ld C,kb_l;
+    call check_scancode;
+    jpz skip_l;
+    call de_wb;
+    skip_l:
+
+    ld C,kb_m;
+    call check_scancode;
+    jpz skip_m;
+    call de_wb;
+    skip_m:
+
+    ld C,kb_n;
+    call check_scancode;
+    jpz skip_n;
+    call de_wb;
+    skip_n:
+
+    ld C,kb_o;
+    call check_scancode;
+    jpz skip_o;
+    call de_wb;
+    skip_o:
+
+    ld C,kb_p;
+    call check_scancode;
+    jpz skip_p;
+    call de_wb;
+    skip_p:
+
+    ld C,kb_q;
+    call check_scancode;
+    jpz skip_q;
+    call de_wb;
+    skip_q:
+
+    ld C,kb_r;
+    call check_scancode;
+    jpz skip_r;
+    call de_wb;
+    skip_r:
+
+    ld C,kb_s;
+    call check_scancode;
+    jpz skip_s;
+    call de_wb;
+    skip_s:
+
+    ld C,kb_t;
+    call check_scancode;
+    jpz skip_t;
+    call de_wb;
+    skip_t:
+
+    ld C,kb_u;
+    call check_scancode;
+    jpz skip_u;
+    call de_wb;
+    skip_u:
+
+    ld C,kb_v;
+    call check_scancode;
+    jpz skip_v;
+    call de_wb;
+    skip_v:
+
+    ld C,kb_w;
+    call check_scancode;
+    jpz skip_w;
+    call de_wb;
+    skip_w:
+
+    ld C,kb_x;
+    call check_scancode;
+    jpz skip_x;
+    call de_wb;
+    skip_x:
+
+    ld C,kb_y;
+    call check_scancode;
+    jpz skip_y;
+    call de_wb;
+    skip_y:
+
+    ld C,kb_z;
+    call check_scancode;
+    jpz skip_z;
+    call de_wb;
+    skip_z:
+
+    ld C,kb_num0;
+    call check_scancode;
+    jpz skip_num0;
+    call de_wb;
+    skip_num0:
+
+    ld C,kb_num1;
+    call check_scancode;
+    jpz skip_num1;
+    call de_wb;
+    skip_num1:
+
+    ld C,kb_num2;
+    call check_scancode;
+    jpz skip_num2;
+    call de_wb;
+    skip_num2:
+
+    ld C,kb_num3;
+    call check_scancode;
+    jpz skip_num3;
+    call de_wb;
+    skip_num3:
+
+    ld C,kb_num4;
+    call check_scancode;
+    jpz skip_num4;
+    call de_wb;
+    skip_num4:
+
+    ld C,kb_num5;
+    call check_scancode;
+    jpz skip_num5;
+    call de_wb;
+    skip_num5:
+
+    ld C,kb_num6;
+    call check_scancode;
+    jpz skip_num6;
+    call de_wb;
+    skip_num6:
+
+    ld C,kb_num7;
+    call check_scancode;
+    jpz skip_num7;
+    call de_wb;
+    skip_num7:
+
+    ld C,kb_num8;
+    call check_scancode;
+    jpz skip_num8;
+    call de_wb;
+    skip_num8:
+
+    ld C,kb_num9;
+    call check_scancode;
+    jpz skip_num9;
+    call de_wb;
+    skip_num9:
+ret;
+
+// Decrement DE and delete the byte at that location.
+de_db:
+    push BC;
+
+    dec DE;
+    ld B,[DE];
+    ld B1,0;
+    ld [DE],B;
+
+    pop BC;
+ret;
+
+// Write the ASCII byte corresponding to scancode C at DE, incrementing DE afterwards.
+de_wb:
+    push BC;
+
+    call scancode_to_ascii;
+
+    ld B,[DE];
+    ld B1,C1;
+    ld [DE],C;
+    inc DE;
+
+    pop BC;
+ret;
