@@ -305,15 +305,18 @@ fn render_graphics(
     {
         let pixels_offset = vram_offset * BYTES_PER_VRAM_INDEX;
 
+        let vram_upper_colour = palette.rgb24_from_nib(*vram_byte, true);
+        let vram_lower_colour = palette.rgb24_from_nib(*vram_byte, false);
+
         // Set bytes 0, 1, & 2 from upper nibble
-        pixels[pixels_offset] = palette.r(*vram_byte, true);
-        pixels[pixels_offset + 1] = palette.g(*vram_byte, true);
-        pixels[pixels_offset + 2] = palette.b(*vram_byte, true);
+        pixels[pixels_offset] = vram_upper_colour.r;
+        pixels[pixels_offset + 1] = vram_upper_colour.g;
+        pixels[pixels_offset + 2] = vram_upper_colour.b;
 
         // Set bytes 3, 4, & 5 from lower nibble
-        pixels[pixels_offset + 3] = palette.r(*vram_byte, false);
-        pixels[pixels_offset + 4] = palette.g(*vram_byte, false);
-        pixels[pixels_offset + 5] = palette.b(*vram_byte, false);
+        pixels[pixels_offset + 3] = vram_lower_colour.r;
+        pixels[pixels_offset + 4] = vram_lower_colour.g;
+        pixels[pixels_offset + 5] = vram_lower_colour.b;
     }
 
     // Update the texture
