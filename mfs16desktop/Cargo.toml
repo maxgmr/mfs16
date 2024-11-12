@@ -7,11 +7,6 @@ repository = "https://github.com/maxgmr/mfs16"
 build = "build.rs"
 license-file = "LICENSE"
 
-[profile.release]
-codegen-units = 1
-lto = "fat"
-panic = "abort"
-
 [dependencies]
 camino = { version = "1", features = ["serde1"] }
 clap = { version = "4", features = ["cargo", "derive", "string"] }
