@@ -1,0 +1,55 @@
+jp entry_point;
+
+// CONSTANTS
+ie_register_addr = 0xFFFF_FFFE:d;
+screen_start = 0x0100_0000:d;
+
+// Keyboard interrupt handler
+0x200:d:
+    call toggle_screen;
+reti;
+
+entry_point:
+    // Enable only keyboard interrupts
+    ld BC,ie_register_addr;
+    ld [BC],0b0000_0010:w;
+    // Enable interrupts
+    ei;
+
+main_loop:
+    halt;
+jp main_loop;
+
+toggle_screen:
+    ld HL,screen_start;
+    // Check if screen is on
+    ld A,[HL];
+    pss A;
+    // Loop 19200 times (307_200 pixels / 16 pixels written per loop)
+    ld A, 19200:w;
+    jpz screen_on;
+    jp screen_off;
+
+    screen_on:
+        ld DE, screen_on_loop;
+        screen_on_loop:
+            // Go through the colours
+            ldi [HL],0x2301:w;
+            ldi [HL],0x6745:w;
+            ldi [HL],0xAB89:w;
+            ldi [HL],0xEFCD:w;
+            dec A;
+        jnz DE;
+    ret;
+
+    screen_off:
+        ld DE, screen_off_loop;
+        screen_off_loop:
+            // Erase the screen
+            ldi [HL],0x0000:w;
+            ldi [HL],0x0000:w;
+            ldi [HL],0x0000:w;
+            ldi [HL],0x0000:w;
+            dec A;
+        jnz DE;
+    ret;
