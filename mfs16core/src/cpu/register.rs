@@ -32,7 +32,7 @@ pub enum Reg16 {
 impl Reg16 {
     /// Get the [Reg16] corresponding to the given nibble, panicking if the nibble does not
     /// correspond to any variant.
-    pub fn from_nib(nibble: u8) -> Reg16 {
+    fn from_nib(nibble: u8) -> Reg16 {
         match nibble {
             0x0 => A,
             0x1 => B,
@@ -94,7 +94,7 @@ pub enum Reg32 {
 impl Reg32 {
     /// Get the [Reg32] corresponding to the given nibble, panicking if the nibble does not
     /// correspond to any variant.
-    pub fn from_nib(nibble: u8) -> Reg32 {
+    fn from_nib(nibble: u8) -> Reg32 {
         match nibble {
             0x0 => BC,
             0x1 => DE,
@@ -166,7 +166,7 @@ pub enum Reg8 {
 impl Reg8 {
     /// Get the [Reg8] corresponding to the given nibble, panicking if the nibble does not
     /// correspond to any variant.
-    pub fn from_nib(nibble: u8) -> Reg8 {
+    fn from_nib(nibble: u8) -> Reg8 {
         match nibble {
             0x0 => A1,
             0x1 => A0,
@@ -420,9 +420,11 @@ pub trait Reg {
     fn get(&self, cpu: &Cpu) -> Self::ValueType;
     /// Set the register of the given [Cpu] to the given value.
     fn set(&self, cpu: &mut Cpu, val: Self::ValueType);
+    /// Get the register variant from the given nibble.
+    fn from_nib(nibble: u8) -> Self;
 }
 macro_rules! impl_reg {
-    ($(($t:ty, $g_fn:ident, $s_fn:ident, $vt:ty)),+) => {
+    ($(($t:ty, $g_fn:ident, $s_fn:ident, $f4_fn:ident, $vt:ty)),+) => {
         $(
             impl Reg for $t {
                 type ValueType = $vt;
@@ -434,14 +436,18 @@ macro_rules! impl_reg {
                 fn set(&self, cpu: &mut Cpu, val: Self::ValueType) {
                     cpu.$s_fn(*self, val)
                 }
+
+                fn from_nib(nibble: u8) -> Self {
+                    Self::$f4_fn(nibble)
+                }
             }
         )+
     };
 }
 impl_reg!(
-    (Reg16, reg, set_reg, u16),
-    (Reg32, breg, set_breg, u32),
-    (Reg8, vreg, set_vreg, u8)
+    (Reg16, reg, set_reg, from_nib, u16),
+    (Reg32, breg, set_breg, from_nib, u32),
+    (Reg8, vreg, set_vreg, from_nib, u8)
 );
 
 #[cfg(test)]

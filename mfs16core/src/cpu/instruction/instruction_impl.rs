@@ -1,4 +1,22 @@
+use std::collections::HashMap;
+
+use phf::phf_map;
+
 use super::*;
+use crate::Reg;
+
+macro_rules! generate_instr {
+    ($map:ident, $prefix:literal, $instr_variant:ident, $nib0_bound:literal) => {
+        $map.extend({
+            let mut temp_map: HashMap<u16, Instruction> = HashMap::new();
+            for nib0 in 0..=$arg1_bound {
+                let opcode = ($prefix << 8) | nib0;
+                temp_map.insert(opcode, Instruction::$instr_variant(nib0 as u8));
+            }
+            temp_map
+        });
+    };
+}
 
 impl Instruction {
     /// Get the [Instruction] from the given opcode.
