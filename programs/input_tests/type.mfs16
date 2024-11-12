@@ -17,20 +17,24 @@ colour = 0xFFFF:w;
 
 jp entry_point;
 
+// Frame interrupt handler
+0x100:d:
+    call draw_screen;
+reti;
+
 // Keyboard interrupt handler
 0x200:d:
     call handle_input;
     call clear_screen;
-    call draw_screen;
 reti;
 
 entry_point:
-    // Enable only keyboard interrupts
-    call enable_only_kbi;
-    // Enable interrupts
-    ei;
+    // Enable only keyboard and frame interrupts
+    call enable_only_kbfi;
     // Set DE to start of data
     ld DE,data_start_addr;
+    // Enable interrupts
+    ei;
 
 main_loop:
     halt;
@@ -73,6 +77,7 @@ clear_screen:
     push DE;
     push HL;
 
+    ld A,0:w;
     ld HL,screen_start;
     ld BC,cl_scr_loop_end;
     ld DE,screen_end;
@@ -80,7 +85,7 @@ clear_screen:
     cmp HL,DE;
     jnn BC;
 
-    ldi [HL],0:w;
+    ldi [HL],A;
 
     jp cl_scr_loop;
     cl_scr_loop_end:
@@ -173,10 +178,10 @@ font_prep:
     ld D,colour;
 ret;
 
-enable_only_kbi:
+enable_only_kbfi:
     push BC;
     ld BC,ie_register_addr;
-    ld [BC],0b0000_0010:w;
+    ld [BC],0b0000_0011:w;
     pop BC;
 ret;
 
