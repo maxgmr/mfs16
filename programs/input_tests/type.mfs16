@@ -74,13 +74,13 @@ clear_screen:
     push HL;
 
     ld HL,screen_start;
-    ld C,0:w;
+    ld BC,cl_scr_loop_end;
     ld DE,screen_end;
     cl_scr_loop:
     cmp HL,DE;
-    jnn cl_scr_loop_end;
+    jnn BC;
 
-    ldi [HL],C;
+    ldi [HL],0:w;
 
     jp cl_scr_loop;
     cl_scr_loop_end:

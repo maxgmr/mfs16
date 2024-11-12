@@ -1,22 +1,5 @@
-use std::collections::HashMap;
-
-use phf::phf_map;
-
 use super::*;
 use crate::Reg;
-
-macro_rules! generate_instr {
-    ($map:ident, $prefix:literal, $instr_variant:ident, $nib0_bound:literal) => {
-        $map.extend({
-            let mut temp_map: HashMap<u16, Instruction> = HashMap::new();
-            for nib0 in 0..=$arg1_bound {
-                let opcode = ($prefix << 8) | nib0;
-                temp_map.insert(opcode, Instruction::$instr_variant(nib0 as u8));
-            }
-            temp_map
-        });
-    };
-}
 
 impl Instruction {
     /// Get the [Instruction] from the given opcode.
@@ -30,7 +13,7 @@ impl Instruction {
             (0x0, 0x0, _, _) => Nop,
             (0x0, 0x1, 0xA, 0x0) => LdSpImm32,
             (0x0, 0x1, 0xA, 0x1) => LdImm32Sp,
-            (0x0, 0x1, 0xB, bra) => LdSpBra(Reg32::from_nib(bra)),
+            (0x0, 0x1, 0xB, bra) => LdSpBra(Reg::from_nib(bra)),
             (0x0, 0x1, 0xC, bra) => LdBraSp(Reg32::from_nib(bra)),
             (0x0, 0x1, ra, rb) if ra < NUM_REGS && rb < NUM_REGS => {
                 LdRaRb(Reg16::from_nib(ra), Reg16::from_nib(rb))
