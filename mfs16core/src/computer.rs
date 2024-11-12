@@ -5,8 +5,8 @@ use crate::{
     Addr,
 };
 
-/// System clock frequency: 8_388_608 Hz (~8.4 MHz)
-pub const CLOCK_FREQ: u32 = 2_u32.pow(23);
+/// System clock frequency: 16_777_216 Hz (~16.78 MHz)
+pub const CLOCK_FREQ: u32 = 2_u32.pow(24);
 
 /// ROM Size: 8 MiB (~8.39 MB)
 pub const ROM_SIZE: usize = 0x80_0000;
