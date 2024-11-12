@@ -48,7 +48,8 @@ main_loop:
     // Enable interrupts
     ei;
 
-    // Wait a frame
+    // Wait two frames
+    halt;
     halt;
 
     // Disable interrupts

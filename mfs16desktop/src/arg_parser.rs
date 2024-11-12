@@ -3,7 +3,7 @@ use clap::Parser;
 
 use crate::utils;
 
-const DEFAULT_FPS: f32 = 30.0;
+const DEFAULT_FPS: f32 = 60.0;
 
 /// The CLI parser.
 #[derive(Parser, Debug)]
