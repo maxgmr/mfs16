@@ -4,11 +4,6 @@ jp entry_point;
 ie_register_addr = 0xFFFF_FFFE:d;
 screen_start = 0x0100_0000:d;
 
-// Keyboard interrupt handler
-0x200:d:
-    call toggle_screen;
-reti;
-
 entry_point:
     // Enable only keyboard interrupts
     ld BC,ie_register_addr;
@@ -53,3 +48,8 @@ toggle_screen:
             dec A;
         jnz DE;
     ret;
+
+// Keyboard interrupt handler
+0x200:d:
+    call toggle_screen;
+reti;
