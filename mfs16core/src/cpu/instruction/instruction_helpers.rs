@@ -292,6 +292,7 @@ pub fn opc_2arg_off<T: Into<u16>, U: Into<u16>, V: Into<u16>>(
 }
 
 // ------- CPU INSTRUCTION FUNCTIONS -------
+#[inline(always)]
 fn ld_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
     match cpu.step_num {
         1 => cpu.set_reg(ra, cpu.reg(rb)),
@@ -299,6 +300,7 @@ fn ld_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
     }
 }
 
+#[inline(always)]
 fn ld_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32) {
     match cpu.step_num {
         1 => cpu.set_breg(bra, cpu.breg(brb)),
@@ -306,6 +308,7 @@ fn ld_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32) {
     }
 }
 
+#[inline(always)]
 fn ld_sp_imm32(cpu: &mut Cpu, mmu: &mut Mmu) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -315,6 +318,7 @@ fn ld_sp_imm32(cpu: &mut Cpu, mmu: &mut Mmu) {
     }
 }
 
+#[inline(always)]
 fn ld_imm32_sp(cpu: &mut Cpu, mmu: &mut Mmu) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -324,6 +328,7 @@ fn ld_imm32_sp(cpu: &mut Cpu, mmu: &mut Mmu) {
     }
 }
 
+#[inline(always)]
 fn ld_sp_bra(cpu: &mut Cpu, bra: Reg32) {
     match cpu.step_num {
         1 => cpu.sp = Addr::new_default_range(cpu.breg(bra)),
@@ -331,6 +336,7 @@ fn ld_sp_bra(cpu: &mut Cpu, bra: Reg32) {
     }
 }
 
+#[inline(always)]
 fn ld_bra_sp(cpu: &mut Cpu, bra: Reg32) {
     match cpu.step_num {
         1 => cpu.set_breg(bra, cpu.sp.address()),
@@ -338,6 +344,7 @@ fn ld_bra_sp(cpu: &mut Cpu, bra: Reg32) {
     }
 }
 
+#[inline(always)]
 fn ld_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
     match cpu.step_num {
         1 => cpu.set_vreg(vra, cpu.vreg(vrb)),
@@ -345,6 +352,7 @@ fn ld_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
     }
 }
 
+#[inline(always)]
 fn ld_ra_imm16(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -353,6 +361,7 @@ fn ld_ra_imm16(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
     }
 }
 
+#[inline(always)]
 fn ld_bra_imm16(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -361,6 +370,7 @@ fn ld_bra_imm16(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     }
 }
 
+#[inline(always)]
 fn ld_bra_imm32(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -370,6 +380,7 @@ fn ld_bra_imm32(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32) {
     }
 }
 
+#[inline(always)]
 fn ld_vra_imm8(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8) {
     match cpu.step_num {
         1 => cpu.read_next_byte(mmu),
@@ -378,6 +389,7 @@ fn ld_vra_imm8(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8) {
     }
 }
 
+#[inline(always)]
 fn ld_bra_rb(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, rb: Reg16) {
     match cpu.step_num {
         1 => cpu.update_last_word(cpu.reg(rb)),
@@ -386,6 +398,7 @@ fn ld_bra_rb(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, rb: Reg16) {
     }
 }
 
+#[inline(always)]
 fn ld_ra_brb(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32) {
     match cpu.step_num {
         1 => cpu.read_word_at_addr(mmu, cpu.breg(brb)),
@@ -394,6 +407,7 @@ fn ld_ra_brb(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32) {
     }
 }
 
+#[inline(always)]
 fn ldr_ra_imm32(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -408,6 +422,7 @@ fn ldr_ra_imm32(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
     }
 }
 
+#[inline(always)]
 fn ldi_bra_rb(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, rb: Reg16) {
     match cpu.step_num {
         1 => cpu.update_last_word(cpu.reg(rb)),
@@ -421,6 +436,7 @@ fn ldi_bra_rb(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, rb: Reg16) {
     }
 }
 
+#[inline(always)]
 fn ldd_bra_rb(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, rb: Reg16) {
     match cpu.step_num {
         1 => cpu.update_last_word(cpu.reg(rb)),
@@ -434,6 +450,7 @@ fn ldd_bra_rb(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, rb: Reg16) {
     }
 }
 
+#[inline(always)]
 fn ldi_ra_brb(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32) {
     match cpu.step_num {
         1 => cpu.read_word_at_addr(mmu, cpu.breg(brb)),
@@ -447,6 +464,7 @@ fn ldi_ra_brb(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32) {
     }
 }
 
+#[inline(always)]
 fn ldd_ra_brb(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32) {
     match cpu.step_num {
         1 => cpu.read_word_at_addr(mmu, cpu.breg(brb)),
@@ -460,6 +478,7 @@ fn ldd_ra_brb(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32) {
     }
 }
 
+#[inline(always)]
 fn ldid_bra_imm16(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, is_inc: bool) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -477,6 +496,7 @@ fn ldid_bra_imm16(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, is_inc: bool) {
     }
 }
 
+#[inline(always)]
 fn alu_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16, operation: AluOp) {
     match cpu.step_num {
         1 => {
@@ -489,6 +509,7 @@ fn alu_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16, operation: AluOp) {
     }
 }
 
+#[inline(always)]
 fn alu_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32, operation: AluOp) {
     match cpu.step_num {
         1 => {
@@ -501,6 +522,7 @@ fn alu_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32, operation: AluOp) {
     }
 }
 
+#[inline(always)]
 fn alu_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8, operation: AluOp) {
     match cpu.step_num {
         1 => {
@@ -513,6 +535,7 @@ fn alu_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8, operation: AluOp) {
     }
 }
 
+#[inline(always)]
 fn alu_ra_imm16(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, operation: AluOp) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -526,6 +549,7 @@ fn alu_ra_imm16(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, operation: AluOp) {
     }
 }
 
+#[inline(always)]
 fn alu_bra_imm32(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, operation: AluOp) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -540,6 +564,7 @@ fn alu_bra_imm32(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, operation: AluOp) {
     }
 }
 
+#[inline(always)]
 fn alu_vra_imm8(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8, operation: AluOp) {
     match cpu.step_num {
         1 => cpu.read_next_byte(mmu),
@@ -553,6 +578,7 @@ fn alu_vra_imm8(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8, operation: AluOp) {
     }
 }
 
+#[inline(always)]
 fn alu_ra_brb(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, brb: Reg32, operation: AluOp) {
     match cpu.step_num {
         1 => cpu.read_word_at_addr(mmu, cpu.breg(brb)),
@@ -566,6 +592,7 @@ fn alu_ra_brb(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, brb: Reg32, operation: AluOp)
     }
 }
 
+#[inline(always)]
 fn pss_ra(cpu: &mut Cpu, ra: Reg16) {
     match cpu.step_num {
         1 => {
@@ -576,6 +603,7 @@ fn pss_ra(cpu: &mut Cpu, ra: Reg16) {
     }
 }
 
+#[inline(always)]
 fn pss_bra(cpu: &mut Cpu, bra: Reg32) {
     match cpu.step_num {
         1 => {
@@ -586,6 +614,7 @@ fn pss_bra(cpu: &mut Cpu, bra: Reg32) {
     }
 }
 
+#[inline(always)]
 fn pss_vra(cpu: &mut Cpu, vra: Reg8) {
     match cpu.step_num {
         1 => {
@@ -596,6 +625,7 @@ fn pss_vra(cpu: &mut Cpu, vra: Reg8) {
     }
 }
 
+#[inline(always)]
 fn pss_imm16(cpu: &mut Cpu, mmu: &Mmu) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -607,6 +637,7 @@ fn pss_imm16(cpu: &mut Cpu, mmu: &Mmu) {
     }
 }
 
+#[inline(always)]
 fn pss_imm32(cpu: &mut Cpu, mmu: &Mmu) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -619,6 +650,7 @@ fn pss_imm32(cpu: &mut Cpu, mmu: &Mmu) {
     }
 }
 
+#[inline(always)]
 fn pss_imm8(cpu: &mut Cpu, mmu: &Mmu) {
     match cpu.step_num {
         1 => cpu.read_next_byte(mmu),
@@ -630,6 +662,7 @@ fn pss_imm8(cpu: &mut Cpu, mmu: &Mmu) {
     }
 }
 
+#[inline(always)]
 fn alu_ra_b<T: Into<u16>>(cpu: &mut Cpu, ra: Reg16, b: T, operation: AluOp) {
     match cpu.step_num {
         1 => {
@@ -641,6 +674,7 @@ fn alu_ra_b<T: Into<u16>>(cpu: &mut Cpu, ra: Reg16, b: T, operation: AluOp) {
     }
 }
 
+#[inline(always)]
 fn alu_bra_b<T: Into<u32>>(cpu: &mut Cpu, bra: Reg32, b: T, operation: AluOp) {
     match cpu.step_num {
         1 => {
@@ -652,6 +686,7 @@ fn alu_bra_b<T: Into<u32>>(cpu: &mut Cpu, bra: Reg32, b: T, operation: AluOp) {
     }
 }
 
+#[inline(always)]
 fn alu_vra_b<T: Into<u8>>(cpu: &mut Cpu, vra: Reg8, b: T, operation: AluOp) {
     match cpu.step_num {
         1 => {
@@ -663,6 +698,7 @@ fn alu_vra_b<T: Into<u8>>(cpu: &mut Cpu, vra: Reg8, b: T, operation: AluOp) {
     }
 }
 
+#[inline(always)]
 fn alu_a_b_dbl<R, T, S>(cpu: &mut Cpu, a: R, b: R, operation: AluDblOp)
 where
     R: Reg<ValueType = T>,
@@ -689,6 +725,7 @@ where
     }
 }
 
+#[inline(always)]
 fn alu_ra_brb_dbl(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32, operation: AluDblOp) {
     match cpu.step_num {
         1 => cpu.read_word_at_addr(mmu, cpu.breg(brb)),
@@ -704,6 +741,7 @@ fn alu_ra_brb_dbl(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32, operation
     }
 }
 
+#[inline(always)]
 fn alu_ra_imm16_dbl(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, operation: AluDblOp) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -718,6 +756,7 @@ fn alu_ra_imm16_dbl(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, operation: AluDblOp) {
     }
 }
 
+#[inline(always)]
 fn alu_bra_imm32_dbl(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, operation: AluDblOp) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -733,6 +772,7 @@ fn alu_bra_imm32_dbl(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, operation: AluDblOp) 
     }
 }
 
+#[inline(always)]
 fn alu_vra_imm8_dbl(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8, operation: AluDblOp) {
     match cpu.step_num {
         1 => cpu.read_next_byte(mmu),
@@ -747,6 +787,7 @@ fn alu_vra_imm8_dbl(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8, operation: AluDblOp) {
     }
 }
 
+#[inline(always)]
 fn cmp_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
     match cpu.step_num {
         1 => {
@@ -758,6 +799,7 @@ fn cmp_ra_rb(cpu: &mut Cpu, ra: Reg16, rb: Reg16) {
     }
 }
 
+#[inline(always)]
 fn cmp_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32) {
     match cpu.step_num {
         1 => {
@@ -769,6 +811,7 @@ fn cmp_bra_brb(cpu: &mut Cpu, bra: Reg32, brb: Reg32) {
     }
 }
 
+#[inline(always)]
 fn cmp_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
     match cpu.step_num {
         1 => {
@@ -780,6 +823,7 @@ fn cmp_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
     }
 }
 
+#[inline(always)]
 fn cmp_ra_imm16(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -792,6 +836,7 @@ fn cmp_ra_imm16(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
     }
 }
 
+#[inline(always)]
 fn cmp_bra_imm32(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -805,6 +850,7 @@ fn cmp_bra_imm32(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32) {
     }
 }
 
+#[inline(always)]
 fn cmp_vra_imm8(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8) {
     match cpu.step_num {
         1 => cpu.read_next_byte(mmu),
@@ -817,6 +863,7 @@ fn cmp_vra_imm8(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8) {
     }
 }
 
+#[inline(always)]
 fn cmp_imm16_ra(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -829,6 +876,7 @@ fn cmp_imm16_ra(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
     }
 }
 
+#[inline(always)]
 fn cmp_imm32_bra(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -842,6 +890,7 @@ fn cmp_imm32_bra(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32) {
     }
 }
 
+#[inline(always)]
 fn cmp_imm8_vra(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8) {
     match cpu.step_num {
         1 => cpu.read_next_byte(mmu),
@@ -854,6 +903,7 @@ fn cmp_imm8_vra(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8) {
     }
 }
 
+#[inline(always)]
 fn cmp_ra_brb(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, brb: Reg32) {
     match cpu.step_num {
         1 => cpu.read_word_at_addr(mmu, cpu.breg(brb)),
@@ -866,6 +916,7 @@ fn cmp_ra_brb(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, brb: Reg32) {
     }
 }
 
+#[inline(always)]
 fn cmp_bra_rb(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, rb: Reg16) {
     match cpu.step_num {
         1 => cpu.read_word_at_addr(mmu, cpu.breg(bra)),
@@ -878,6 +929,7 @@ fn cmp_bra_rb(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, rb: Reg16) {
     }
 }
 
+#[inline(always)]
 fn bit_ra_b(cpu: &mut Cpu, ra: Reg16, b: u8) {
     match cpu.step_num {
         1 => cpu.change_flag(Flag::Zero, !test_bit(cpu.reg(ra), b as u16)),
@@ -885,6 +937,7 @@ fn bit_ra_b(cpu: &mut Cpu, ra: Reg16, b: u8) {
     }
 }
 
+#[inline(always)]
 fn bit_bra_b(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, b: u8) {
     match cpu.step_num {
         1 => cpu.read_word_at_addr(mmu, cpu.breg(bra)),
@@ -893,6 +946,7 @@ fn bit_bra_b(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, b: u8) {
     }
 }
 
+#[inline(always)]
 fn bit_op_ra_b(cpu: &mut Cpu, ra: Reg16, b: u8, bit_op: BitOp) {
     match cpu.step_num {
         1 => cpu.set_reg(ra, change_bit(cpu.reg(ra), b, bit_op)),
@@ -900,6 +954,7 @@ fn bit_op_ra_b(cpu: &mut Cpu, ra: Reg16, b: u8, bit_op: BitOp) {
     }
 }
 
+#[inline(always)]
 fn bit_op_bra_b(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, b: u8, bit_op: BitOp) {
     match cpu.step_num {
         1 => cpu.read_word_at_addr(mmu, cpu.breg(bra)),
@@ -908,6 +963,7 @@ fn bit_op_bra_b(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, b: u8, bit_op: BitOp) 
     }
 }
 
+#[inline(always)]
 fn swp_ra(cpu: &mut Cpu, ra: Reg16) {
     match cpu.step_num {
         1 => {
@@ -918,6 +974,7 @@ fn swp_ra(cpu: &mut Cpu, ra: Reg16) {
     }
 }
 
+#[inline(always)]
 fn swp_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     match cpu.step_num {
         1 => cpu.read_word_at_addr(mmu, cpu.breg(bra)),
@@ -929,6 +986,7 @@ fn swp_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     }
 }
 
+#[inline(always)]
 fn set_flag(cpu: &mut Cpu, flag: Flag) {
     match cpu.step_num {
         1 => cpu.set_flag(flag),
@@ -936,6 +994,7 @@ fn set_flag(cpu: &mut Cpu, flag: Flag) {
     }
 }
 
+#[inline(always)]
 fn reset_flag(cpu: &mut Cpu, flag: Flag) {
     match cpu.step_num {
         1 => cpu.reset_flag(flag),
@@ -943,6 +1002,7 @@ fn reset_flag(cpu: &mut Cpu, flag: Flag) {
     }
 }
 
+#[inline(always)]
 fn toggle_flag(cpu: &mut Cpu, flag: Flag) {
     match cpu.step_num {
         1 => cpu.change_flag(flag, !cpu.flag(flag)),
@@ -950,6 +1010,7 @@ fn toggle_flag(cpu: &mut Cpu, flag: Flag) {
     }
 }
 
+#[inline(always)]
 fn set_all_flags(cpu: &mut Cpu) {
     match cpu.step_num {
         1 => cpu.flags = Flags::from_string("ZCOPN"),
@@ -957,6 +1018,7 @@ fn set_all_flags(cpu: &mut Cpu) {
     }
 }
 
+#[inline(always)]
 fn reset_all_flags(cpu: &mut Cpu) {
     match cpu.step_num {
         1 => cpu.flags = Flags::from_string(""),
@@ -964,6 +1026,7 @@ fn reset_all_flags(cpu: &mut Cpu) {
     }
 }
 
+#[inline(always)]
 fn rand_ra(cpu: &mut Cpu, ra: Reg16) {
     match cpu.step_num {
         1 => {
@@ -973,6 +1036,7 @@ fn rand_ra(cpu: &mut Cpu, ra: Reg16) {
     }
 }
 
+#[inline(always)]
 fn rand_bra(cpu: &mut Cpu, bra: Reg32) {
     match cpu.step_num {
         1 => {
@@ -982,6 +1046,7 @@ fn rand_bra(cpu: &mut Cpu, bra: Reg32) {
     }
 }
 
+#[inline(always)]
 fn rand_vra(cpu: &mut Cpu, vra: Reg8) {
     match cpu.step_num {
         1 => {
@@ -991,6 +1056,7 @@ fn rand_vra(cpu: &mut Cpu, vra: Reg8) {
     }
 }
 
+#[inline(always)]
 fn jp_imm32(cpu: &mut Cpu, mmu: &Mmu) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -1000,6 +1066,7 @@ fn jp_imm32(cpu: &mut Cpu, mmu: &Mmu) {
     }
 }
 
+#[inline(always)]
 fn jr_imm32(cpu: &mut Cpu, mmu: &Mmu) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -1009,6 +1076,7 @@ fn jr_imm32(cpu: &mut Cpu, mmu: &Mmu) {
     }
 }
 
+#[inline(always)]
 fn cond_jump_imm32(cpu: &mut Cpu, mmu: &Mmu, flag: Flag, expected: bool) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -1023,6 +1091,7 @@ fn cond_jump_imm32(cpu: &mut Cpu, mmu: &Mmu, flag: Flag, expected: bool) {
     }
 }
 
+#[inline(always)]
 fn jp_bra(cpu: &mut Cpu, bra: Reg32) {
     match cpu.step_num {
         1 => cpu.jump(cpu.breg(bra)),
@@ -1030,6 +1099,7 @@ fn jp_bra(cpu: &mut Cpu, bra: Reg32) {
     }
 }
 
+#[inline(always)]
 fn jr_bra(cpu: &mut Cpu, bra: Reg32) {
     match cpu.step_num {
         1 => cpu.relative_jump(cpu.breg(bra)),
@@ -1037,6 +1107,7 @@ fn jr_bra(cpu: &mut Cpu, bra: Reg32) {
     }
 }
 
+#[inline(always)]
 fn cond_jump_bra(cpu: &mut Cpu, bra: Reg32, flag: Flag, expected: bool) {
     match cpu.step_num {
         1 => cpu.check_conditional(flag, expected),
@@ -1049,6 +1120,7 @@ fn cond_jump_bra(cpu: &mut Cpu, bra: Reg32, flag: Flag, expected: bool) {
     }
 }
 
+#[inline(always)]
 fn call_imm32(cpu: &mut Cpu, mmu: &mut Mmu) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -1059,6 +1131,7 @@ fn call_imm32(cpu: &mut Cpu, mmu: &mut Mmu) {
     }
 }
 
+#[inline(always)]
 fn cond_call_imm32(cpu: &mut Cpu, mmu: &mut Mmu, flag: Flag, expected: bool) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -1078,6 +1151,7 @@ fn cond_call_imm32(cpu: &mut Cpu, mmu: &mut Mmu, flag: Flag, expected: bool) {
     }
 }
 
+#[inline(always)]
 fn call_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     match cpu.step_num {
         1 => cpu.push_stack(mmu, cpu.pc.address()),
@@ -1086,6 +1160,7 @@ fn call_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     }
 }
 
+#[inline(always)]
 fn ret(cpu: &mut Cpu, mmu: &mut Mmu) {
     match cpu.step_num {
         1 => cpu.pc = Addr::new_default_range(cpu.pop_stack(mmu)),
@@ -1093,6 +1168,7 @@ fn ret(cpu: &mut Cpu, mmu: &mut Mmu) {
     }
 }
 
+#[inline(always)]
 fn cond_ret(cpu: &mut Cpu, mmu: &mut Mmu, flag: Flag, expected: bool) {
     match cpu.step_num {
         1 => cpu.check_conditional(flag, expected),
@@ -1105,6 +1181,7 @@ fn cond_ret(cpu: &mut Cpu, mmu: &mut Mmu, flag: Flag, expected: bool) {
     }
 }
 
+#[inline(always)]
 fn reti(cpu: &mut Cpu, mmu: &mut Mmu) {
     match cpu.step_num {
         1 => cpu.pc = Addr::new_default_range(cpu.pop_stack(mmu)),
@@ -1113,6 +1190,7 @@ fn reti(cpu: &mut Cpu, mmu: &mut Mmu) {
     }
 }
 
+#[inline(always)]
 fn cond_call_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, flag: Flag, expected: bool) {
     match cpu.step_num {
         1 => cpu.check_conditional(flag, expected),
@@ -1130,6 +1208,7 @@ fn cond_call_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, flag: Flag, expected:
     }
 }
 
+#[inline(always)]
 fn push_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     match cpu.step_num {
         1 => cpu.push_stack(mmu, cpu.breg(bra)),
@@ -1137,6 +1216,7 @@ fn push_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     }
 }
 
+#[inline(always)]
 fn pop_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     match cpu.step_num {
         1 => {
@@ -1147,6 +1227,7 @@ fn pop_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     }
 }
 
+#[inline(always)]
 fn peek_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     match cpu.step_num {
         1 => cpu.set_breg(bra, mmu.read_dword(cpu.sp.address())),
@@ -1154,6 +1235,7 @@ fn peek_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     }
 }
 
+#[inline(always)]
 fn push_imm32(cpu: &mut Cpu, mmu: &mut Mmu) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
@@ -1163,6 +1245,7 @@ fn push_imm32(cpu: &mut Cpu, mmu: &mut Mmu) {
     }
 }
 
+#[inline(always)]
 fn stop(cpu: &mut Cpu) {
     match cpu.step_num {
         1 => cpu.is_stopped = true,
@@ -1170,6 +1253,7 @@ fn stop(cpu: &mut Cpu) {
     }
 }
 
+#[inline(always)]
 fn set_interrupts(cpu: &mut Cpu, value: bool) {
     match cpu.step_num {
         1 => cpu.interrupts_enabled = value,
@@ -1177,6 +1261,7 @@ fn set_interrupts(cpu: &mut Cpu, value: bool) {
     }
 }
 
+#[inline(always)]
 fn halt(cpu: &mut Cpu) {
     match cpu.step_num {
         1 => cpu.is_halted = true,
