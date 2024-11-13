@@ -64,8 +64,6 @@ impl Memory {
             return NOT_READABLE_BYTE;
         }
 
-        self.check_addr(address, address, "read");
-
         self.contents[address as usize]
     }
 
@@ -83,7 +81,6 @@ impl Memory {
         }
 
         let end = address + 1;
-        self.check_addr(address, end, "read");
 
         <u16>::from_le_bytes(
             self.contents[(address as usize)..=(end as usize)]
@@ -109,7 +106,6 @@ impl Memory {
         }
 
         let end = address + 3;
-        self.check_addr(address, end, "read");
 
         <u32>::from_le_bytes(
             self.contents[(address as usize)..=(end as usize)]
@@ -129,7 +125,6 @@ impl Memory {
             return;
         }
 
-        self.check_addr(address, end, "write");
         self.contents[(address as usize)..=(end as usize)].copy_from_slice(le_bytes);
     }
 
@@ -137,14 +132,6 @@ impl Memory {
     /// existing data in that range. Overriddes `self.writable`.
     pub fn direct_write(&mut self, start: u32, bytes: &[u8]) {
         self.contents[(start as usize)..((start as usize) + bytes.len())].copy_from_slice(bytes);
-    }
-
-    fn check_addr(&self, first_address: u32, last_address: u32, verb: &'static str) {
-        for address in first_address..=last_address {
-            if (address) as usize >= self.contents.len() {
-                panic!("Illegal memory {verb} at address {:#X}.", address);
-            }
-        }
     }
 }
 impl Default for Memory {
@@ -240,28 +227,28 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Illegal memory read at address 0x1000000.")]
+    #[should_panic(expected = "out of bounds")]
     fn test_oob_read_byte() {
         let mem = Memory::default();
         mem.read_byte(0x100_0000);
     }
 
     #[test]
-    #[should_panic(expected = "Illegal memory read at address 0x1000000.")]
+    #[should_panic(expected = "out of range")]
     fn test_oob_read_word() {
         let mem = Memory::default();
         mem.read_word(0xFF_FFFF);
     }
 
     #[test]
-    #[should_panic(expected = "Illegal memory write at address 0x1000000.")]
+    #[should_panic(expected = "out of range")]
     fn test_oob_write_byte() {
         let mut mem = Memory::default();
         mem.write_byte(0x100_0000, 0xAB);
     }
 
     #[test]
-    #[should_panic(expected = "Illegal memory write at address 0x1000000.")]
+    #[should_panic(expected = "out of range")]
     fn test_oob_write_word() {
         let mut mem = Memory::default();
         mem.write_word(0xFF_FFFF, 0xAB);
