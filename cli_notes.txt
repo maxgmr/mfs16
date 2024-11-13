@@ -1,2 +1,3 @@
 Example flamegraph:         `cargo flamegraph -p mfs16desktop -- programs/type`
 Example criterion bench:    `cargo bench --bench cpu_cycle_bench -- --verbose`
+Example flamegraph + criterion bench: `cargo flamegraph --bench cpu_cycle_bench -- --bench`

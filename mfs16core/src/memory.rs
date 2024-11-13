@@ -34,21 +34,25 @@ impl Memory {
     }
 
     /// Check if this [Memory] is readable.
+    #[inline(always)]
     pub fn is_readable(&self) -> bool {
         self.readable
     }
 
     /// Check if this [Memory] is writable.
+    #[inline(always)]
     pub fn is_writable(&self) -> bool {
         self.writable
     }
 
     /// Change memory read permissions.
+    #[inline(always)]
     pub fn set_readable(&mut self, value: bool) {
         self.readable = value
     }
 
     /// Change memory write permissions.
+    #[inline(always)]
     pub fn set_writable(&mut self, value: bool) {
         self.writable = value
     }
