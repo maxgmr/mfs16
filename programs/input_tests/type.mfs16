@@ -19,13 +19,13 @@ jp entry_point;
 
 // Frame interrupt handler
 0x100:d:
+    clv;
     call draw_screen;
 reti;
 
 // Keyboard interrupt handler
 0x200:d:
     call handle_input;
-    call clear_screen;
 reti;
 
 entry_point:
@@ -65,30 +65,6 @@ handle_input:
 
     // Add/subtract input bytes to data
     call modify_data;
-
-    pop HL;
-    pop DE;
-    pop BC;
-ret;
-
-// Clear the screen.
-clear_screen:
-    push BC;
-    push DE;
-    push HL;
-
-    ld A,0:w;
-    ld HL,screen_start;
-    ld BC,cl_scr_loop_end;
-    ld DE,screen_end;
-    cl_scr_loop:
-    cmp HL,DE;
-    jnn BC;
-
-    ldi [HL],A;
-
-    jp cl_scr_loop;
-    cl_scr_loop_end:
 
     pop HL;
     pop DE;
