@@ -1,9 +1,9 @@
 row_len = 0x140:d;
 vram_start = 0x0100_0000:d;
-text_colour = 0xAAAA:w;
+text_colour = 0xAAAA_AAAA:d;
 
 ld BC,row_len;
-ld D,text_colour;
+ld DE,text_colour;
 ld HL,vram_start;
 
 call cap_h;
