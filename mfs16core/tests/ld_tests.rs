@@ -641,4 +641,63 @@ fn test_ld() {
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0053));
     assert_eq!(c.cpu.breg(HL), 0x0100_BABE);
     assert_eq!(c.mmu.read_dword(0x0100_BAC2), 0x1234_5678);
+
+    // LD [imm32],A
+    c.mmu.write_word(0x34_5678, 0x0000);
+    c.cpu.set_reg(A, 0xFEED);
+    c.mmu.write_word(0x00_0053, 0x0990);
+    c.mmu.write_dword(0x00_0055, 0x34_5678);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0055));
+    assert_eq!(c.cpu.reg(A), 0xFEED);
+    assert_eq!(c.mmu.read_word(0x34_5678), 0x0000);
+
+    // Read word 1
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0057));
+    assert_eq!(c.cpu.reg(A), 0xFEED);
+    assert_eq!(c.mmu.read_word(0x34_5678), 0x0000);
+
+    // Read word 0
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0059));
+    assert_eq!(c.cpu.reg(A), 0xFEED);
+    assert_eq!(c.mmu.read_word(0x34_5678), 0x0000);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0059));
+    assert_eq!(c.cpu.reg(A), 0xFEED);
+    assert_eq!(c.mmu.read_word(0x34_5678), 0xFEED);
+
+    // LD [imm32],A
+    c.cpu.set_reg(B, 0x0000);
+    c.mmu.write_word(0x00_0059, 0x09A1);
+    c.mmu.write_dword(0x00_005B, 0x34_5678);
+
+    // Read instr
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_005B));
+    assert_eq!(c.cpu.reg(B), 0x0000);
+    assert_eq!(c.mmu.read_word(0x34_5678), 0xFEED);
+
+    // Read word 1
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_005D));
+    assert_eq!(c.cpu.reg(B), 0x0000);
+    assert_eq!(c.mmu.read_word(0x34_5678), 0xFEED);
+
+    // Read word 0
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_005F));
+    assert_eq!(c.cpu.reg(B), 0x0000);
+    assert_eq!(c.mmu.read_word(0x34_5678), 0xFEED);
+
+    // Do operation
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_005F));
+    assert_eq!(c.cpu.reg(B), 0xFEED);
+    assert_eq!(c.mmu.read_word(0x34_5678), 0xFEED);
 }
