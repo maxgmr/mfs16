@@ -135,6 +135,24 @@ pub enum Instruction {
     /// 0x098a - LDD [bra],imm16
     /// Load imm16 into [bra], then decrement bra by two.
     LddBraImm16(Reg32),
+    /// 0x0Aab - VLD [bra],brb
+    /// VRAM load. Special, faster 32-bit version of LD [bra],rb for VRAM only.
+    VldBraBrb(Reg32, Reg32),
+    /// 0x0Bab - VLDI [bra],brb
+    /// VRAM load. Special, faster 32-bit version of LDI [bra],rb for VRAM only.
+    VldiBraBrb(Reg32, Reg32),
+    /// 0x0Cab - VLDD [bra],brb
+    /// VRAM load. Special, faster 32-bit version of LDD [bra],rb for VRAM only.
+    VlddBraBrb(Reg32, Reg32),
+    /// 0x0Dab - VLD [bra],imm32
+    /// VRAM load. Special, faster 32-bit version of LD [bra],imm16 for VRAM only.
+    VldBraImm32(Reg32),
+    /// 0x0Eab - VLDI [bra],imm32
+    /// VRAM load. Special, faster 32-bit version of LDI [bra],imm16 for VRAM only.
+    VldiBraImm32(Reg32),
+    /// 0x0Fab - VLDD [bra],imm32
+    /// VRAM load. Special, faster 32-bit version of LDD [bra],imm16 for VRAM only.
+    VlddBraImm32(Reg32),
     /// 0x10ab - ADD ra,rb
     /// Add rb to ra.
     /// ra += rb

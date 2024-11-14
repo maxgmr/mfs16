@@ -153,6 +153,16 @@ impl Mmu {
             }
         };
     }
+
+    /// Write a double word to VRAM only.
+    pub fn write_dword_vram(&mut self, address: u32, value: u32) {
+        match address.try_into().unwrap() {
+            VRAM_OFFSET..VRAM_END => self.gpu.write_dword(address - VRAM_OFFSET as u32, value),
+            _ => {
+                print_warning_message("VRAM write outside of VRAM", address, self.debug);
+            }
+        }
+    }
 }
 impl Default for Mmu {
     fn default() -> Self {
