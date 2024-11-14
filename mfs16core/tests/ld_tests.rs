@@ -533,26 +533,26 @@ fn test_ld() {
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_003F));
     assert_eq!(c.cpu.breg(BC), 0x1234_5678);
-    assert_eq!(c.cpu.breg(HL), 0x0100_BEF1);
+    assert_eq!(c.cpu.breg(HL), 0x0100_BEF3);
     assert_eq!(c.mmu.read_dword(0x0100_BEEF), 0x1234_5678);
 
     // VLDD [bra],brb
-    c.mmu.write_dword(0x0100_BEF1, 0x0000_0000);
+    c.mmu.write_dword(0x0100_BEF3, 0x0000_0000);
     c.mmu.write_word(0x00_003F, 0x0C20);
 
     // Read instr
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0041));
     assert_eq!(c.cpu.breg(BC), 0x1234_5678);
-    assert_eq!(c.cpu.breg(HL), 0x0100_BEF1);
-    assert_eq!(c.mmu.read_dword(0x0100_BEF1), 0x0000_0000);
+    assert_eq!(c.cpu.breg(HL), 0x0100_BEF3);
+    assert_eq!(c.mmu.read_dword(0x0100_BEF3), 0x0000_0000);
 
     // Do operation
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0041));
     assert_eq!(c.cpu.breg(BC), 0x1234_5678);
     assert_eq!(c.cpu.breg(HL), 0x0100_BEEF);
-    assert_eq!(c.mmu.read_dword(0x0100_BEF1), 0x1234_5678);
+    assert_eq!(c.mmu.read_dword(0x0100_BEF3), 0x1234_5678);
 
     // VLD [bra],imm32
     c.cpu.set_breg(HL, 0x0100_BABE);
@@ -610,35 +610,35 @@ fn test_ld() {
     // Do operation
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_004D));
-    assert_eq!(c.cpu.breg(HL), 0x0100_BAC0);
+    assert_eq!(c.cpu.breg(HL), 0x0100_BAC2);
     assert_eq!(c.mmu.read_dword(0x0100_BABE), 0x1234_5678);
 
     // VLDD [bra],imm32
-    c.mmu.write_dword(0x0100_BAC0, 0x0000_0000);
+    c.mmu.write_dword(0x0100_BAC2, 0x0000_0000);
     c.mmu.write_word(0x00_004D, 0x0C52);
     c.mmu.write_dword(0x00_004F, 0x1234_5678);
 
     // Read instr
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_004F));
-    assert_eq!(c.cpu.breg(HL), 0x0100_BAC0);
-    assert_eq!(c.mmu.read_dword(0x0100_BAC0), 0x0000_0000);
+    assert_eq!(c.cpu.breg(HL), 0x0100_BAC2);
+    assert_eq!(c.mmu.read_dword(0x0100_BAC2), 0x0000_0000);
 
     // Read word 1
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0051));
-    assert_eq!(c.cpu.breg(HL), 0x0100_BAC0);
-    assert_eq!(c.mmu.read_dword(0x0100_BAC0), 0x0000_0000);
+    assert_eq!(c.cpu.breg(HL), 0x0100_BAC2);
+    assert_eq!(c.mmu.read_dword(0x0100_BAC2), 0x0000_0000);
 
     // Read word 0
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0053));
-    assert_eq!(c.cpu.breg(HL), 0x0100_BAC0);
-    assert_eq!(c.mmu.read_dword(0x0100_BAC0), 0x0000_0000);
+    assert_eq!(c.cpu.breg(HL), 0x0100_BAC2);
+    assert_eq!(c.mmu.read_dword(0x0100_BAC2), 0x0000_0000);
 
     // Do operation
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0053));
     assert_eq!(c.cpu.breg(HL), 0x0100_BABE);
-    assert_eq!(c.mmu.read_dword(0x0100_BAC0), 0x1234_5678);
+    assert_eq!(c.mmu.read_dword(0x0100_BAC2), 0x1234_5678);
 }

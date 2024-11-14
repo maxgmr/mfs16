@@ -510,8 +510,8 @@ fn vld_bra_brb(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, brb: Reg32, modify_bra:
 
             let breg_val = cpu.breg(bra);
             match modify_bra {
-                ..0 => cpu.set_breg(bra, breg_val.wrapping_sub(2)),
-                1.. => cpu.set_breg(bra, breg_val.wrapping_add(2)),
+                ..0 => cpu.set_breg(bra, breg_val.wrapping_sub(4)),
+                1.. => cpu.set_breg(bra, breg_val.wrapping_add(4)),
                 0 => {}
             };
         }
@@ -529,8 +529,8 @@ fn vld_bra_imm32(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, modify_bra: i32) {
 
             let breg_val = cpu.breg(bra);
             match modify_bra {
-                ..0 => cpu.set_breg(bra, breg_val.wrapping_sub(2)),
-                1.. => cpu.set_breg(bra, breg_val.wrapping_add(2)),
+                ..0 => cpu.set_breg(bra, breg_val.wrapping_sub(4)),
+                1.. => cpu.set_breg(bra, breg_val.wrapping_add(4)),
                 0 => {}
             };
         }
