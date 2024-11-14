@@ -36,6 +36,9 @@ pub fn step(cpu: &mut Cpu, mmu: &mut Mmu) {
         VldBraImm32(bra) => vld_bra_imm32(cpu, mmu, bra, 0),
         VldiBraImm32(bra) => vld_bra_imm32(cpu, mmu, bra, 1),
         VlddBraImm32(bra) => vld_bra_imm32(cpu, mmu, bra, -1),
+        CvmBra(bra) => cvm_bra(cpu, mmu, bra, 0),
+        CvmiBra(bra) => cvm_bra(cpu, mmu, bra, 1),
+        CvmdBra(bra) => cvm_bra(cpu, mmu, bra, -1),
         AddRaRb(ra, rb) => alu_ra_rb(cpu, ra, rb, Add),
         AddBraBrb(bra, brb) => alu_bra_brb(cpu, bra, brb, Add),
         AddVraVrb(vra, vrb) => alu_vra_vrb(cpu, vra, vrb, Add),
@@ -526,6 +529,23 @@ fn vld_bra_imm32(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, modify_bra: i32) {
         2 => cpu.read_next_word(mmu),
         3 => {
             mmu.write_dword_vram(cpu.breg(bra), get_dword_from_last(cpu));
+
+            let breg_val = cpu.breg(bra);
+            match modify_bra {
+                ..0 => cpu.set_breg(bra, breg_val.wrapping_sub(4)),
+                1.. => cpu.set_breg(bra, breg_val.wrapping_add(4)),
+                0 => {}
+            };
+        }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+#[inline(always)]
+fn cvm_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, modify_bra: i32) {
+    match cpu.step_num {
+        1 => {
+            mmu.write_dword_vram(cpu.breg(bra), 0x0000_0000);
 
             let breg_val = cpu.breg(bra);
             match modify_bra {

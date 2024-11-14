@@ -153,6 +153,15 @@ pub enum Instruction {
     /// 0x0C5a - VLDD [bra],imm32
     /// VRAM load. Special, faster 32-bit version of LDD [bra],imm16 for VRAM only.
     VlddBraImm32(Reg32),
+    /// 0x0C6a - CVM [bra]
+    /// Clear VRAM. Clears the entire 32-bit dword at address bra in VRAM.
+    CvmBra(Reg32),
+    /// 0x0C7a - CVMI [bra]
+    /// Clears VRAM dword at address bra, incrementing bra by 4.
+    CvmiBra(Reg32),
+    /// 0x0C8a - CVMD [bra]
+    /// Clears VRAM dword at address bra, decrementing bra by 4.
+    CvmdBra(Reg32),
     /// 0x10ab - ADD ra,rb
     /// Add rb to ra.
     /// ra += rb
