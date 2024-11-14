@@ -8,19 +8,10 @@ pub struct Gpu {
     /// Video RAM responsible for storing the pixel data of the computer. Each pixel takes up one
     /// nibble of space.
     pub vram: [u8; Self::VRAM_SIZE],
-    /// Frame interrupt flag. Is collected by the MMU during the next cycle.
-    pub frame_interrupt: bool,
 }
 impl Gpu {
     /// This GPU's VRAM size.
     pub const VRAM_SIZE: usize = VRAM_SIZE;
-
-    /// Consume the frame interrupt flag.
-    pub fn consume_frame_interrupt(&mut self) -> bool {
-        let flag = self.frame_interrupt;
-        self.frame_interrupt = false;
-        flag
-    }
 
     /// Write a double word from VRAM starting at the given address.
     pub fn write_dword(&mut self, address: u32, dword: u32) {
