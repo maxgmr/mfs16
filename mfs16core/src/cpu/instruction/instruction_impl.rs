@@ -1,12 +1,9 @@
 use super::*;
 use crate::Reg;
 
-include!(concat!(env!("OUT_DIR"), "/generated_opcodes.rs"));
-
 impl Instruction {
     /// Get the [Instruction] from the given opcode.
     pub fn from_opcode(opcode: u16) -> Self {
-        // *OPCODE_MAP.get(&opcode).unwrap()
         let nib_1 = (opcode >> 12) as u8;
         let nib_2 = ((opcode & 0x0F00) >> 8) as u8;
         let nib_3 = ((opcode & 0x00F0) >> 4) as u8;
