@@ -74,7 +74,6 @@ impl Default for Gpu {
     fn default() -> Self {
         Self {
             vram: [0x00; Self::VRAM_SIZE],
-            frame_interrupt: false,
         }
     }
 }
