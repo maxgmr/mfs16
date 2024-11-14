@@ -16,14 +16,12 @@ impl Gpu {
     /// Write a double word from VRAM starting at the given address.
     pub fn write_dword(&mut self, address: u32, dword: u32) {
         let end = address + 3;
-        self.check_address_ok(address, end);
         self.vram[(address as usize)..=(end as usize)].copy_from_slice(&dword.to_le_bytes());
     }
 
     /// Read a double word from VRAM starting at the given address.
     pub fn read_dword(&self, address: u32) -> u32 {
         let end = address + 3;
-        self.check_address_ok(address, end);
         <u32>::from_le_bytes(
             self.vram[(address as usize)..=(end as usize)]
                 .try_into()
@@ -34,14 +32,12 @@ impl Gpu {
     /// Write a word to VRAM starting at the given address.
     pub fn write_word(&mut self, address: u32, word: u16) {
         let end = address + 1;
-        self.check_address_ok(address, end);
         self.vram[(address as usize)..=(end as usize)].copy_from_slice(&word.to_le_bytes());
     }
 
     /// Read a word from VRAM starting at the given address.
     pub fn read_word(&self, address: u32) -> u16 {
         let end = address + 1;
-        self.check_address_ok(address, end);
         <u16>::from_le_bytes(
             self.vram[(address as usize)..=(end as usize)]
                 .try_into()
@@ -51,22 +47,12 @@ impl Gpu {
 
     /// Write a byte to VRAM at the given address.
     pub fn write_byte(&mut self, address: u32, byte: u8) {
-        self.check_address_ok(address, address);
         self.vram[address as usize] = byte;
     }
 
     /// Read a byte from VRAM at the given address.
     pub fn read_byte(&self, address: u32) -> u8 {
-        self.check_address_ok(address, address);
         self.vram[address as usize]
-    }
-
-    fn check_address_ok(&self, address: u32, end: u32) {
-        for address in address..=end {
-            if (address as usize) >= Self::VRAM_SIZE {
-                panic!("Illegal VRAM read at address {:#010X}.", address);
-            }
-        }
     }
 }
 impl Default for Gpu {
