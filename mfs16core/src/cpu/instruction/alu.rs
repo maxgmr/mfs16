@@ -1,10 +1,7 @@
 //! All the Arithmetic Logic Unit (ALU) instructions.
-use std::{
-    fmt::{Binary, Display},
-    ops::{
-        Add as OpsAdd, BitAnd, BitOr, BitXor, Div as OpsDiv, Mul as OpsMul, Not as OpsNot, Rem,
-        Shl, Shr, Sub as OpsSub,
-    },
+use std::ops::{
+    Add as OpsAdd, BitAnd, BitOr, BitXor, Div as OpsDiv, Mul as OpsMul, Not as OpsNot, Rem, Shl,
+    Shr, Sub as OpsSub,
 };
 
 use crate::{
@@ -56,51 +53,9 @@ pub enum AluDblOp {
 /// Argument 'b' is ignored for single-operand operations.
 pub fn alu<T, L, S>(cpu: &mut Cpu, operation: AluOp, a: T, b: T) -> T
 where
-    T: Zeroable
-        + Oneable
-        + Msb
-        + Copy
-        + PartialEq
-        + PartialOrd
-        + Ord
-        + BitAnd<Output = T>
-        + BitOr<Output = T>
-        + BitXor<Output = T>
-        + OpsNot<Output = T>
-        + OpsAdd<Output = T>
-        + WrappingAdd
-        + OpsSub<Output = T>
-        + WrappingSub
-        + NMinus1Mask
-        + Display
-        + Binary
-        + AsLargerType
-        + HasMax
-        + Shl<Output = T>
-        + Shr<Output = T>
-        + NumBits
-        + Rem<Output = T>
-        + AsSignedType<Output = S>
-        + AsLargerType<Output = L>,
-    L: OpsAdd<Output = L>
-        + PartialOrd
-        + OpsMul<Output = L>
-        + Zeroable
-        + BitAnd<Output = L>
-        + OpsNot<Output = L>
-        + Copy
-        + AsSmallerType<Output = T>,
-    S: BitAnd<Output = S>
-        + OpsMul<Output = S>
-        + OpsNot<Output = S>
-        + Oneable
-        + Msb
-        + Shr<Output = S>
-        + Zeroable
-        + PartialEq
-        + OverflowingMulDiv
-        + Copy
-        + AsUnsignedType<Output = T>,
+    T: Aluable + AsLargerType<Output = L> + AsSignedType<Output = S>,
+    L: LargerType + AsSmallerType<Output = T>,
+    S: SignedType + AsUnsignedType<Output = T>,
 {
     match operation {
         Add => alu_add(cpu, a, b, false),
@@ -132,16 +87,8 @@ where
 /// This version returns two integer results.
 pub fn alu_dbl<T, S>(cpu: &mut Cpu, operation: AluDblOp, a: T, b: T) -> (T, T)
 where
-    T: AsSignedType<Output = S>
-        + Zeroable
-        + Msb
-        + Copy
-        + Eq
-        + Rem<Output = T>
-        + BitAnd<Output = T>
-        + Oneable
-        + OpsDiv<Output = T>,
-    S: AsUnsignedType<Output = T> + Rem<Output = S> + OverflowingMulDiv,
+    T: Aluable + AsSignedType<Output = S>,
+    S: SignedType + AsUnsignedType<Output = T>,
 {
     match operation {
         Divu => alu_divu(cpu, a, b),
@@ -151,19 +98,8 @@ where
 
 fn alu_add<T, L>(cpu: &mut Cpu, a: T, b: T, use_carry: bool) -> T
 where
-    T: Zeroable
-        + Oneable
-        + Msb
-        + Copy
-        + PartialEq
-        + PartialOrd
-        + Ord
-        + BitAnd<Output = T>
-        + WrappingAdd
-        + NMinus1Mask
-        + AsLargerType<Output = L>
-        + HasMax,
-    L: OpsAdd<Output = L> + PartialOrd,
+    T: Aluable + AsLargerType<Output = L>,
+    L: LargerType + AsSmallerType<Output = T>,
 {
     let c = get_carry::<T>(cpu, use_carry);
 
@@ -181,20 +117,7 @@ where
     result
 }
 
-fn alu_sub<T>(cpu: &mut Cpu, a: T, b: T, use_carry: bool) -> T
-where
-    T: Zeroable
-        + Oneable
-        + Msb
-        + Copy
-        + PartialEq
-        + PartialOrd
-        + Ord
-        + BitAnd<Output = T>
-        + WrappingSub
-        + WrappingAdd
-        + NMinus1Mask,
-{
+fn alu_sub<T: Aluable>(cpu: &mut Cpu, a: T, b: T, use_carry: bool) -> T {
     let c = get_carry::<T>(cpu, use_carry);
 
     let result = a.trait_wrapping_sub(b).trait_wrapping_sub(c);
@@ -208,20 +131,7 @@ where
     result
 }
 
-fn alu_tcp<T>(cpu: &mut Cpu, a: T) -> T
-where
-    T: Zeroable
-        + Oneable
-        + Msb
-        + Copy
-        + PartialEq
-        + PartialOrd
-        + Ord
-        + BitAnd<Output = T>
-        + WrappingSub
-        + WrappingAdd
-        + NMinus1Mask,
-{
+fn alu_tcp<T: Aluable>(cpu: &mut Cpu, a: T) -> T {
     let result = alu_sub(cpu, <T>::zero(), a, false);
     cpu.flags.change_flag(Carry, a != <T>::zero());
     result
@@ -229,20 +139,8 @@ where
 
 fn alu_inc_dec<T, L>(cpu: &mut Cpu, a: T, is_inc: bool) -> T
 where
-    T: Zeroable
-        + Oneable
-        + Msb
-        + Copy
-        + PartialEq
-        + PartialOrd
-        + Ord
-        + BitAnd<Output = T>
-        + WrappingAdd
-        + WrappingSub
-        + NMinus1Mask
-        + AsLargerType<Output = L>
-        + HasMax,
-    L: OpsAdd<Output = L> + PartialOrd,
+    T: Aluable + AsLargerType<Output = L>,
+    L: LargerType + AsSmallerType<Output = T>,
 {
     let original_carry = cpu.flag(Carry);
     let original_overflow = cpu.flag(Overflow);
@@ -261,10 +159,7 @@ where
     result
 }
 
-fn alu_pss<T>(cpu: &mut Cpu, a: T) -> T
-where
-    T: Zeroable + Oneable + Msb + PartialEq + Eq + BitAnd<Output = T> + Copy,
-{
+fn alu_pss<T: Aluable>(cpu: &mut Cpu, a: T) -> T {
     let original_carry = cpu.flag(Carry);
     let original_overflow = cpu.flag(Overflow);
 
@@ -276,58 +171,31 @@ where
     a
 }
 
-fn alu_and<T>(cpu: &mut Cpu, a: T, b: T) -> T
-where
-    T: Zeroable + Oneable + Msb + PartialEq + Eq + BitAnd<Output = T> + Copy,
-{
+fn alu_and<T: Aluable>(cpu: &mut Cpu, a: T, b: T) -> T {
     let result: T = a & b;
     set_bitwise_flags(cpu, result);
     result
 }
 
-fn alu_or<T>(cpu: &mut Cpu, a: T, b: T) -> T
-where
-    T: Zeroable + Oneable + Msb + PartialEq + Eq + BitAnd<Output = T> + BitOr<Output = T> + Copy,
-{
+fn alu_or<T: Aluable>(cpu: &mut Cpu, a: T, b: T) -> T {
     let result: T = a | b;
     set_bitwise_flags(cpu, result);
     result
 }
 
-fn alu_xor<T>(cpu: &mut Cpu, a: T, b: T) -> T
-where
-    T: Zeroable + Oneable + Msb + PartialEq + Eq + BitAnd<Output = T> + BitXor<Output = T> + Copy,
-{
+fn alu_xor<T: Aluable>(cpu: &mut Cpu, a: T, b: T) -> T {
     let result: T = a ^ b;
     set_bitwise_flags(cpu, result);
     result
 }
 
-fn alu_not<T>(cpu: &mut Cpu, a: T) -> T
-where
-    T: OpsNot<Output = T> + Copy + Zeroable + Oneable + Msb + Eq + BitAnd<Output = T>,
-{
+fn alu_not<T: Aluable>(cpu: &mut Cpu, a: T) -> T {
     let result: T = !a;
     set_bitwise_flags(cpu, result);
     result
 }
 
-fn alu_shr<T>(cpu: &mut Cpu, a: T, b: T, preserve_msb: bool) -> T
-where
-    T: NumBits
-        + BitAnd<Output = T>
-        + BitOr<Output = T>
-        + PartialEq
-        + PartialOrd
-        + Zeroable
-        + Oneable
-        + Shl<Output = T>
-        + Shr<Output = T>
-        + Msb
-        + HasMax
-        + Copy
-        + OpsSub<Output = T>,
-{
+fn alu_shr<T: Aluable>(cpu: &mut Cpu, a: T, b: T, preserve_msb: bool) -> T {
     // Do nothing if shift by 0
     if b == <T>::zero() {
         return a;
@@ -380,20 +248,7 @@ where
     result
 }
 
-fn alu_shl<T>(cpu: &mut Cpu, a: T, b: T) -> T
-where
-    T: Zeroable
-        + Oneable
-        + NumBits
-        + PartialEq
-        + PartialOrd
-        + Shl<Output = T>
-        + Shr<Output = T>
-        + OpsSub<Output = T>
-        + NumBits
-        + Copy
-        + Msb,
-{
+fn alu_shl<T: Aluable>(cpu: &mut Cpu, a: T, b: T) -> T {
     // Do nothing if shift by 0
     if b == <T>::zero() {
         return a;
@@ -418,21 +273,7 @@ where
     result
 }
 
-fn alu_rotate<T>(cpu: &mut Cpu, a: T, b: T, is_left: bool) -> T
-where
-    T: Rem<Output = T>
-        + Oneable
-        + Zeroable
-        + PartialEq
-        + NumBits
-        + Copy
-        + Msb
-        + OpsSub<Output = T>
-        + BitAnd<Output = T>
-        + BitOr<Output = T>
-        + Shl<Output = T>
-        + Shr<Output = T>,
-{
+fn alu_rotate<T: Aluable>(cpu: &mut Cpu, a: T, b: T, is_left: bool) -> T {
     let rotate_bits = b % <T>::num_bits();
 
     // Do nothing if rotate ends at same place
@@ -463,25 +304,7 @@ where
     result
 }
 
-fn alu_rotate_carry<T>(cpu: &mut Cpu, a: T, b: T, is_left: bool) -> T
-where
-    T: Rem<Output = T>
-        + Zeroable
-        + Oneable
-        + PartialEq
-        + PartialOrd
-        + NumBits
-        + HasMax
-        + Msb
-        + OpsNot<Output = T>
-        + BitAnd<Output = T>
-        + BitOr<Output = T>
-        + OpsAdd<Output = T>
-        + OpsSub<Output = T>
-        + Shl<Output = T>
-        + Shr<Output = T>
-        + Copy,
-{
+fn alu_rotate_carry<T: Aluable>(cpu: &mut Cpu, a: T, b: T, is_left: bool) -> T {
     let rotate_bits = b % (<T>::num_bits() + <T>::one());
 
     // Do nothing if rotate ends at same place
@@ -535,21 +358,8 @@ where
 
 fn alu_mulu<T, L>(cpu: &mut Cpu, a: T, b: T) -> T
 where
-    T: AsLargerType<Output = L>
-        + HasMax
-        + Copy
-        + Zeroable
-        + Oneable
-        + Msb
-        + BitAnd<Output = T>
-        + Eq,
-    L: OpsMul<Output = L>
-        + Zeroable
-        + BitAnd<Output = L>
-        + OpsNot<Output = L>
-        + PartialEq
-        + Copy
-        + AsSmallerType<Output = T>,
+    T: Aluable + AsLargerType<Output = L>,
+    L: LargerType + AsSmallerType<Output = T>,
 {
     let result = a.as_larger_type() * b.as_larger_type();
 
@@ -567,8 +377,8 @@ where
 
 fn alu_muli<T, S>(cpu: &mut Cpu, a: T, b: T) -> T
 where
-    T: AsSignedType<Output = S> + Copy + Msb + Zeroable + Oneable + Eq + BitAnd<Output = T>,
-    S: OpsMul<Output = S> + OverflowingMulDiv + AsUnsignedType<Output = T>,
+    T: Aluable + AsSignedType<Output = S>,
+    S: SignedType + AsUnsignedType<Output = T>,
 {
     let (result, is_overflow) = a.as_signed_type().overflowing_mul(b.as_signed_type());
     let final_result = result.as_unsigned_type();
@@ -577,18 +387,7 @@ where
     final_result
 }
 
-fn alu_divu<T>(cpu: &mut Cpu, a: T, b: T) -> (T, T)
-where
-    T: Zeroable
-        + PartialEq
-        + Rem<Output = T>
-        + OpsDiv<Output = T>
-        + Copy
-        + BitAnd<Output = T>
-        + Oneable
-        + Msb
-        + Eq,
-{
+fn alu_divu<T: Aluable>(cpu: &mut Cpu, a: T, b: T) -> (T, T) {
     if b == <T>::zero() {
         return (a, b);
     }
@@ -603,8 +402,8 @@ where
 
 fn alu_divi<T, S>(cpu: &mut Cpu, a: T, b: T) -> (T, T)
 where
-    T: Zeroable + Copy + BitAnd<Output = T> + Oneable + Msb + AsSignedType<Output = S> + Eq,
-    S: Rem<Output = S> + OverflowingMulDiv + AsUnsignedType<Output = T>,
+    T: Aluable + AsSignedType<Output = S>,
+    S: SignedType + AsUnsignedType<Output = T>,
 {
     if b == <T>::zero() {
         return (a, b);
@@ -627,10 +426,7 @@ where
     (final_quotient, final_remainder)
 }
 
-fn get_carry<T>(cpu: &Cpu, use_carry: bool) -> T
-where
-    T: Oneable + Zeroable,
-{
+fn get_carry<T: Aluable>(cpu: &Cpu, use_carry: bool) -> T {
     if use_carry && cpu.flag(Carry) {
         T::one()
     } else {
@@ -638,19 +434,13 @@ where
     }
 }
 
-fn set_mul_div_flags<T>(cpu: &mut Cpu, result: T)
-where
-    T: Zeroable + Copy + Eq + BitAnd<Output = T> + Oneable + Msb,
-{
+fn set_mul_div_flags<T: Aluable>(cpu: &mut Cpu, result: T) {
     cpu.flags.change_zero(result);
     cpu.flags.change_parity(result);
     cpu.flags.change_negative(result);
 }
 
-fn set_add_sub_flags<T>(cpu: &mut Cpu, n_minus_1_carry: bool, n_carry: bool, result: T)
-where
-    T: Zeroable + Oneable + Msb + PartialEq + Eq + BitAnd<Output = T> + Copy,
-{
+fn set_add_sub_flags<T: Aluable>(cpu: &mut Cpu, n_minus_1_carry: bool, n_carry: bool, result: T) {
     cpu.flags.change_zero(result);
     cpu.flags.change_flag(Carry, n_carry);
     cpu.flags.change_flag(Overflow, n_minus_1_carry ^ n_carry);
@@ -658,10 +448,7 @@ where
     cpu.flags.change_negative(result);
 }
 
-fn set_bitwise_flags<T>(cpu: &mut Cpu, result: T)
-where
-    T: Zeroable + Copy + Eq + BitAnd<Output = T> + Oneable + Msb,
-{
+fn set_bitwise_flags<T: Aluable>(cpu: &mut Cpu, result: T) {
     cpu.flags.change_zero(result);
     cpu.flags.reset_flag(Carry);
     cpu.flags.reset_flag(Overflow);
@@ -670,6 +457,116 @@ where
 }
 
 // ------- TRAITS -------
+
+/// Composite trait.
+///
+/// Implementors of this trait implement a larger selection of traits that allow operations to be
+/// performed on the type by the ALU.
+pub trait Aluable:
+    Copy
+    + PartialEq
+    + PartialOrd
+    + Ord
+    + BitAnd<Output = Self>
+    + BitOr<Output = Self>
+    + BitXor<Output = Self>
+    + OpsNot<Output = Self>
+    + OpsAdd<Output = Self>
+    + OpsSub<Output = Self>
+    + OpsDiv<Output = Self>
+    + Shl<Output = Self>
+    + Shr<Output = Self>
+    + Rem<Output = Self>
+    + WrappingAdd
+    + WrappingSub
+    + Zeroable
+    + Oneable
+    + Msb
+    + HasMax
+    + NumBits
+    + NMinus1Mask
+{
+}
+
+/// Composite trait for the larger type associated with an [Aluable] type.
+pub trait LargerType:
+    Copy
+    + PartialOrd
+    + OpsAdd<Output = Self>
+    + OpsMul<Output = Self>
+    + OpsNot<Output = Self>
+    + BitAnd<Output = Self>
+    + Zeroable
+{
+}
+
+/// Composite trait for the signed type associated with an [Aluable] type.
+pub trait SignedType:
+    Copy
+    + PartialEq
+    + OpsMul<Output = Self>
+    + OpsNot<Output = Self>
+    + Rem<Output = Self>
+    + BitAnd<Output = Self>
+    + Shr<Output = Self>
+    + Zeroable
+    + Oneable
+    + Msb
+    + OverflowingMulDiv
+{
+}
+
+impl<T> Aluable for T where
+    T: Copy
+        + PartialEq
+        + PartialOrd
+        + Ord
+        + BitAnd<Output = Self>
+        + BitOr<Output = Self>
+        + BitXor<Output = Self>
+        + OpsNot<Output = Self>
+        + OpsAdd<Output = Self>
+        + OpsSub<Output = Self>
+        + OpsDiv<Output = Self>
+        + Shl<Output = Self>
+        + Shr<Output = Self>
+        + Rem<Output = Self>
+        + WrappingAdd
+        + WrappingSub
+        + Zeroable
+        + Oneable
+        + Msb
+        + HasMax
+        + NumBits
+        + NMinus1Mask
+{
+}
+
+impl<T> LargerType for T where
+    T: Copy
+        + PartialOrd
+        + OpsAdd<Output = Self>
+        + OpsMul<Output = Self>
+        + OpsNot<Output = Self>
+        + BitAnd<Output = Self>
+        + Zeroable
+{
+}
+
+impl<T> SignedType for T where
+    T: Copy
+        + PartialEq
+        + OpsMul<Output = Self>
+        + OpsNot<Output = Self>
+        + Rem<Output = Self>
+        + BitAnd<Output = Self>
+        + Shr<Output = Self>
+        + Zeroable
+        + Oneable
+        + Msb
+        + OverflowingMulDiv
+{
+}
 
 /// Implementors of this trait have a wrapping_add method.
 pub trait WrappingAdd {

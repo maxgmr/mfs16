@@ -745,16 +745,8 @@ fn alu_vra_b<T: Into<u8>>(cpu: &mut Cpu, vra: Reg8, b: T, operation: AluOp) {
 fn alu_a_b_dbl<R, T, S>(cpu: &mut Cpu, a: R, b: R, operation: AluDblOp)
 where
     R: Reg<ValueType = T>,
-    T: AsSignedType<Output = S>
-        + Zeroable
-        + Msb
-        + Copy
-        + Eq
-        + Rem<Output = T>
-        + BitAnd<Output = T>
-        + Oneable
-        + Div<Output = T>,
-    S: AsUnsignedType<Output = T> + Rem<Output = S> + OverflowingMulDiv,
+    T: Aluable + AsSignedType<Output = S>,
+    S: SignedType + AsUnsignedType<Output = T>,
 {
     match cpu.step_num {
         1 => {
