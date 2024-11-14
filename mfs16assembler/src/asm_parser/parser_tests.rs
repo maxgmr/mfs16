@@ -882,6 +882,4 @@ to_bytes_test!(
     DWord(0x1234_5678),
     vec![0x52, 0x0C, 0x78, 0x56, 0x34, 0x12]
 );
-to_bytes_test!(cvmbra, Cvm, BregDeref(HL), None, vec![0x62, 0x0C]);
-to_bytes_test!(cvmibra, Cvmi, BregDeref(HL), None, vec![0x72, 0x0C]);
-to_bytes_test!(cvmdbra, Cvmd, BregDeref(HL), None, vec![0x82, 0x0C]);
+to_bytes_test!(clv, Clv, None, None, vec![0xFB, 0xFF]);

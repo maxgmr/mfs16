@@ -1,14 +1,41 @@
 #![cfg(test)]
 
+use std::array;
+
 use mfs16core::{
     gen_mem, Addr, Computer, Flags, Instruction::*, MemWritable, Memory, Reg, Reg16::*, Reg32::*,
-    Reg8::*,
+    Reg8::*, VRAM_SIZE,
 };
 use pretty_assertions::assert_eq;
 
 mod helpers;
 
 use helpers::{instr_test, test_computer};
+
+#[test]
+fn test_clv() {
+    let mut c = test_computer();
+    let vram_replacement: [u8; VRAM_SIZE] =
+        array::from_fn(|i| ((i as u32) % ((<u8>::MAX as u32) + 1)) as u8);
+    c.mmu.gpu.vram = vram_replacement;
+    assert_eq!(c.mmu.gpu.vram[200], 200);
+
+    c.mmu.write_word(0x00_0000, 0xFFFB);
+
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0002));
+    assert_eq!(c.mmu.gpu.vram[200], 200);
+
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0002));
+    assert_eq!(c.mmu.gpu.vram[200], 0);
+
+    c.mmu
+        .gpu
+        .vram
+        .iter()
+        .for_each(|byte| assert_eq!(byte, &0x00_u8));
+}
 
 #[test]
 fn test_stop() {
