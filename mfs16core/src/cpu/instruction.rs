@@ -135,6 +135,12 @@ pub enum Instruction {
     /// 0x098a - LDD [bra],imm16
     /// Load imm16 into [bra], then decrement bra by two.
     LddBraImm16(Reg32),
+    /// 0x099a - LD [imm32],ra
+    /// Load ra into the memory location denoted by the 32-bit little-endian immediate value.
+    LdImm32Ra(Reg16),
+    /// 0x09Aa - LD ra,[imm32]
+    /// Load the value pointed to by the little-endian 32-bit immediate value into ra.
+    LdRaImm32(Reg16),
     /// 0x0Aab - VLD [bra],brb
     /// VRAM load. Special, faster 32-bit version of LD [bra],rb for VRAM only.
     VldBraBrb(Reg32, Reg32),

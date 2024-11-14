@@ -414,6 +414,8 @@ pub fn instr_to_bytes(
         (Operation::Ldd, Reg(ra), BregDeref(brb)) => Ok(i2b(LddRaBrb(*ra, *brb))),
         (Operation::Ldi, BregDeref(bra), Word(w)) => Ok(i2b_imm16(LdiBraImm16(*bra), *w)),
         (Operation::Ldd, BregDeref(bra), Word(w)) => Ok(i2b_imm16(LddBraImm16(*bra), *w)),
+        (Operation::Ld, DWordDeref(d), Reg(ra)) => Ok(i2b_imm32(LdImm32Ra(*ra), *d)),
+        (Operation::Ld, Reg(ra), DWordDeref(d)) => Ok(i2b_imm32(LdRaImm32(*ra), *d)),
         (Operation::Vld, BregDeref(bra), Breg(brb)) => Ok(i2b(VldBraBrb(*bra, *brb))),
         (Operation::Vldi, BregDeref(bra), Breg(brb)) => Ok(i2b(VldiBraBrb(*bra, *brb))),
         (Operation::Vldd, BregDeref(bra), Breg(brb)) => Ok(i2b(VlddBraBrb(*bra, *brb))),

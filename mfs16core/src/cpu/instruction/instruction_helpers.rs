@@ -28,6 +28,8 @@ pub fn step(cpu: &mut Cpu, mmu: &mut Mmu) {
         LddRaBrb(ra, brb) => ldd_ra_brb(cpu, mmu, ra, brb),
         LdiBraImm16(bra) => ldid_bra_imm16(cpu, mmu, bra, true),
         LddBraImm16(bra) => ldid_bra_imm16(cpu, mmu, bra, false),
+        LdImm32Ra(ra) => ld_imm32_ra(cpu, mmu, ra),
+        LdRaImm32(ra) => ld_ra_imm32(cpu, mmu, ra),
         VldBraBrb(bra, brb) => vld_bra_brb(cpu, mmu, bra, brb, 0),
         VldiBraBrb(bra, brb) => vld_bra_brb(cpu, mmu, bra, brb, 1),
         VlddBraBrb(bra, brb) => vld_bra_brb(cpu, mmu, bra, brb, -1),
@@ -497,6 +499,26 @@ fn ldid_bra_imm16(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, is_inc: bool) {
             };
             cpu.set_breg(bra, breg_val);
         }
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+#[inline(always)]
+fn ld_imm32_ra(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(mmu),
+        2 => cpu.read_next_word(mmu),
+        3 => mmu.write_word(get_dword_from_last(cpu), cpu.reg(ra)),
+        _ => invalid_step_panic(cpu.instr, cpu.step_num),
+    }
+}
+
+#[inline(always)]
+fn ld_ra_imm32(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
+    match cpu.step_num {
+        1 => cpu.read_next_word(mmu),
+        2 => cpu.read_next_word(mmu),
+        3 => cpu.set_reg(ra, mmu.read_word(get_dword_from_last(cpu))),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
