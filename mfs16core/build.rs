@@ -21,6 +21,8 @@ fn main() -> io::Result<()> {
     let out_path = Path::new(&env::var("OUT_DIR").unwrap()).join(OUT_FILE_NAME);
     let mut file = File::create(out_path)?;
 
+    writeln!(file, "use phf::phf_map;\n")?;
+
     writeln!(file, "use crate::{{Reg16::*, Reg32::*, Reg8::*}};\n")?;
 
     writeln!(
