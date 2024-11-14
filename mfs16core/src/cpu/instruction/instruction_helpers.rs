@@ -1,9 +1,7 @@
-use std::ops::{BitAnd, Div, Rem};
-
 use super::*;
 use crate::{
     helpers::{change_bit, combine_u8_le, split_word, test_bit, BitOp},
-    Addr, Flag, Flags, Msb, Oneable, Reg, Zeroable, VRAM_SIZE,
+    Addr, Flag, Flags, Reg, VRAM_SIZE,
 };
 
 /// Perform the current step of the current CPU instruction.
