@@ -141,14 +141,20 @@ pub fn run_emulator(
                 }
             }
 
-            // Set the frame interrupt
-            computer.mmu.set_interrupt(Interrupt::Frame);
+            // Send the new VRAM state.
+            // If manual frame updates are enabled, try consuming the frame update flag. In this
+            // case, only send a VRAM update if the flag was set.
+            if !computer.mmu.gpu.is_man_frame_enabled()
+                || computer.mmu.gpu.consume_frame_update_flag()
+            {
+                // Set the frame interrupt
+                computer.mmu.set_interrupt(Interrupt::Frame);
 
-            // Send the new VRAM state
-            if let Err(e) = vram_sender.send(computer.mmu.gpu.vram.to_vec()) {
-                emu_should_quit.store(true, Ordering::SeqCst);
-                eprintln!("{}", eyre!("{e}"));
-                break;
+                if let Err(e) = vram_sender.send(computer.mmu.gpu.vram.to_vec()) {
+                    emu_should_quit.store(true, Ordering::SeqCst);
+                    eprintln!("{}", eyre!("{e}"));
+                    break;
+                }
             }
 
             if !too_slow_printed && (cycles_start.elapsed() >= emu_frame_duration) {

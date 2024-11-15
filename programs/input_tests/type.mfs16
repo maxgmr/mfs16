@@ -4,6 +4,8 @@ screen_start = 0x0100_0000:d;
 screen_end = 0x0102_5800:d;
 last_row_end = 0x0102_4CBD:d;
 ie_register_addr = 0xFFFF_FFFE:d;
+enable_man_frame_addr = 0xFFFF_FFBD:d;
+man_frame_update_addr = 0xFFFF_FFBB:d;
 
 row_len = 0x140:d;
 col_len = 0xF0:d;
@@ -21,6 +23,8 @@ jp entry_point;
 0x100:d:
     clv;
     call draw_screen;
+    // Send manual frame update
+    ld [man_frame_update_addr],A;
 reti;
 
 // Keyboard interrupt handler
@@ -29,6 +33,10 @@ reti;
 reti;
 
 entry_point:
+    // Enable manual frame updates
+    ld [enable_man_frame_addr],A;
+    // Send manual frame update to begin
+    ld [man_frame_update_addr],A;
     // Enable only keyboard and frame interrupts
     call enable_only_kbfi;
     // Set DE to start of data

@@ -17,6 +17,13 @@ const ROM_END: usize = ROM_OFFSET + ROM_SIZE;
 const RAM_END: usize = RAM_OFFSET + RAM_SIZE;
 const VRAM_END: usize = VRAM_OFFSET + VRAM_SIZE;
 
+/// Write to this address to send a manual frame update.
+pub const MAN_FRAME_UPDATE_ADDR: usize = 0xFFFF_FFBB;
+/// Write to this address to turn off manual frame updates.
+pub const MAN_FRAME_DISABLE_ADDR: usize = 0xFFFF_FFBC;
+/// Write to this address to turn on manual frame updates.
+pub const MAN_FRAME_ENABLE_ADDR: usize = 0xFFFF_FFBD;
+
 /// Start address of the keyboard register.
 pub const KB_REG_START: usize = 0xFFFF_FFBE;
 
@@ -91,6 +98,9 @@ impl Mmu {
             ROM_OFFSET..ROM_END => self.rom.write_byte(address - ROM_OFFSET as u32, value),
             RAM_OFFSET..RAM_END => self.ram.write_byte(address - RAM_OFFSET as u32, value),
             VRAM_OFFSET..VRAM_END => self.gpu.write_byte(address - VRAM_OFFSET as u32, value),
+            MAN_FRAME_UPDATE_ADDR => self.gpu.set_frame_update_flag(),
+            MAN_FRAME_DISABLE_ADDR => self.gpu.man_frame_disable(),
+            MAN_FRAME_ENABLE_ADDR => self.gpu.man_frame_enable(),
             IE_REGISTER_ADDR => self.ie_register = value,
             INTERRUPT_REGISTER_ADDR => self.interrupt_register = value,
             _ => {
@@ -117,6 +127,9 @@ impl Mmu {
             ROM_OFFSET..ROM_END => self.rom.write_word(address - ROM_OFFSET as u32, value),
             RAM_OFFSET..RAM_END => self.ram.write_word(address - RAM_OFFSET as u32, value),
             VRAM_OFFSET..VRAM_END => self.gpu.write_word(address - VRAM_OFFSET as u32, value),
+            MAN_FRAME_UPDATE_ADDR => self.gpu.set_frame_update_flag(),
+            MAN_FRAME_DISABLE_ADDR => self.gpu.man_frame_disable(),
+            MAN_FRAME_ENABLE_ADDR => self.gpu.man_frame_enable(),
             IE_REGISTER_ADDR => self.ie_register = value as u8,
             INTERRUPT_REGISTER_ADDR => self.interrupt_register = value as u8,
             _ => {
@@ -146,6 +159,9 @@ impl Mmu {
             ROM_OFFSET..ROM_END => self.rom.write_dword(address - ROM_OFFSET as u32, value),
             RAM_OFFSET..RAM_END => self.ram.write_dword(address - RAM_OFFSET as u32, value),
             VRAM_OFFSET..VRAM_END => self.gpu.write_dword(address - VRAM_OFFSET as u32, value),
+            MAN_FRAME_UPDATE_ADDR => self.gpu.set_frame_update_flag(),
+            MAN_FRAME_DISABLE_ADDR => self.gpu.man_frame_disable(),
+            MAN_FRAME_ENABLE_ADDR => self.gpu.man_frame_enable(),
             IE_REGISTER_ADDR => self.ie_register = value as u8,
             INTERRUPT_REGISTER_ADDR => self.interrupt_register = value as u8,
             _ => {
