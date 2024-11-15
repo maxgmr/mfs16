@@ -1,0 +1,167 @@
+ie_register_addr = 0xFFFF_FFFE:d;
+
+vram_start = 0x0100_0000:d;
+
+row_len = 0x140:d;
+col_len = 0xF0:d;
+
+my_colour = 0xDDDD_DDDD:d;
+my_speed = 1:d;
+
+green = 0x2222_2222:d;
+blue = 0xDDDD_DDDD:d;
+grey = 0x8888_8888:d;
+
+jp entry_point;
+
+// Frame interrupt handler
+0x100:d:
+push BC;
+
+    // Check up/w/k
+    ld C,kb_k;
+    call check_scancode;
+    jnz is_up;
+    ld C,kb_w;
+    call check_scancode;
+    jnz is_up;
+    ld C,kb_up;
+    call check_scancode;
+    jpz not_up;
+    is_up:
+    ld BC,row_len;
+    mulu BC,my_speed;
+    mulu BC,2:d;
+    sub DE,BC;
+    jp done;
+    not_up:
+
+    // Check down/s/j
+    ld C,kb_j;
+    call check_scancode;
+    jnz is_down;
+    ld C,kb_s;
+    call check_scancode;
+    jnz is_down;
+    ld C,kb_down;
+    call check_scancode;
+    jpz not_down;
+    is_down:
+    ld BC,row_len;
+    mulu BC,my_speed;
+    mulu BC,2:d;
+    add DE,BC;
+    jp done;
+    not_down:
+
+    // Check left/a/h
+    ld C,kb_h;
+    call check_scancode;
+    jnz is_left;
+    ld C,kb_a;
+    call check_scancode;
+    jnz is_left;
+    ld C,kb_left;
+    call check_scancode;
+    jpz not_left;
+    is_left:
+    ld BC,my_speed;
+    sub DE,BC;
+    jp done;
+    not_left:
+
+    // Check right/d/l
+    ld C,kb_l;
+    call check_scancode;
+    jnz is_right;
+    ld C,kb_d;
+    call check_scancode;
+    jnz is_right;
+    ld C,kb_right;
+    call check_scancode;
+    jpz not_right;
+    is_right:
+    ld BC,my_speed;
+    add DE,BC;
+    not_right:
+
+done:
+pop BC;
+reti;
+
+entry_point:
+    call enable_fri;
+    call prompt_user_start;
+    call load_bg;
+    call spawn_in_centre;
+    ei;
+    
+main_loop:
+    call draw_screen;
+    halt;
+jp main_loop;
+
+prompt_user_start:
+    // TODO
+ret;
+
+load_bg:
+    // TODO
+ret;
+
+draw_screen:
+    clv;
+    // TODO draw bg
+    push DE;
+    push BC;
+    
+    ld BC,my_colour;
+
+    vld [DE],BC;
+    add DE,row_len;
+    vld [DE],BC;
+    add DE,row_len;
+    vld [DE],BC;
+    add DE,row_len;
+    vld [DE],BC;
+    add DE,row_len;
+    vld [DE],BC;
+    add DE,row_len;
+    vld [DE],BC;
+    add DE,row_len;
+    vld [DE],BC;
+    add DE,row_len;
+    vld [DE],BC;
+
+    pop BC;
+    pop DE;
+ret;
+
+// Move DE to centre of screen.
+spawn_in_centre:
+    push BC;
+    push HL;
+
+    // Move to centre Y
+    ld DE,row_len;
+    ld HL,col_len;
+    divu HL,2:d;
+    mulu DE,HL;
+    
+    // Move to centre X
+    ld HL,row_len;
+    divu HL,2:d;
+    add DE,HL;
+
+    add DE,vram_start;
+
+    pop HL;
+    pop BC;
+ret;
+
+enable_fri:
+    push BC;
+    ld BC,ie_register_addr;
+    ld [BC],0b0000_0001:w;
+    pop BC;
+ret;
