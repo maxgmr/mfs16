@@ -564,11 +564,20 @@ impl<'a> Parser<'a> {
     fn parse_deref(&mut self) -> eyre::Result<Operand> {
         get_next_expected!(self, "`[`", OpenBracket);
 
-        let next = get_next_expected!(self, "big register or dword", Breg(_), DWord(_));
-        let operand = match &next.kind {
-            Breg(breg) => Operand::BregDeref(*breg),
-            DWord(d) => Operand::DWordDeref(*d),
-            _ => return Err(eyre!("Unreachable: already known to be big register.")),
+        // Handle variables separately
+        let operand = if let Some(&Identifier(_)) = self.peek() {
+            if let Variable::DWord(value) = self.parse_variable()? {
+                Operand::DWordDeref(value)
+            } else {
+                return Err(eyre!("Deref variable must be a double word."));
+            }
+        } else {
+            let next = get_next_expected!(self, "big register or dword", Breg(_), DWord(_));
+            match &next.kind {
+                Breg(breg) => Operand::BregDeref(*breg),
+                DWord(d) => Operand::DWordDeref(*d),
+                _ => return Err(eyre!("Unreachable: already known to be big register.")),
+            }
         };
 
         get_next_expected!(self, "`]`", CloseBracket);
