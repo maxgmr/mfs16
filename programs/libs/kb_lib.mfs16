@@ -510,12 +510,6 @@ scancode_to_ascii:
     ret;
     kb_end_9:
 
-    cmp C,kb_space;
-    jnz kb_end_space;
-    ld C0,32;
-    ret;
-    kb_end_space:
-
     cmp C,kb_return;
     jpz kb_newline;
     cmp C,kb_return2;
@@ -525,6 +519,139 @@ scancode_to_ascii:
     ld C0,10;
     ret;
     kb_end_return:
+
+    cmp C,kb_tab;
+    jnz kb_end_tab;
+    ld C0,09;
+    ret;
+    kb_end_tab:
+
+    cmp C,kb_space;
+    jnz kb_end_space;
+    ld C0,32;
+    ret;
+    kb_end_space:
+
+    cmp C,kb_minus;
+    jnz kb_end_minus;
+    call check_shift;
+    jnz kb_sh_minus;
+    ld C0,45;
+    ret;
+    kb_sh_minus:
+    ld C0,95;
+    ret;
+    kb_end_minus:
+
+    cmp C,kb_equals;
+    jnz kb_end_equals;
+    call check_shift;
+    jnz kb_sh_equals;
+    ld C0,61;
+    ret;
+    kb_sh_equals:
+    ld C0,43;
+    ret;
+    kb_end_equals:
+
+    cmp C,kb_leftbracket;
+    jnz kb_end_leftbracket;
+    call check_shift;
+    jnz kb_sh_leftbracket;
+    ld C0,91;
+    ret;
+    kb_sh_leftbracket:
+    ld C0,123;
+    ret;
+    kb_end_leftbracket:
+
+    cmp C,kb_rightbracket;
+    jnz kb_end_rightbracket;
+    call check_shift;
+    jnz kb_sh_rightbracket;
+    ld C0,93;
+    ret;
+    kb_sh_rightbracket:
+    ld C0,125;
+    ret;
+    kb_end_rightbracket:
+
+    cmp C,kb_backslash;
+    jnz kb_end_backslash;
+    call check_shift;
+    jnz kb_sh_backslash;
+    ld C0,92;
+    ret;
+    kb_sh_backslash:
+    ld C0,124;
+    ret;
+    kb_end_backslash:
+
+    cmp C,kb_semicolon;
+    jnz kb_end_semicolon;
+    call check_shift;
+    jnz kb_sh_semicolon;
+    ld C0,59;
+    ret;
+    kb_sh_semicolon:
+    ld C0,58;
+    ret;
+    kb_end_semicolon:
+
+    cmp C,kb_apostrophe;
+    jnz kb_end_apostrophe;
+    call check_shift;
+    jnz kb_sh_apostrophe;
+    ld C0,39;
+    ret;
+    kb_sh_apostrophe:
+    ld C0,34;
+    ret;
+    kb_end_apostrophe:
+
+    cmp C,kb_grave;
+    jnz kb_end_grave;
+    call check_shift;
+    jnz kb_sh_grave;
+    ld C0,96;
+    ret;
+    kb_sh_grave:
+    ld C0,126;
+    ret;
+    kb_end_grave:
+
+    cmp C,kb_comma;
+    jnz kb_end_comma;
+    call check_shift;
+    jnz kb_sh_comma;
+    ld C0,44;
+    ret;
+    kb_sh_comma:
+    ld C0,60;
+    ret;
+    kb_end_comma:
+
+    cmp C,kb_period;
+    jnz kb_end_period;
+    call check_shift;
+    jnz kb_sh_period;
+    ld C0,46;
+    ret;
+    kb_sh_period:
+    ld C0,62;
+    ret;
+    kb_end_period:
+
+    cmp C,kb_slash;
+    jnz kb_end_slash;
+    call check_shift;
+    jnz kb_sh_slash;
+    ld C0,47;
+    ret;
+    kb_sh_slash:
+    ld C0,63;
+    ret;
+    kb_end_slash:
 
     // Unknown scancode
     ld C0,0xFF;

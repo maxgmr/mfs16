@@ -93,8 +93,6 @@ draw_screen:
     // Read + print ASCII data, two bytes at a time, until null character    
     rzf;
     read_loop:
-    jpz read_loop_end;
-
         ldi C,[DE];
         // Handle first char
         pss C0;
@@ -106,8 +104,6 @@ draw_screen:
         pss C0;
         jpz read_loop_end;
         call draw_byte;
-
-
     jp read_loop;
     read_loop_end:
 
@@ -1027,6 +1023,72 @@ modify_data:
     jpz skip_space;
     call de_wb;
     skip_space:
+
+    ld C,kb_minus;
+    call check_scancode;
+    jpz skip_minus;
+    call de_wb;
+    skip_minus:
+
+    ld C,kb_equals;
+    call check_scancode;
+    jpz skip_equals;
+    call de_wb;
+    skip_equals:
+
+    ld C,kb_leftbracket;
+    call check_scancode;
+    jpz skip_leftbracket;
+    call de_wb;
+    skip_leftbracket:
+
+    ld C,kb_rightbracket;
+    call check_scancode;
+    jpz skip_rightbracket;
+    call de_wb;
+    skip_rightbracket:
+
+    ld C,kb_backslash;
+    call check_scancode;
+    jpz skip_backslash;
+    call de_wb;
+    skip_backslash:
+
+    ld C,kb_semicolon;
+    call check_scancode;
+    jpz skip_semicolon;
+    call de_wb;
+    skip_semicolon:
+
+    ld C,kb_apostrophe;
+    call check_scancode;
+    jpz skip_apostrophe;
+    call de_wb;
+    skip_apostrophe:
+
+    ld C,kb_grave;
+    call check_scancode;
+    jpz skip_grave;
+    call de_wb;
+    skip_grave:
+
+    ld C,kb_comma;
+    call check_scancode;
+    jpz skip_comma;
+    call de_wb;
+    skip_comma:
+
+    ld C,kb_period;
+    call check_scancode;
+    jpz skip_period;
+    call de_wb;
+    skip_period:
+
+    ld C,kb_slash;
+    call check_scancode;
+    jpz skip_slash;
+    call de_wb;
+    skip_slash:
 ret;
 
 // Decrement DE and delete the byte at that location.
