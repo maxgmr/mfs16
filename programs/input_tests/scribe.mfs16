@@ -1091,8 +1091,10 @@ modify_data:
     skip_slash:
 ret;
 
-// Decrement DE and delete the byte at that location.
+// Decrement DE and delete the byte at that location. Do nothing if at start of RAM.
 de_db:
+    cmp data_start_addr,DE;
+    jnn de_db_end;
     push BC;
 
     dec DE;
@@ -1101,6 +1103,7 @@ de_db:
     ld [DE],B;
 
     pop BC;
+de_db_end:
 ret;
 
 // Write the ASCII byte corresponding to scancode C at DE, incrementing DE afterwards.
