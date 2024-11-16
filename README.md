@@ -27,3 +27,5 @@ A 16-bit virtual computer.
 - Add offset argument to parsing error for more accurate errors
 
 - Change break conditions structure to be more toml-friendly (e.g. replace enums with structs with named fields)
+
+- Sound!
