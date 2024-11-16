@@ -1,6 +1,12 @@
 ie_register_addr = 0xFFFF_FFFE:d;
 
+bg_data_start = 0x0088_0000:d;
+bg_data_end = 0x008A_5800:d;
+
+vram_bg_data_offset = 0x0078_0000:d;
+
 vram_start = 0x0100_0000:d;
+vram_end = 0x0102_5800:d;
 
 row_len = 0x140:d;
 col_len = 0xF0:d;
@@ -8,15 +14,86 @@ col_len = 0xF0:d;
 my_colour = 0xDDDD_DDDD:d;
 my_speed = 1:d;
 
-green = 0x2222_2222:d;
-blue = 0xDDDD_DDDD:d;
-grey = 0x8888_8888:d;
+bg_colour = 0x2222:w;
+lbg_colour = 0xAAAA:w;
+w_colour = 0x4444:w;
 
 jp entry_point;
 
 // Frame interrupt handler
 0x100:d:
-push BC;
+    call move_character;
+reti;
+
+entry_point:
+    call enable_fri;
+    call prompt_user_start;
+    call load_bg;
+    call draw_bg;
+    call spawn_in_centre;
+    call draw_character;
+    ei;
+    
+main_loop:
+    halt;
+jp main_loop;
+
+prompt_user_start:
+    // TODO
+ret;
+
+load_bg:
+    push DE;
+    push BC;
+
+    ld DE,bg_data_start;
+
+    load_bg_loop:
+
+    rand B;
+    cmp 0xC000:w,B;
+    jpn draw_lbg;
+    ld C,bg_colour;
+    jp colour_pick_done;
+    draw_lbg:
+    ld C,lbg_colour;
+    colour_pick_done:
+
+    ldi [DE],C;
+
+    cmp DE,bg_data_end;
+    jpn load_bg_loop;
+    load_bg_loop_end:
+
+    pop BC;
+    pop DE;
+ret;
+
+draw_bg:
+    push HL;
+    push DE;
+    push BC;
+    
+    ld HL,vram_start;
+    ld DE,bg_data_start;
+
+    draw_bg_loop:
+
+    ldi B,[DE];
+    ldi [HL],B;
+
+    cmp HL,vram_end;
+    jpn draw_bg_loop;
+    draw_bg_loop_end:
+
+    pop BC;
+    pop DE;
+    pop HL;
+ret;
+
+move_character:
+    push BC;
+    call erase_character;
 
     // Check up/w/k
     ld C,kb_k;
@@ -85,33 +162,90 @@ push BC;
     add DE,BC;
     not_right:
 
-done:
-pop BC;
-reti;
-
-entry_point:
-    call enable_fri;
-    call prompt_user_start;
-    call load_bg;
-    call spawn_in_centre;
-    ei;
-    
-main_loop:
-    call draw_screen;
-    halt;
-jp main_loop;
-
-prompt_user_start:
-    // TODO
+    done:
+    call draw_character;
+    pop BC;
 ret;
 
-load_bg:
-    // TODO
+erase_character:
+    push HL;
+    push DE;
+    push BC;
+
+    // Read background colour data at location of character
+    ld HL,DE;
+    sub HL,vram_bg_data_offset;
+
+    ld C,[HL];
+    inc HL;
+    ld B,[HL];
+    dec HL;
+    vld [DE],BC;
+    add DE,row_len;
+    add HL,row_len;
+
+    ld C,[HL];
+    inc HL;
+    ld B,[HL];
+    dec HL;
+    vld [DE],BC;
+    add DE,row_len;
+    add HL,row_len;
+
+    ld C,[HL];
+    inc HL;
+    ld B,[HL];
+    dec HL;
+    vld [DE],BC;
+    add DE,row_len;
+    add HL,row_len;
+
+    ld C,[HL];
+    inc HL;
+    ld B,[HL];
+    dec HL;
+    vld [DE],BC;
+    add DE,row_len;
+    add HL,row_len;
+
+    ld C,[HL];
+    inc HL;
+    ld B,[HL];
+    dec HL;
+    vld [DE],BC;
+    add DE,row_len;
+    add HL,row_len;
+
+    ld C,[HL];
+    inc HL;
+    ld B,[HL];
+    dec HL;
+    vld [DE],BC;
+    add DE,row_len;
+    add HL,row_len;
+
+    ld C,[HL];
+    inc HL;
+    ld B,[HL];
+    dec HL;
+    vld [DE],BC;
+    add DE,row_len;
+    add HL,row_len;
+
+    ld C,[HL];
+    inc HL;
+    ld B,[HL];
+    dec HL;
+    vld [DE],BC;
+    add DE,row_len;
+    add HL,row_len;
+
+    pop BC;
+    pop DE;
+    pop HL;
 ret;
 
-draw_screen:
-    clv;
-    // TODO draw bg
+draw_character:
     push DE;
     push BC;
     
