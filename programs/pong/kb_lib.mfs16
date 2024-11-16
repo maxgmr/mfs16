@@ -1,0 +1,679 @@
+jp lib_end;
+/*
+    Library for keyboard input. Provides constants for easy scancode referencing and a
+    set of functions which check if the keys of the keyboard are pressed or not.
+*/
+kb_register_start = 0xFFFF_FFBE:d;
+
+/*
+    Set the Z flag based on the kb register bit pointed to by scancode C.
+*/
+check_scancode:
+    push BC;
+    push DE;
+
+    // C = byte index, B = bit index
+    ld B,8:w;
+    divu C,B;
+
+    // Get the KB register byte associated with the given scancode
+    ld DE,kb_register_start;
+    add E,C;
+    ld D,[DE];
+
+    // Get the KB register bit associated with the given scancode
+    shift_loop:
+        pss B0;
+        jpz shift_loop_end;
+
+        lsr D,1;
+
+        dec B0;
+        jp shift_loop;
+    shift_loop_end:
+    // Set zero flag to the value of that KB register bit
+    and D,1:w;
+
+    pop DE;
+    pop BC;
+ret;
+
+/*
+    Given scancode C, return the corresponding ASCII byte in C0.
+*/
+scancode_to_ascii:
+    cmp C,kb_a;
+    jnz kb_end_a;
+    call check_shift;
+    jnz kb_u_a;
+    jp kb_l_a;
+    kb_u_a:
+    ld C0,65;
+    ret;
+    kb_l_a:
+    ld C0,97;
+    ret;
+    kb_end_a:
+
+    cmp C,kb_b;
+    jnz kb_end_b;
+    call check_shift;
+    jnz kb_u_b;
+    jp kb_l_b;
+    kb_u_b:
+    ld C0,66;
+    ret;
+    kb_l_b:
+    ld C0,98;
+    ret;
+    kb_end_b:
+
+    cmp C,kb_c;
+    jnz kb_end_c;
+    call check_shift;
+    jnz kb_u_c;
+    jp kb_l_c;
+    kb_u_c:
+    ld C0,67;
+    ret;
+    kb_l_c:
+    ld C0,99;
+    ret;
+    kb_end_c:
+
+    cmp C,kb_d;
+    jnz kb_end_d;
+    call check_shift;
+    jnz kb_u_d;
+    jp kb_l_d;
+    kb_u_d:
+    ld C0,68;
+    ret;
+    kb_l_d:
+    ld C0,100;
+    ret;
+    kb_end_d:
+
+    cmp C,kb_e;
+    jnz kb_end_e;
+    call check_shift;
+    jnz kb_u_e;
+    jp kb_l_e;
+    kb_u_e:
+    ld C0,69;
+    ret;
+    kb_l_e:
+    ld C0,101;
+    ret;
+    kb_end_e:
+
+    cmp C,kb_f;
+    jnz kb_end_f;
+    call check_shift;
+    jnz kb_u_f;
+    jp kb_l_f;
+    kb_u_f:
+    ld C0,70;
+    ret;
+    kb_l_f:
+    ld C0,102;
+    ret;
+    kb_end_f:
+
+    cmp C,kb_g;
+    jnz kb_end_g;
+    call check_shift;
+    jnz kb_u_g;
+    jp kb_l_g;
+    kb_u_g:
+    ld C0,71;
+    ret;
+    kb_l_g:
+    ld C0,103;
+    ret;
+    kb_end_g:
+
+    cmp C,kb_h;
+    jnz kb_end_h;
+    call check_shift;
+    jnz kb_u_h;
+    jp kb_l_h;
+    kb_u_h:
+    ld C0,72;
+    ret;
+    kb_l_h:
+    ld C0,104;
+    ret;
+    kb_end_h:
+
+    cmp C,kb_i;
+    jnz kb_end_i;
+    call check_shift;
+    jnz kb_u_i;
+    jp kb_l_i;
+    kb_u_i:
+    ld C0,73;
+    ret;
+    kb_l_i:
+    ld C0,105;
+    ret;
+    kb_end_i:
+
+    cmp C,kb_j;
+    jnz kb_end_j;
+    call check_shift;
+    jnz kb_u_j;
+    jp kb_l_j;
+    kb_u_j:
+    ld C0,74;
+    ret;
+    kb_l_j:
+    ld C0,106;
+    ret;
+    kb_end_j:
+
+    cmp C,kb_k;
+    jnz kb_end_k;
+    call check_shift;
+    jnz kb_u_k;
+    jp kb_l_k;
+    kb_u_k:
+    ld C0,75;
+    ret;
+    kb_l_k:
+    ld C0,107;
+    ret;
+    kb_end_k:
+
+    cmp C,kb_l;
+    jnz kb_end_l;
+    call check_shift;
+    jnz kb_u_l;
+    jp kb_l_l;
+    kb_u_l:
+    ld C0,76;
+    ret;
+    kb_l_l:
+    ld C0,108;
+    ret;
+    kb_end_l:
+
+    cmp C,kb_m;
+    jnz kb_end_m;
+    call check_shift;
+    jnz kb_u_m;
+    jp kb_l_m;
+    kb_u_m:
+    ld C0,77;
+    ret;
+    kb_l_m:
+    ld C0,109;
+    ret;
+    kb_end_m:
+
+    cmp C,kb_n;
+    jnz kb_end_n;
+    call check_shift;
+    jnz kb_u_n;
+    jp kb_l_n;
+    kb_u_n:
+    ld C0,78;
+    ret;
+    kb_l_n:
+    ld C0,110;
+    ret;
+    kb_end_n:
+
+    cmp C,kb_o;
+    jnz kb_end_o;
+    call check_shift;
+    jnz kb_u_o;
+    jp kb_l_o;
+    kb_u_o:
+    ld C0,79;
+    ret;
+    kb_l_o:
+    ld C0,111;
+    ret;
+    kb_end_o:
+
+    cmp C,kb_p;
+    jnz kb_end_p;
+    call check_shift;
+    jnz kb_u_p;
+    jp kb_l_p;
+    kb_u_p:
+    ld C0,80;
+    ret;
+    kb_l_p:
+    ld C0,112;
+    ret;
+    kb_end_p:
+
+    cmp C,kb_q;
+    jnz kb_end_q;
+    call check_shift;
+    jnz kb_u_q;
+    jp kb_l_q;
+    kb_u_q:
+    ld C0,81;
+    ret;
+    kb_l_q:
+    ld C0,113;
+    ret;
+    kb_end_q:
+
+    cmp C,kb_r;
+    jnz kb_end_r;
+    call check_shift;
+    jnz kb_u_r;
+    jp kb_l_r;
+    kb_u_r:
+    ld C0,82;
+    ret;
+    kb_l_r:
+    ld C0,114;
+    ret;
+    kb_end_r:
+
+    cmp C,kb_s;
+    jnz kb_end_s;
+    call check_shift;
+    jnz kb_u_s;
+    jp kb_l_s;
+    kb_u_s:
+    ld C0,83;
+    ret;
+    kb_l_s:
+    ld C0,115;
+    ret;
+    kb_end_s:
+
+    cmp C,kb_t;
+    jnz kb_end_t;
+    call check_shift;
+    jnz kb_u_t;
+    jp kb_l_t;
+    kb_u_t:
+    ld C0,84;
+    ret;
+    kb_l_t:
+    ld C0,116;
+    ret;
+    kb_end_t:
+
+    cmp C,kb_u;
+    jnz kb_end_u;
+    call check_shift;
+    jnz kb_u_u;
+    jp kb_l_u;
+    kb_u_u:
+    ld C0,85;
+    ret;
+    kb_l_u:
+    ld C0,117;
+    ret;
+    kb_end_u:
+
+    cmp C,kb_v;
+    jnz kb_end_v;
+    call check_shift;
+    jnz kb_u_v;
+    jp kb_l_v;
+    kb_u_v:
+    ld C0,86;
+    ret;
+    kb_l_v:
+    ld C0,118;
+    ret;
+    kb_end_v:
+
+    cmp C,kb_w;
+    jnz kb_end_w;
+    call check_shift;
+    jnz kb_u_w;
+    jp kb_l_w;
+    kb_u_w:
+    ld C0,87;
+    ret;
+    kb_l_w:
+    ld C0,119;
+    ret;
+    kb_end_w:
+
+    cmp C,kb_x;
+    jnz kb_end_x;
+    call check_shift;
+    jnz kb_u_x;
+    jp kb_l_x;
+    kb_u_x:
+    ld C0,88;
+    ret;
+    kb_l_x:
+    ld C0,120;
+    ret;
+    kb_end_x:
+
+    cmp C,kb_y;
+    jnz kb_end_y;
+    call check_shift;
+    jnz kb_u_y;
+    jp kb_l_y;
+    kb_u_y:
+    ld C0,89;
+    ret;
+    kb_l_y:
+    ld C0,121;
+    ret;
+    kb_end_y:
+
+    cmp C,kb_z;
+    jnz kb_end_z;
+    call check_shift;
+    jnz kb_u_z;
+    jp kb_l_z;
+    kb_u_z:
+    ld C0,90;
+    ret;
+    kb_l_z:
+    ld C0,122;
+    ret;
+    kb_end_z:
+
+    cmp C,kb_num0;
+    jnz kb_end_0;
+    call check_shift;
+    jnz kb_u_0;
+    jp kb_l_0;
+    kb_u_0:
+    ld C0,41;
+    ret;
+    kb_l_0:
+    ld C0,48;
+    ret;
+    kb_end_0:
+
+    cmp C,kb_num1;
+    jnz kb_end_1;
+    call check_shift;
+    jnz kb_u_1;
+    jp kb_l_1;
+    kb_u_1:
+    ld C0,33;
+    ret;
+    kb_l_1:
+    ld C0,49;
+    ret;
+    kb_end_1:
+
+    cmp C,kb_num2;
+    jnz kb_end_2;
+    call check_shift;
+    jnz kb_u_2;
+    jp kb_l_2;
+    kb_u_2:
+    ld C0,64;
+    ret;
+    kb_l_2:
+    ld C0,50;
+    ret;
+    kb_end_2:
+
+    cmp C,kb_num3;
+    jnz kb_end_3;
+    call check_shift;
+    jnz kb_u_3;
+    jp kb_l_3;
+    kb_u_3:
+    ld C0,35;
+    ret;
+    kb_l_3:
+    ld C0,51;
+    ret;
+    kb_end_3:
+
+    cmp C,kb_num4;
+    jnz kb_end_4;
+    call check_shift;
+    jnz kb_u_4;
+    jp kb_l_4;
+    kb_u_4:
+    ld C0,36;
+    ret;
+    kb_l_4:
+    ld C0,52;
+    ret;
+    kb_end_4:
+
+    cmp C,kb_num5;
+    jnz kb_end_5;
+    call check_shift;
+    jnz kb_u_5;
+    jp kb_l_5;
+    kb_u_5:
+    ld C0,37;
+    ret;
+    kb_l_5:
+    ld C0,53;
+    ret;
+    kb_end_5:
+
+    cmp C,kb_num6;
+    jnz kb_end_6;
+    call check_shift;
+    jnz kb_u_6;
+    jp kb_l_6;
+    kb_u_6:
+    ld C0,94;
+    ret;
+    kb_l_6:
+    ld C0,54;
+    ret;
+    kb_end_6:
+
+    cmp C,kb_num7;
+    jnz kb_end_7;
+    call check_shift;
+    jnz kb_u_7;
+    jp kb_l_7;
+    kb_u_7:
+    ld C0,38;
+    ret;
+    kb_l_7:
+    ld C0,55;
+    ret;
+    kb_end_7:
+
+    cmp C,kb_num8;
+    jnz kb_end_8;
+    call check_shift;
+    jnz kb_u_8;
+    jp kb_l_8;
+    kb_u_8:
+    ld C0,42;
+    ret;
+    kb_l_8:
+    ld C0,56;
+    ret;
+    kb_end_8:
+
+    cmp C,kb_num9;
+    jnz kb_end_9;
+    call check_shift;
+    jnz kb_u_9;
+    jp kb_l_9;
+    kb_u_9:
+    ld C0,40;
+    ret;
+    kb_l_9:
+    ld C0,57;
+    ret;
+    kb_end_9:
+
+    cmp C,kb_return;
+    jpz kb_newline;
+    cmp C,kb_return2;
+    jpz kb_newline;
+    jp kb_end_return;
+    kb_newline:
+    ld C0,10;
+    ret;
+    kb_end_return:
+
+    cmp C,kb_tab;
+    jnz kb_end_tab;
+    ld C0,09;
+    ret;
+    kb_end_tab:
+
+    cmp C,kb_space;
+    jnz kb_end_space;
+    ld C0,32;
+    ret;
+    kb_end_space:
+
+    cmp C,kb_minus;
+    jnz kb_end_minus;
+    call check_shift;
+    jnz kb_sh_minus;
+    ld C0,45;
+    ret;
+    kb_sh_minus:
+    ld C0,95;
+    ret;
+    kb_end_minus:
+
+    cmp C,kb_equals;
+    jnz kb_end_equals;
+    call check_shift;
+    jnz kb_sh_equals;
+    ld C0,61;
+    ret;
+    kb_sh_equals:
+    ld C0,43;
+    ret;
+    kb_end_equals:
+
+    cmp C,kb_leftbracket;
+    jnz kb_end_leftbracket;
+    call check_shift;
+    jnz kb_sh_leftbracket;
+    ld C0,91;
+    ret;
+    kb_sh_leftbracket:
+    ld C0,123;
+    ret;
+    kb_end_leftbracket:
+
+    cmp C,kb_rightbracket;
+    jnz kb_end_rightbracket;
+    call check_shift;
+    jnz kb_sh_rightbracket;
+    ld C0,93;
+    ret;
+    kb_sh_rightbracket:
+    ld C0,125;
+    ret;
+    kb_end_rightbracket:
+
+    cmp C,kb_backslash;
+    jnz kb_end_backslash;
+    call check_shift;
+    jnz kb_sh_backslash;
+    ld C0,92;
+    ret;
+    kb_sh_backslash:
+    ld C0,124;
+    ret;
+    kb_end_backslash:
+
+    cmp C,kb_semicolon;
+    jnz kb_end_semicolon;
+    call check_shift;
+    jnz kb_sh_semicolon;
+    ld C0,59;
+    ret;
+    kb_sh_semicolon:
+    ld C0,58;
+    ret;
+    kb_end_semicolon:
+
+    cmp C,kb_apostrophe;
+    jnz kb_end_apostrophe;
+    call check_shift;
+    jnz kb_sh_apostrophe;
+    ld C0,39;
+    ret;
+    kb_sh_apostrophe:
+    ld C0,34;
+    ret;
+    kb_end_apostrophe:
+
+    cmp C,kb_grave;
+    jnz kb_end_grave;
+    call check_shift;
+    jnz kb_sh_grave;
+    ld C0,96;
+    ret;
+    kb_sh_grave:
+    ld C0,126;
+    ret;
+    kb_end_grave:
+
+    cmp C,kb_comma;
+    jnz kb_end_comma;
+    call check_shift;
+    jnz kb_sh_comma;
+    ld C0,44;
+    ret;
+    kb_sh_comma:
+    ld C0,60;
+    ret;
+    kb_end_comma:
+
+    cmp C,kb_period;
+    jnz kb_end_period;
+    call check_shift;
+    jnz kb_sh_period;
+    ld C0,46;
+    ret;
+    kb_sh_period:
+    ld C0,62;
+    ret;
+    kb_end_period:
+
+    cmp C,kb_slash;
+    jnz kb_end_slash;
+    call check_shift;
+    jnz kb_sh_slash;
+    ld C0,47;
+    ret;
+    kb_sh_slash:
+    ld C0,63;
+    ret;
+    kb_end_slash:
+
+    // Unknown scancode
+    ld C0,0xFF;
+ret;
+
+/*
+    Reset zero flag if either shift key is held, set zero flag if neither.
+*/
+check_shift:
+    push BC;
+
+    // Check left shift
+    ld C,kb_lshift;
+    call check_scancode;
+    jnz check_shift_done;
+
+    // Check right shift
+    ld C,kb_rshift;
+    call check_scancode;
+
+    check_shift_done:
+    pop BC;
+ret;
+
+lib_end:

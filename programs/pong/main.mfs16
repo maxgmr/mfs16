@@ -1,0 +1,76 @@
+jp entry_point;
+
+// CONSTANTS
+ram_start = 0x0080_0000:d;
+vram_start = 0x0100_0000:d;
+vram_end = 0x0102_5800:d;
+
+ie_register = 0xFFFF_FFFE:d;
+
+row_len = 0x140:d;
+
+// PARAMETERS
+colour = 0xFFFF_FFFF:d;
+paddle_height = 100;
+
+
+entry_point:
+
+game_loop:
+    ld HL,vram_start;
+
+    push BC;
+    ld BC,row_len;
+    mulu BC,160:d;
+    add HL,BC;
+    pop BC;
+    call draw_paddle;
+
+    add HL,row_len;
+    sub HL,8:d;
+    call draw_paddle;
+
+    sub HL,154:d;
+    call draw_ball;
+jp game_loop;
+
+// Set HL = top-left corner of ball location in VRAM.
+draw_ball:
+    push BC;
+    push DE;
+    push HL;
+
+    ld BC,colour;
+    ld E0,8;
+    draw_ball_row:
+    vld [HL],BC;
+    add HL,row_len;
+    dec E0;
+    jnz draw_ball_row;
+    draw_ball_row_end:
+
+    pop HL;
+    pop DE;
+    pop BC;
+ret;
+
+// Set HL = top-left corner of paddle location in VRAM.
+draw_paddle:
+    push BC;
+    push DE;
+    push HL;
+
+    ld BC,colour; 
+    ld E0,paddle_height;
+    draw_paddle_row:
+    vldi [HL],BC;
+    vldd [HL],BC;
+    add HL,row_len;
+    dec E0;
+    jnz draw_paddle_row;
+    draw_paddle_row_end:
+
+    pop HL;
+    pop DE;
+    pop BC;
+ret;
