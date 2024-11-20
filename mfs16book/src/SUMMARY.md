@@ -1,7 +1,6 @@
 # Summary
 
 - [Introduction](./introduction.md)
-- [Desktop Program](./desktop.md)
 - [Configuration](./configuration.md)
 - [Instruction Set](./instruction_set.md)
 - [Memory Map](./memory_map.md)
