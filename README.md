@@ -14,6 +14,8 @@ A 16-bit virtual computer.
 
 - Man page for assembler
 
+- Arithmetic evaluation for assembler
+
 - MFS-16 program header standard
 
 - Give notice if the old default config is different than the new one
