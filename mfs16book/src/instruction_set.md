@@ -886,7 +886,7 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
   - Set P iff the result is even.
   - Set N iff the result is negative when interpreted as a signed integer.
 
-- **DIVU ra, rb:** Unsigned division. Does nothing if rb == 0. ra /= rb.  
+- **DIVU ra, rb:** Unsigned division. Does nothing if rb == 0. Stores the remainder in rb. ra /= rb.  
   Opcode: 0x52ab  
   Cycles: 2  
   Flags:
@@ -895,7 +895,7 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
   - Set P iff the result is even.
   - Set N iff the result is negative when interpreted as a signed integer.
 
-- **DIVI ra, rb:** Signed division. Does nothing if rb == 0. ra /= rb.  
+- **DIVI ra, rb:** Signed division. Does nothing if rb == 0. Stores the remainder in rb. ra /= rb.  
   Opcode: 0x53ab  
   Cycles: 2  
   Flags:
@@ -915,12 +915,12 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
   Cycles: 2  
   Flags: See MULI ra, rb.
 
-- **DIVU bra, brb:** Unsigned division. bra /= brb.  
+- **DIVU bra, brb:** Unsigned division. Stores the remainder in brb. bra /= brb.  
   Opcode: 0x52(a+7)(b+7)  
   Cycles: 2  
   Flags: See DIVU ra, rb.
 
-- **DIVI bra, brb:** Signed division. bra /= brb.  
+- **DIVI bra, brb:** Signed division. Stores the remainder in brb. bra /= brb.  
   Opcode: 0x53(a+7)(b+7)  
   Cycles: 2  
   Flags: See DIVI ra, rb.
@@ -935,12 +935,12 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
   Cycles: 2  
   Flags: See MULI ra, rb.
 
-- **DIVU vra, vrb:** Unsigned division. vra /= vrb.  
+- **DIVU vra, vrb:** Unsigned division. Stores the remainder in vrb. vra /= vrb.  
   Opcode: 0x56ab  
   Cycles: 2  
   Flags: See DIVU ra, rb.
 
-- **DIVI vra, vrb:** Signed division. vra /= vrb.  
+- **DIVI vra, vrb:** Signed division. Stores the remainder in vrb. vra /= vrb.  
   Opcode: 0x57ab  
   Cycles: 2  
   Flags: See DIVI ra, rb.
@@ -955,12 +955,12 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
   Cycles: 3  
   Flags: See MULI ra, rb.
 
-- **DIVU ra, \[brb\]:** Unsigned division. ra \*= (the value at brb).  
+- **DIVU ra, \[brb\]:** Unsigned division. Stores the remainder in brb. ra \*= (the value at brb).  
   Opcode: 0x5Aab  
   Cycles: 3  
   Flags: See DIVU ra, rb.
 
-- **DIVI ra, \[brb\]:** Signed division. ra /= (the value at brb).  
+- **DIVI ra, \[brb\]:** Signed division. Stores the remainder in brb. ra /= (the value at brb).  
   Opcode: 0x5Bab  
   Cycles: 3  
   Flags: See DIVI ra, rb.
@@ -975,12 +975,12 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
   Cycles: 3  
   Flags: See MULI ra, rb.
 
-- **DIVU ra, imm16:** Unsigned division. ra /= imm16.  
+- **DIVU ra, imm16:** Unsigned division. Stores the remainder in register A. ra /= imm16.  
   Opcode: 0x5C2a  
   Cycles: 3  
   Flags: See DIVU ra, rb.
 
-- **DIVI ra, imm16:** Signed division. ra /= imm16.  
+- **DIVI ra, imm16:** Signed division. Stores the remainder in register A. ra /= imm16.  
   Opcode: 0x5C3a  
   Cycles: 3  
   Flags: See DIVI ra, rb.
@@ -995,12 +995,12 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
   Cycles: 4  
   Flags: See MULI ra, rb.
 
-- **DIVU bra, imm32:** Unsigned division. bra /= imm32.  
+- **DIVU bra, imm32:** Unsigned division. Stores the remainder in big register BC. bra /= imm32.  
   Opcode: 0x5C6a  
   Cycles: 4  
   Flags: See DIVU ra, rb.
 
-- **DIVI bra, imm32:** Signed division. bra /= imm32.  
+- **DIVI bra, imm32:** Signed division. Stores the remainder in big register BC. bra /= imm32.  
   Opcode: 0x5C7a  
   Cycles: 4  
   Flags: See DIVI ra, rb.
@@ -1015,12 +1015,12 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
   Cycles: 3  
   Flags: See MULI ra, rb.
 
-- **DIVU vra, imm8:** Unsigned division. vra /= imm8.  
+- **DIVU vra, imm8:** Unsigned division. Stores the remainder in virtual register A1. vra /= imm8.  
   Opcode: 0x5CAa  
   Cycles: 3  
   Flags: See DIVU ra, rb.
 
-- **DIVI vra, imm8:** Signed division. vra /= imm8.  
+- **DIVI vra, imm8:** Signed division. Stores the remainder in virtual register A0. vra /= imm8.  
   Opcode: 0x5CBa  
   Cycles: 3  
   Flags: See DIVI ra, rb.
