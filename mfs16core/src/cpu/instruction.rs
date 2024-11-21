@@ -54,7 +54,7 @@ const NUM_BREGS: u8 = 3;
 #[cfg_attr(test, derive(EnumIter))]
 pub enum Instruction {
     /// 0x0000 - NOP
-    /// Do nothing for 4 cycles.
+    /// Do nothing for 2 cycles.
     #[default]
     Nop,
     /// 0x01ab - LD ra,rb
