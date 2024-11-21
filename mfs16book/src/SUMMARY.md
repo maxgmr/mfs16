@@ -7,3 +7,4 @@
 - [Memory Map](./memory_map.md)
 - [I/O](./io.md)
 - [MFS-16 Assembly](./mfs16asm.md)
+- [Demo Programs](./demo_programs.md)
