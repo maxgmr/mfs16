@@ -1050,36 +1050,36 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
   Cycles: 5
 
 - **JNZ imm32:** .Jump to address imm32 iff the Zero flag is reset.  
-  Opcode imm32: 0x8003  
-  Cycles imm32: 5
+  Opcode: 0x8003  
+  Cycles: 5
 
 - **JPC imm32:** Jump to address imm32 iff the Carry flag is set.  
-  Opcode imm32: 0x8004  
-  Cycles imm32: 5
+  Opcode: 0x8004  
+  Cycles: 5
 
 - **JNC imm32:** Jump to address imm32 iff the Carry flag is reset.  
-  Opcode imm32: 0x8005  
-  Cycles imm32: 5
+  Opcode: 0x8005  
+  Cycles: 5
 
 - **JPO imm32:** Jump to address imm32 iff the Overflow flag is set.  
-  Opcode imm32: 0x8006  
-  Cycles imm32: 5
+  Opcode: 0x8006  
+  Cycles: 5
 
 - **JNO imm32:** Jump to address imm32 iff the Overflow flag is reset.  
-  Opcode imm32: 0x8007  
-  Cycles imm32: 5
+  Opcode: 0x8007  
+  Cycles: 5
 
 - **JPP imm32:** Jump to address imm32 iff the Parity flag is set.  
-  Opcode imm32: 0x8008  
-  Cycles imm32: 5
+  Opcode: 0x8008  
+  Cycles: 5
 
 - **JNP imm32:** Jump to address imm32 iff the Parity flag is reset.  
-  Opcode imm32: 0x8009  
-  Cycles imm32: 5
+  Opcode: 0x8009  
+  Cycles: 5
 
 - **JPN imm32:** Jump to address imm32 iff the Negative flag is set.  
-  Opcode imm32: 0x800A  
-  Cycles imm32: 5
+  Opcode: 0x800A  
+  Cycles: 5
 
 - **JNN imm32:** Jump to address imm32 iff the Negative flag is reset.  
   Opcode: 0x800B  
