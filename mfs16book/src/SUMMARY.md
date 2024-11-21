@@ -3,6 +3,7 @@
 - [Introduction](./introduction.md)
 - [Configuration](./configuration.md)
 - [CPU](./cpu.md)
+- [Interrupts](./interrupts.md)
 - [Instruction Set](./instruction_set.md)
 - [Memory Map](./memory_map.md)
 - [I/O](./io.md)
