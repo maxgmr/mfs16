@@ -20,6 +20,22 @@ This is the list of MFS-16 CPU instructions. Each opcode is 16 bits + the length
 
 - **SP**: The stack pointer.
 
+- **Z**: The Zero flag.
+
+- **C**: The Carry flag.
+
+- **O**: The Overflow flag.
+
+- **P**: The Parity flag.
+
+- **N**: The Negative flag.
+
+Instructions do not affect flags unless otherwise specified. Any flags omitted by an instruction's list of affected flags are unaffected by the instruction.
+
+"iff" is short for "if and only if".
+
+For example, instruction `LD ra, rb` with opcode `0x01ab` means that any combination of 16-bit registers can be entered. `LD A, B` has opcode `0x0101`, while `LD L, C` has opcode `0x0162`.
+
 ## Instructions
 
 - **NOP:** Do nothing.  
@@ -94,217 +110,285 @@ This is the list of MFS-16 CPU instructions. Each opcode is 16 bits + the length
   Opcode: 0x09ab  
   Cycles:
 
-- **:** .  
+- **LDI \[bra\], imm16:** Load imm16 into address bra, then increment bra by two.  
   Opcode: 0x097a  
   Cycles:
 
-- **:** .  
+- **LDD \[bra\], imm16:** Load imm16 into address bra, then decrement bra by two.  
   Opcode: 0x098a  
   Cycles:
 
-- **:** .  
+- **LD \[imm32\], ra:** Load ra into address imm32.  
   Opcode: 0x099a  
   Cycles:
 
-- **:** .  
+- **LD ra, \[imm32\]:** Load the value at imm32 into ra.  
   Opcode: 0x09Aa  
   Cycles:
 
-- **:** .  
+- **VLD \[bra\], brb:** VRAM load. Faster 32-bit version of LD \[bra\], rb for VRAM addresses only.  
   Opcode: 0x0Aab  
   Cycles:
 
-- **:** .  
+- **VLDI \[bra\], brb:** VRAM load. Faster 32-bit version of LDI \[bra\], rb for VRAM addresses only.  
   Opcode: 0x0Bab  
   Cycles:
 
-- **:** .  
+- **VLDD \[bra\], brb:** VRAM load. Faster 32-bit version of LDD \[bra\], rb for VRAM addresses only.  
   Opcode: 0x0Cab  
   Cycles:
 
-- **:** .  
+- **VLD \[bra\], imm32:** VRAM load. Faster 32-bit version of VLD \[bra\], imm32 for VRAM addresses only.  
   Opcode: 0x0C3a  
   Cycles:
 
-- **:** .  
+- **VLDI \[bra\], imm32:** VRAM load. Faster 32-bit version of VLDI \[bra\], imm32 for VRAM addresses only.  
   Opcode: 0x0C4a  
   Cycles:
 
-- **:** .  
+- **VLDD \[bra\], imm32:** VRAM load. Faster 32-bit version of VLDI \[bra\], imm32 for VRAM addresses only.  
   Opcode: 0x0C5a  
   Cycles:
 
-- **:** .  
+- **ADD ra, rb:** ra += rb.  
   Opcode: 0x10ab  
-  Cycles:
+  Cycles:  
+  Flags:
 
-- **:** .  
+  - Set Z iff the result == 0.
+  - Set C iff the result exceeds the available bits.
+  - Set O iff the signed result is too large or small to fit in the available bits.
+  - Set P iff the result is even.
+  - Set N iff the result is negative when interpreted as a signed value.
+
+- **ADD bra, brb:** bra += brb.  
   Opcode: 0x10(a+7)(b+7)  
-  Cycles:
+  Cycles:  
+  Flags: See ADD ra, rb.
 
-- **:** .  
+- **ADD vra, vrb:** vra += vrb.  
   Opcode: 0x11ab  
-  Cycles:
+  Cycles:  
+  Flags: See ADD ra, rb.
 
-- **:** .  
+- **ADC ra, rb:** ra += rb + C.  
   Opcode: 0x12ab  
-  Cycles:
+  Cycles:  
+  Flags: See ADD ra, rb.
 
-- **:** .  
+- **ADC bra, brb:** bra += brb + C.  
   Opcode: 0x12(a+7)(b+7)  
-  Cycles:
+  Cycles:  
+  Flags: See ADD ra, rb.
 
-- **:** .  
+- **ADC vra, vrb:** vra += vrb + C.  
   Opcode: 0x13ab  
-  Cycles:
+  Cycles:  
+  Flags: See ADD ra, rb.
 
-- **:** .  
+- **SUB ra, rb:** ra -= rb.  
   Opcode: 0x14ab  
-  Cycles:
+  Cycles:  
+  Flags:
 
-- **:** .  
+  - Set Z iff the result == 0.
+  - Set C iff rb > ra for SUB instructions. Set C iff (rb + C) > ra for SBB instructions.
+  - Set O iff the signed result is too large or too small to fit in the available bits.
+  - Set P iff the result is even.
+  - Set N iff the result is negative when interpreted as a signed value.
+
+- **SUB bra, brb:** bra -= brb.  
   Opcode: 0x14(a+7)(b+7)  
-  Cycles:
+  Cycles:  
+  Flags: See SUB ra, rb.
 
-- **:** .  
+- **SUB vra, vrb:** vra -= vrb.  
   Opcode: 0x15ab  
-  Cycles:
+  Cycles:  
+  Flags: See SUB ra, rb.
 
-- **:** .  
+- **SBB ra, rb:** ra -= rb + C.  
   Opcode: 0x16ab  
-  Cycles:
+  Cycles:  
+  Flags: See SUB ra, rb.
 
-- **:** .  
+- **SBB bra, brb:** bra -= brb + C.  
   Opcode: 0x16(a+7)(b+7)  
-  Cycles:
+  Cycles:  
+  Flags: See SUB ra, rb.
 
-- **:** .  
+- **SBB vra, vrb:** vra -= vrb + C.  
   Opcode: 0x17ab  
-  Cycles:
+  Cycles:  
+  Flags: See SUB ra, rb.
 
-- **:** .  
+- **ADD ra, imm16:** ra += imm16.  
   Opcode: 0x180a  
-  Cycles:
+  Cycles:  
+  Flags: See ADD ra, rb.
 
-- **:** .  
+- **ADC ra, imm16:** ra += imm16 + C.  
   Opcode: 0x181a  
-  Cycles:
+  Cycles:  
+  Flags: See ADD ra, rb.
 
-- **:** .  
+- **ADD bra, imm32:** bra += imm32.  
   Opcode: 0x182a  
-  Cycles:
+  Cycles:  
+  Flags: See ADD ra, rb.
 
-- **:** .  
+- **ADC bra, imm32:** bra += imm32 + C.  
   Opcode: 0x183a  
-  Cycles:
+  Cycles:  
+  Flags: See ADD ra, rb.
 
-- **:** .  
+- **ADD vra, imm8:** vra += imm8.  
   Opcode: 0x184a  
-  Cycles:
+  Cycles:  
+  Flags: See ADD ra, rb.
 
-- **:** .  
+- **ADC vra, imm8:** vra += imm8 + C.  
   Opcode: 0x185a  
-  Cycles:
+  Cycles:  
+  Flags: See ADD ra, rb.
 
-- **:** .  
+- **SUB ra, imm16:** ra -= imm16.  
   Opcode: 0x186a  
-  Cycles:
+  Cycles:  
+  Flags: See SUB ra, rb.
 
-- **:** .  
+- **SBB ra, imm16:** ra -= imm16 + C.  
   Opcode: 0x187a  
-  Cycles:
+  Cycles:  
+  Flags: See SUB ra, rb.
 
-- **:** .  
+- **SUB bra, imm32:** bra -= imm32.  
   Opcode: 0x188a  
-  Cycles:
+  Cycles:  
+  Flags: See SUB ra, rb.
 
-- **:** .  
+- **SBB bra, imm32:** bra -= imm32 + C.  
   Opcode: 0x189a  
-  Cycles:
+  Cycles:  
+  Flags: See SUB ra, rb.
 
-- **:** .  
+- **SUB vra, imm8:** vra -= imm8.  
   Opcode: 0x18Aa  
-  Cycles:
+  Cycles:  
+  Flags: See SUB ra, rb.
 
-- **:** .  
+- **SBB vra, imm8:** vra -= imm8 + C.  
   Opcode: 0x18Ba  
-  Cycles:
+  Cycles:  
+  Flags: See SUB ra, rb.
 
-- **:** .  
+- **ADD ra, \[brb\]:** ra += (the value at brb).  
   Opcode: 0x19ab  
-  Cycles:
+  Cycles:  
+  Flags: See ADD ra, rb.
 
-- **:** .  
+- **ADC ra, \[brb\]:** ra += (the value at brb) + C.  
   Opcode: 0x1Aab  
-  Cycles:
+  Cycles:  
+  Flags: See ADD ra, rb.
 
-- **:** .  
+- **SUB ra, \[brb\]:** ra -= (the value at brb).  
   Opcode: 0x1Bab  
-  Cycles:
+  Cycles:  
+  Flags: See SUB ra, rb.
 
-- **:** .  
+- **SBB ra, \[brb\]:** ra -= (the value at brb) + C.  
   Opcode: 0x1Cab  
-  Cycles:
+  Cycles:  
+  Flags: See SUB ra, rb.
 
-- **:** .  
+- **TCP ra:** Two's complement ra. ra = -ra.  
   Opcode: 0x1D0a  
-  Cycles:
+  Cycles:  
+  Flags:
 
-- **:** .  
+  - Set Z iff the result == 0.
+  - Set C iff the result != 0.
+  - Set O iff the signed result is too large or too small to fit in the available bits.
+  - Set P iff the result is even.
+  - Set N iff the result is negative when interpreted as a signed value.
+
+- **TCP bra:** Two's complement bra. bra = -bra.  
   Opcode: 0x1D1a  
-  Cycles:
+  Cycles:  
+  Flags: See TCP ra.
 
-- **:** .  
+- **TCP vra:** Two's complement vra. vra = -vra.  
   Opcode: 0x1D2a  
-  Cycles:
+  Cycles:  
+  Flags: See TCP ra.
 
-- **:** .  
+- **INC ra:** Increment ra. ra += 1.  
   Opcode: 0x1D3a  
-  Cycles:
+  Cycles:  
+  Flags:
 
-- **:** .  
+  - Set Z iff the result == 0.
+  - Set P iff the result is even.
+
+- **INC bra:** Increment bra. bra += 1.  
   Opcode: 0x1D4a  
-  Cycles:
+  Cycles:  
+  Flags: See INC ra.
 
-- **:** .  
+- **INC vra:** Increment vra. vra += 1.  
   Opcode: 0x1D5a  
-  Cycles:
+  Cycles:  
+  Flags: See INC ra.
 
-- **:** .  
+- **DEC ra:** Decrement ra. ra -= 1.  
   Opcode: 0x1D6a  
-  Cycles:
+  Cycles:  
+  Flags: See INC ra.
 
-- **:** .  
+- **DEC bra:** Decrement bra. bra -= 1.  
   Opcode: 0x1D7a  
-  Cycles:
+  Cycles:  
+  Flags: See INC ra.
 
-- **:** .  
+- **DEC vra:** Decrement vra. vra -= 1.  
   Opcode: 0x1D8a  
-  Cycles:
+  Cycles:  
+  Flags: See INC ra.
 
-- **:** .  
+- **PSS ra:** Set the CPU flags based on the value of ra.  
   Opcode: 0x1D9a  
-  Cycles:
+  Cycles:  
+  Flags:
 
-- **:** .  
+  - Set Z iff the value == 0.
+  - Set P iff the value is even.
+  - Set N iff the value is negative when interpreted as a signed integer.
+
+- **PSS bra:** Set the CPU flags based on the value of bra.  
   Opcode: 0x1DAa  
-  Cycles:
+  Cycles:  
+  Flags: See PSS ra.
 
-- **:** .  
+- **PSS vra:** Set the CPU flags based on the value of vra.  
   Opcode: 0x1DBa  
-  Cycles:
+  Cycles:  
+  Flags: See PSS ra.
 
-- **:** .  
+- **PSS imm16:** Set the CPU flags based on the value of imm16.  
   Opcode: 0x1DC0  
-  Cycles:
+  Cycles:  
+  Flags: See PSS ra.
 
-- **:** .  
+- **PSS imm32:** Set the CPU flags based on the value of imm32.  
   Opcode: 0x1DC1  
-  Cycles:
+  Cycles:  
+  Flags: See PSS ra.
 
-- **:** .  
+- **PSS imm8:** Set the CPU flags based on the value of imm8.  
   Opcode: 0x1DC2  
-  Cycles:
+  Cycles:  
+  Flags: See PSS ra.
 
 - **:** .  
   Opcode: 0x1Eab  

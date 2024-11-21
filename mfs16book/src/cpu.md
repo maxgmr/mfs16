@@ -1,1 +1,5 @@
 # CPU
+
+## Registers
+
+## Flags
