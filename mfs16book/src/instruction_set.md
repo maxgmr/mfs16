@@ -56,103 +56,107 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
 
 - **LD \[imm32\], SP:** Load SP into address imm32.  
   Opcode: 0x01A1  
-  Cycles:
+  Cycles: 4
 
 - **LD SP, bra:** Load bra into SP.  
   Opcode: 0x01Ba  
-  Cycles:
+  Cycles: 2
 
 - **LD bra, SP:** Load SP into bra.  
   Opcode: 0x01Ca  
-  Cycles:
+  Cycles: 2
 
 - **LD vra, vrb:** Load vrb into vra.  
   Opcode: 0x02ab  
-  Cycles:
+  Cycles: 2
 
 - **LD ra, imm16:** Load imm16 into ra.  
   Opcode: 0x030a  
-  Cycles:
+  Cycles: 3
 
 - **LD bra, imm32:** Load imm32 into bra.  
   Opcode: 0x031a  
-  Cycles:
+  Cycles: 4
 
 - **LD vra, imm8:** Load imm8 into vra.  
   Opcode: 0x032a  
-  Cycles:
+  Cycles: 3
 
 - **LD \[bra\], imm16:** Load imm16 into address bra.  
   Opcode: 0x033a  
-  Cycles:
+  Cycles: 3
+
+- **LD \[bra\], rb:** Load rb into address bra.  
+  Opcode: 0x04ab  
+  Cycles: 3
 
 - **LD ra, \[brb\]:** Load the value at address brb into ra.  
   Opcode: 0x05ab  
-  Cycles:
+  Cycles: 3
 
 - **LDR ra, imm32:** Load the value at (HL + imm32 interpreted as a signed integer) into ra.  
   Opcode: 0x057a  
-  Cycles:
+  Cycles: 5
 
 - **LDI \[bra\], rb:** Load rb into address bra, then increase bra by two.  
   Opcode: 0x06ab  
-  Cycles:
+  Cycles: 3
 
 - **LDD \[bra\], rb:** Load rb into address bra, then decrease bra by two.  
   Opcode: 0x07ab  
-  Cycles:
+  Cycles: 3
 
 - **LDI ra, \[brb\]:** Load the value at brb into address ra, then increase brb by two.  
   Opcode: 0x08ab  
-  Cycles:
+  Cycles: 3
 
 - **LDD ra, \[brb\]:** Load the value at brb into address ra, then decrease brb by two.  
   Opcode: 0x09ab  
-  Cycles:
+  Cycles: 3
 
 - **LDI \[bra\], imm16:** Load imm16 into address bra, then increment bra by two.  
   Opcode: 0x097a  
-  Cycles:
+  Cycles: 3
 
 - **LDD \[bra\], imm16:** Load imm16 into address bra, then decrement bra by two.  
   Opcode: 0x098a  
-  Cycles:
+  Cycles: 3
 
 - **LD \[imm32\], ra:** Load ra into address imm32.  
   Opcode: 0x099a  
-  Cycles:
+  Cycles: 4
 
 - **LD ra, \[imm32\]:** Load the value at imm32 into ra.  
   Opcode: 0x09Aa  
-  Cycles:
+  Cycles: 4
 
 - **VLD \[bra\], brb:** VRAM load. Faster 32-bit version of LD \[bra\], rb for VRAM addresses only.  
   Opcode: 0x0Aab  
-  Cycles:
+  Cycles: 2
 
 - **VLDI \[bra\], brb:** VRAM load. Faster 32-bit version of LDI \[bra\], rb for VRAM addresses only.  
   Opcode: 0x0Bab  
-  Cycles:
+  Cycles: 2
 
 - **VLDD \[bra\], brb:** VRAM load. Faster 32-bit version of LDD \[bra\], rb for VRAM addresses only.  
   Opcode: 0x0Cab  
-  Cycles:
+  Cycles: 2
 
 - **VLD \[bra\], imm32:** VRAM load. Faster 32-bit version of VLD \[bra\], imm32 for VRAM addresses only.  
   Opcode: 0x0C3a  
-  Cycles:
+  Cycles: 4
 
 - **VLDI \[bra\], imm32:** VRAM load. Faster 32-bit version of VLDI \[bra\], imm32 for VRAM addresses only.  
   Opcode: 0x0C4a  
-  Cycles:
+  Cycles: 4
 
 - **VLDD \[bra\], imm32:** VRAM load. Faster 32-bit version of VLDI \[bra\], imm32 for VRAM addresses only.  
   Opcode: 0x0C5a  
-  Cycles:
+  Cycles: 4
 
 - **ADD ra, rb:** ra += rb.  
   Opcode: 0x10ab  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set Z iff the result == 0.
@@ -163,32 +167,32 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
 
 - **ADD bra, brb:** bra += brb.  
   Opcode: 0x10(a+7)(b+7)  
-  Cycles:  
+  Cycles: 2  
   Flags: See ADD ra, rb.
 
 - **ADD vra, vrb:** vra += vrb.  
   Opcode: 0x11ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See ADD ra, rb.
 
 - **ADC ra, rb:** ra += rb + C.  
   Opcode: 0x12ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See ADD ra, rb.
 
 - **ADC bra, brb:** bra += brb + C.  
   Opcode: 0x12(a+7)(b+7)  
-  Cycles:  
+  Cycles: 2  
   Flags: See ADD ra, rb.
 
 - **ADC vra, vrb:** vra += vrb + C.  
   Opcode: 0x13ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See ADD ra, rb.
 
 - **SUB ra, rb:** ra -= rb.  
   Opcode: 0x14ab  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set Z iff the result == 0.
@@ -199,112 +203,112 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
 
 - **SUB bra, brb:** bra -= brb.  
   Opcode: 0x14(a+7)(b+7)  
-  Cycles:  
+  Cycles: 2  
   Flags: See SUB ra, rb.
 
 - **SUB vra, vrb:** vra -= vrb.  
   Opcode: 0x15ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See SUB ra, rb.
 
 - **SBB ra, rb:** ra -= rb + C.  
   Opcode: 0x16ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See SUB ra, rb.
 
 - **SBB bra, brb:** bra -= brb + C.  
   Opcode: 0x16(a+7)(b+7)  
-  Cycles:  
+  Cycles: 2  
   Flags: See SUB ra, rb.
 
 - **SBB vra, vrb:** vra -= vrb + C.  
   Opcode: 0x17ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See SUB ra, rb.
 
 - **ADD ra, imm16:** ra += imm16.  
   Opcode: 0x180a  
-  Cycles:  
+  Cycles: 3  
   Flags: See ADD ra, rb.
 
 - **ADC ra, imm16:** ra += imm16 + C.  
   Opcode: 0x181a  
-  Cycles:  
+  Cycles: 3  
   Flags: See ADD ra, rb.
 
 - **ADD bra, imm32:** bra += imm32.  
   Opcode: 0x182a  
-  Cycles:  
+  Cycles: 4  
   Flags: See ADD ra, rb.
 
 - **ADC bra, imm32:** bra += imm32 + C.  
   Opcode: 0x183a  
-  Cycles:  
+  Cycles: 4  
   Flags: See ADD ra, rb.
 
 - **ADD vra, imm8:** vra += imm8.  
   Opcode: 0x184a  
-  Cycles:  
+  Cycles: 3  
   Flags: See ADD ra, rb.
 
 - **ADC vra, imm8:** vra += imm8 + C.  
   Opcode: 0x185a  
-  Cycles:  
+  Cycles: 3  
   Flags: See ADD ra, rb.
 
 - **SUB ra, imm16:** ra -= imm16.  
   Opcode: 0x186a  
-  Cycles:  
+  Cycles: 3  
   Flags: See SUB ra, rb.
 
 - **SBB ra, imm16:** ra -= imm16 + C.  
   Opcode: 0x187a  
-  Cycles:  
+  Cycles: 3  
   Flags: See SUB ra, rb.
 
 - **SUB bra, imm32:** bra -= imm32.  
   Opcode: 0x188a  
-  Cycles:  
+  Cycles: 4  
   Flags: See SUB ra, rb.
 
 - **SBB bra, imm32:** bra -= imm32 + C.  
   Opcode: 0x189a  
-  Cycles:  
+  Cycles: 4  
   Flags: See SUB ra, rb.
 
 - **SUB vra, imm8:** vra -= imm8.  
   Opcode: 0x18Aa  
-  Cycles:  
+  Cycles: 3  
   Flags: See SUB ra, rb.
 
 - **SBB vra, imm8:** vra -= imm8 + C.  
   Opcode: 0x18Ba  
-  Cycles:  
+  Cycles: 3  
   Flags: See SUB ra, rb.
 
 - **ADD ra, \[brb\]:** ra += (the value at brb).  
   Opcode: 0x19ab  
-  Cycles:  
+  Cycles: 3  
   Flags: See ADD ra, rb.
 
 - **ADC ra, \[brb\]:** ra += (the value at brb) + C.  
   Opcode: 0x1Aab  
-  Cycles:  
+  Cycles: 3  
   Flags: See ADD ra, rb.
 
 - **SUB ra, \[brb\]:** ra -= (the value at brb).  
   Opcode: 0x1Bab  
-  Cycles:  
+  Cycles: 3  
   Flags: See SUB ra, rb.
 
 - **SBB ra, \[brb\]:** ra -= (the value at brb) + C.  
   Opcode: 0x1Cab  
-  Cycles:  
+  Cycles: 3  
   Flags: See SUB ra, rb.
 
 - **TCP ra:** Two's complement ra. ra = -ra.  
   Opcode: 0x1D0a  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set Z iff the result == 0.
@@ -315,17 +319,17 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
 
 - **TCP bra:** Two's complement bra. bra = -bra.  
   Opcode: 0x1D1a  
-  Cycles:  
+  Cycles: 2  
   Flags: See TCP ra.
 
 - **TCP vra:** Two's complement vra. vra = -vra.  
   Opcode: 0x1D2a  
-  Cycles:  
+  Cycles: 2  
   Flags: See TCP ra.
 
 - **INC ra:** Increment ra. ra += 1.  
   Opcode: 0x1D3a  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set Z iff the result == 0.
@@ -333,32 +337,32 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
 
 - **INC bra:** Increment bra. bra += 1.  
   Opcode: 0x1D4a  
-  Cycles:  
+  Cycles: 2  
   Flags: See INC ra.
 
 - **INC vra:** Increment vra. vra += 1.  
   Opcode: 0x1D5a  
-  Cycles:  
+  Cycles: 2  
   Flags: See INC ra.
 
 - **DEC ra:** Decrement ra. ra -= 1.  
   Opcode: 0x1D6a  
-  Cycles:  
+  Cycles: 2  
   Flags: See INC ra.
 
 - **DEC bra:** Decrement bra. bra -= 1.  
   Opcode: 0x1D7a  
-  Cycles:  
+  Cycles: 2  
   Flags: See INC ra.
 
 - **DEC vra:** Decrement vra. vra -= 1.  
   Opcode: 0x1D8a  
-  Cycles:  
+  Cycles: 2  
   Flags: See INC ra.
 
 - **PSS ra:** Set the CPU flags based on the value of ra.  
   Opcode: 0x1D9a  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set Z iff the value == 0.
@@ -367,32 +371,32 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
 
 - **PSS bra:** Set the CPU flags based on the value of bra.  
   Opcode: 0x1DAa  
-  Cycles:  
+  Cycles: 2  
   Flags: See PSS ra.
 
 - **PSS vra:** Set the CPU flags based on the value of vra.  
   Opcode: 0x1DBa  
-  Cycles:  
+  Cycles: 2  
   Flags: See PSS ra.
 
 - **PSS imm16:** Set the CPU flags based on the value of imm16.  
   Opcode: 0x1DC0  
-  Cycles:  
+  Cycles: 3  
   Flags: See PSS ra.
 
 - **PSS imm32:** Set the CPU flags based on the value of imm32.  
   Opcode: 0x1DC1  
-  Cycles:  
+  Cycles: 4  
   Flags: See PSS ra.
 
 - **PSS imm8:** Set the CPU flags based on the value of imm8.  
   Opcode: 0x1DC2  
-  Cycles:  
+  Cycles: 3  
   Flags: See PSS ra.
 
 - **AND ra, rb:** Bitwise AND. ra &= rb.  
   Opcode: 0x1Eab  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set Z iff the result == 0.
@@ -403,122 +407,122 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
 
 - **AND bra, brb:** Bitwise AND. bra &= brb.  
   Opcode: 0x1Fab  
-  Cycles:  
+  Cycles: 2  
   Flags: See AND ra, rb.
 
 - **AND vra, vrb:** Bitwise AND. vra &= vrb.  
   Opcode: 0x20ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See AND ra, rb.
 
 - **AND ra, \[brb\]:** Bitwise AND. ra &= (the value at brb).  
   Opcode: 0x21ab  
-  Cycles:  
+  Cycles: 3  
   Flags: See AND ra, rb.
 
 - **OR ra, rb:** Bitwise OR. ra |= rb.  
   Opcode: 0x22ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See AND ra, rb.
 
 - **OR bra, brb:** Bitwise OR. bra |= brb.  
   Opcode: 0x23ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See AND ra, rb.
 
 - **OR vra, vrb:** Bitwise OR. vra |= vrb.  
   Opcode: 0x24ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See AND ra, rb.
 
 - **OR ra, \[brb\]:** Bitwise OR. ra |= (the value at brb).  
   Opcode: 0x25ab  
-  Cycles:  
+  Cycles: 3  
   Flags: See AND ra, rb.
 
 - **XOR ra, rb:** Bitwise XOR. ra ^= rb.  
   Opcode: 0x26ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See AND ra, rb.
 
 - **XOR bra, brb:** Bitwise XOR. bra ^= brb.  
   Opcode: 0x27ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See AND ra, rb.
 
 - **XOR vra, vrb:** Bitwise XOR. vra ^= vrb.  
   Opcode: 0x28ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See AND ra, rb.
 
 - **XOR ra, \[brb\]:** Bitwise XOR. ra ^= (the value at brb).  
   Opcode: 0x29ab  
-  Cycles:  
+  Cycles: 3  
   Flags: See AND ra, rb.
 
 - **AND ra, imm16:** Bitwise AND. ra &= imm16.  
   Opcode: 0x2A0a  
-  Cycles:  
+  Cycles: 3  
   Flags: See AND ra, rb.
 
 - **AND bra, imm32:** Bitwise AND. bra &= imm32.  
   Opcode: 0x2A1a  
-  Cycles:  
+  Cycles: 4  
   Flags: See AND ra, rb.
 
 - **AND vra, imm8:** Bitwise AND. vra &= imm8.  
   Opcode: 0x2A2a  
-  Cycles:  
+  Cycles: 3  
   Flags: See AND ra, rb.
 
 - **OR ra, imm16:** Bitwise OR. ra |= imm16.  
   Opcode: 0x2A3a  
-  Cycles:  
+  Cycles: 3  
   Flags: See AND ra, rb.
 
 - **OR bra, imm32:** Bitwise OR. bra |= imm32.  
   Opcode: 0x2A4a  
-  Cycles:  
+  Cycles: 4  
   Flags: See AND ra, rb.
 
 - **OR vra, imm8:** Bitwise OR. vra |= imm8.  
   Opcode: 0x2A5a  
-  Cycles:  
+  Cycles: 3  
   Flags: See AND ra, rb.
 
 - **XOR ra, imm16:** Bitwise XOR. ra ^= imm16.  
   Opcode: 0x2A6a  
-  Cycles:  
+  Cycles: 3  
   Flags: See AND ra, rb.
 
 - **XOR bra, imm32:** Bitwise XOR. bra ^= imm32.  
   Opcode: 0x2A7a  
-  Cycles:  
+  Cycles: 4  
   Flags: See AND ra, rb.
 
 - **XOR vra, imm8:** Bitwise XOR. vra ^= imm8.  
   Opcode: 0x2A8a  
-  Cycles:  
+  Cycles: 3  
   Flags: See AND ra, rb.
 
 - **NOT ra:** Flip all bits of ra. ra = !ra.  
   Opcode: 0x2A9a  
-  Cycles:  
+  Cycles: 2  
   Flags: See AND ra, rb.
 
 - **NOT bra:** Flip all bits of bra. bra = !bra.  
   Opcode: 0x2AAa  
-  Cycles:  
+  Cycles: 2  
   Flags: See AND ra, rb.
 
 - **NOT vra:** Flip all bits of vra. vra = !vra.  
   Opcode: 0x2ABa  
-  Cycles:  
+  Cycles: 2  
   Flags: See AND ra, rb.
 
 - **ASR ra, u4:** Arithmetic shift. Shift ra right u4 bits, preserving the most significant bit.  
   Opcode: 0x2Bab  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set C iff the last bit shifted out == 1.
@@ -526,17 +530,17 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
 
 - **ASR bra, u4:** Arithmetic shift. Shift bra right u4 bits, preserving the most significant bit.  
   Opcode: 0x2Cab  
-  Cycles:  
+  Cycles: 2  
   Flags: See ASR ra, u4.
 
 - **ASR vra, u4:** Arithmetic shift. Shift vra right u4 bits, preserving the most significant bit.  
   Opcode: 0x2Dab  
-  Cycles:  
+  Cycles: 2  
   Flags: See ASR ra, u4.
 
 - **ASL ra, u4:** Arithmetic shift. Shift ra left u4 bits, shifting on zeroes.  
   Opcode: 0x2Eab  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set C iff the last bit shifted out == 1.
@@ -544,17 +548,17 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
 
 - **ASL bra, u4:** Arithmetic shift. Shift bra left u4 bits, shifting on zeroes.  
   Opcode: 0x2Fab  
-  Cycles:  
+  Cycles: 2  
   Flags: See ASL ra, u4.
 
 - **ASL vra, u4:** Arithmetic shift. Shift vra left u4 bits, shifting on zeroes.  
   Opcode: 0x30ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See ASL ra, u4.
 
 - **LSR ra, u4:** Logical shift. Shift ra right u4 bits, shifting on zeroes.  
   Opcode: 0x31ab  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set C iff the last bit shifted out == 1.
@@ -562,17 +566,17 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
 
 - **LSR bra, u4:** Logical shift. Shift bra right u4 bits, shifting on zeroes.  
   Opcode: 0x32ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See LSR ra, u4.
 
 - **LSR vra, u4:** Logical shift. Shift vra right u4 bits, shifting on zeroes.  
   Opcode: 0x33ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See LSR ra, u4.
 
 - **RTR ra, u4:** Rotate ra right u4 bits.  
   Opcode: 0x34ab  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set C iff the last bit carried over to the other side == 1.
@@ -580,32 +584,32 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
 
 - **RTR bra, u4:** Rotate bra right u4 bits.  
   Opcode: 0x35ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See RTR ra, u4.
 
 - **RTR vra, u4:** Rotate vra right u4 bits.  
   Opcode: 0x36ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See RTR ra, u4.
 
 - **RTL ra, u4:** Rotate ra left u4 bits.  
   Opcode: 0x37ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See RTR ra, u4.
 
 - **RTL bra, u4:** Rotate bra left u4 bits.  
   Opcode: 0x38ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See RTR ra, u4.
 
 - **RTL vra, u4:** Rotate vra left u4 bits.  
   Opcode: 0x39ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See RTR ra, u4.
 
 - **RCR ra, u4:** Rotate ra right u4 bits through the carry flag.  
   Opcode: 0x3Aab  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - C will be set iff the bit rotated into C == 1.
@@ -613,236 +617,236 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
 
 - **RCR bra, u4:** Rotate bra right u4 bits through the carry flag.  
   Opcode: 0x3Bab  
-  Cycles:  
+  Cycles: 2  
   Flags: See RCR ra, u4.
 
 - **RCR vra, u4:** Rotate vra right u4 bits through the carry flag.  
   Opcode: 0x3Cab  
-  Cycles:  
+  Cycles: 2  
   Flags: See RCR ra, u4.
 
 - **RCL ra, u4:** Rotate ra left u4 bits through the carry flag.  
   Opcode: 0x3Dab  
-  Cycles:  
+  Cycles: 2  
   Flags: See RCR ra, u4.
 
 - **RCL bra, u4:** Rotate bra left u4 bits through the carry flag.  
   Opcode: 0x3Eab  
-  Cycles:  
+  Cycles: 2  
   Flags: See RCR ra, u4.
 
 - **RCL vra, u4:** Rotate vra left u4 bits through the carry flag.  
   Opcode: 0x3Fab  
-  Cycles:  
+  Cycles: 2  
   Flags: See RCR ra, u4.
 
 - **CMP ra, rb:** Set the flags according to the result of ra - rb, discarding the result.  
   Opcode: 0x40ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See SUB ra, rb.
 
 - **CMP bra, brb:** Set the flags according to the result of bra - brb, discarding the result.  
   Opcode: 0x40(a+7)(b+7)  
-  Cycles:  
+  Cycles: 2  
   Flags: See SUB ra, rb.
 
 - **CMP vra, vrb:** Set the flags according to the result of vra - vrb, discarding the result.  
   Opcode: 0x41ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See SUB ra, rb.
 
 - **CMP ra, imm16:** Set the flags according to the result of ra - imm16, discarding the result.  
   Opcode: 0x420a  
-  Cycles:  
+  Cycles: 3  
   Flags: See SUB ra, rb.
 
 - **CMP bra, imm32:** Set the flags according to the result of bra - imm32, discarding the result.  
   Opcode: 0x421a  
-  Cycles:  
+  Cycles: 4  
   Flags: See SUB ra, rb.
 
 - **CMP vra, imm8:** Set the flags according to the result of vra - imm8, discarding the result.  
   Opcode: 0x422a  
-  Cycles:  
+  Cycles: 3  
   Flags: See SUB ra, rb.
 
 - **CMP imm16, ra:** Set the flags according to the result of imm16 - ra, discarding the result.  
   Opcode: 0x423a  
-  Cycles:  
+  Cycles: 3  
   Flags: See SUB ra, rb.
 
 - **CMP imm32, bra:** Set the flags according to the result of imm32 - bra, discarding the result.  
   Opcode: 0x424a  
-  Cycles:  
+  Cycles: 4  
   Flags: See SUB ra, rb.
 
 - **CMP imm8, vra:** Set the flags according to the result of imm8 - vra, discarding the result.  
   Opcode: 0x425a  
-  Cycles:  
+  Cycles: 3  
   Flags: See SUB ra, rb.
 
 - **CMP ra, \[brb\]:** Set the flags according to the result of ra - (the value at brb), discarding the result.  
   Opcode: 0x43ab  
-  Cycles:  
+  Cycles: 3  
   Flags: See SUB ra, rb.
 
 - **CMP \[bra\], rb:** Set the flags according to the result of (the value at bra) - rb, discarding the result.  
   Opcode: 0x44ab  
-  Cycles:  
+  Cycles: 5  
   Flags: See SUB ra, rb.
 
 - **BIT ra, u4:** Set the Zero flag according to bit u4 of ra.  
   Opcode: 0x45ab  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set Z iff bit u4 of the given value == 0.
 
 - **BIT \[bra\], u4:** Set the Zero flag according to bit u4 of the value at bra.  
   Opcode: 0x46ab  
-  Cycles:  
+  Cycles: 3  
   Flags: See BIT ra, u4.
 
 - **STB ra, u4:** Set bit u4 of ra.  
   Opcode: 0x47ab  
-  Cycles:
+  Cycles: 2
 
 - **STB \[bra\], u4:** Set bit u4 of the value at bra.  
   Opcode: 0x48ab  
-  Cycles:
+  Cycles: 3
 
 - **RSB ra, u4:** Reset bit u4 of ra.  
   Opcode: 0x49ab  
-  Cycles:
+  Cycles: 2
 
 - **RSB \[bra\], u4:** Reset bit u4 of the value at bra.  
   Opcode: 0x4Aab  
-  Cycles:
+  Cycles: 3
 
 - **TGB ra, u4:** Toggle bit u4 of ra.  
   Opcode: 0x4Bab  
-  Cycles:
+  Cycles: 2
 
 - **TGB \[bra\], u4:** Toggle bit u4 of the value at bra.  
   Opcode: 0x4Cab  
-  Cycles:
+  Cycles: 3
 
 - **SWP ra:** Swap the high and low bytes of ra.  
   Opcode: 0x4D0a  
-  Cycles:
+  Cycles: 2
 
 - **SWP \[bra\]:** Swap the high and low bytes of the value at bra.  
   Opcode: 0x4D1a  
-  Cycles:
+  Cycles: 3
 
 - **SZF:** Set the Zero flag.  
   Opcode: 0x4D20  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set Z.
 
 - **RZF:** Reset the Zero flag.  
   Opcode: 0x4D21  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Reset Z.
 
 - **TZF:** Toggle the Zero flag.  
   Opcode: 0x4D22  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set Z iff Z is currently reset.
 
 - **SCF:** Set the Carry flag.  
   Opcode: 0x4D23  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set C.
 
 - **RCF:** Reset the Carry flag.  
   Opcode: 0x4D24  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Reset C.
 
 - **TCF:** Toggle the Carry flag.  
   Opcode: 0x4D25  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set C iff C is currently reset.
 
 - **SOF:** Set the Overflow flag.  
   Opcode: 0x4D26  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set O.
 
 - **ROF:** Reset the Overflow flag.  
   Opcode: 0x4D27  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Reset O.
 
 - **TOF:** Toggle the Overflow flag.  
   Opcode: 0x4D28  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set O iff O is currently reset.
 
 - **SPF:** Set the Parity flag.  
   Opcode: 0x4D29  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set P.
 
 - **RPF:** Reset the Parity flag.  
   Opcode: 0x4D2A  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Reset P.
 
 - **TPF:** Toggle the Parity flag.  
   Opcode: 0x4D2B  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set P iff P is currently reset.
 
 - **SNF:** Set the Negative flag.  
   Opcode: 0x4D2C  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set N.
 
 - **RNF:** Reset the Negative flag.  
   Opcode: 0x4D2D  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Reset N.
 
 - **TNF:** Toggle the Negative flag.  
   Opcode: 0x4D2E  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set N iff N is currently reset.
 
 - **SAF:** Set all flags.  
   Opcode: 0x4D2F  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set Z.
@@ -853,7 +857,7 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
 
 - **RAF:** Reset all flags.  
   Opcode: 0x4D30  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Reset Z.
@@ -864,7 +868,7 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
 
 - **MULU ra, rb:** Unsigned multiplication. ra \*= rb.  
   Opcode: 0x50ab  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set Z iff the result == 0.
@@ -874,7 +878,7 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
 
 - **MULI ra, rb:** Signed multiplication. ra \*= rb.  
   Opcode: 0x51ab  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set Z iff the result == 0.
@@ -884,7 +888,7 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
 
 - **DIVU ra, rb:** Unsigned division. Does nothing if rb == 0. ra /= rb.  
   Opcode: 0x52ab  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set Z iff the result == 0.
@@ -893,7 +897,7 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
 
 - **DIVI ra, rb:** Signed division. Does nothing if rb == 0. ra /= rb.  
   Opcode: 0x53ab  
-  Cycles:  
+  Cycles: 2  
   Flags:
 
   - Set Z iff the result == 0.
@@ -903,400 +907,400 @@ Consider this example on reading the notation. instruction `LD ra, rb` with opco
 
 - **MULU bra, brb:** Unsigned multiplication. bra \*= brb.  
   Opcode: 0x50(a+7)(b+7)  
-  Cycles:  
+  Cycles: 2  
   Flags: See MULU ra, rb.
 
 - **MULI bra, brb:** Signed multiplication. bra \*= brb.  
   Opcode: 0x51(a+7)(b+7)  
-  Cycles:  
+  Cycles: 2  
   Flags: See MULI ra, rb.
 
 - **DIVU bra, brb:** Unsigned division. bra /= brb.  
   Opcode: 0x52(a+7)(b+7)  
-  Cycles:  
+  Cycles: 2  
   Flags: See DIVU ra, rb.
 
 - **DIVI bra, brb:** Signed division. bra /= brb.  
   Opcode: 0x53(a+7)(b+7)  
-  Cycles:  
+  Cycles: 2  
   Flags: See DIVI ra, rb.
 
 - **MULU vra, vrb:** Unsigned multiplication. vra \*= vrb.  
   Opcode: 0x54ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See MULU ra, rb.
 
 - **MULI vra, vrb:** Signed multiplication. vra \*= vrb.  
   Opcode: 0x55ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See MULI ra, rb.
 
 - **DIVU vra, vrb:** Unsigned division. vra /= vrb.  
   Opcode: 0x56ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See DIVU ra, rb.
 
 - **DIVI vra, vrb:** Signed division. vra /= vrb.  
   Opcode: 0x57ab  
-  Cycles:  
+  Cycles: 2  
   Flags: See DIVI ra, rb.
 
 - **MULU ra, \[brb\]:** Unsigned multiplication. ra \*= (the value at brb).  
   Opcode: 0x58ab  
-  Cycles:  
+  Cycles: 3  
   Flags: See MULU ra, rb.
 
 - **MULI ra, \[brb\]:** Signed multiplication. ra \*= (the value at brb).  
   Opcode: 0x59ab  
-  Cycles:  
+  Cycles: 3  
   Flags: See MULI ra, rb.
 
 - **DIVU ra, \[brb\]:** Unsigned division. ra \*= (the value at brb).  
   Opcode: 0x5Aab  
-  Cycles:  
+  Cycles: 3  
   Flags: See DIVU ra, rb.
 
 - **DIVI ra, \[brb\]:** Signed division. ra /= (the value at brb).  
   Opcode: 0x5Bab  
-  Cycles:  
+  Cycles: 3  
   Flags: See DIVI ra, rb.
 
 - **MULU ra, imm16:** Unsigned multiplication. ra \*= imm16.  
   Opcode: 0x5C0a  
-  Cycles:  
+  Cycles: 3  
   Flags: See MULU ra, rb.
 
 - **MULI ra, imm16:** Signed multiplication. ra \*= imm16.  
   Opcode: 0x5C1a  
-  Cycles:  
+  Cycles: 3  
   Flags: See MULI ra, rb.
 
 - **DIVU ra, imm16:** Unsigned division. ra /= imm16.  
   Opcode: 0x5C2a  
-  Cycles:  
+  Cycles: 3  
   Flags: See DIVU ra, rb.
 
 - **DIVI ra, imm16:** Signed division. ra /= imm16.  
   Opcode: 0x5C3a  
-  Cycles:  
+  Cycles: 3  
   Flags: See DIVI ra, rb.
 
 - **MULU bra, imm32:** Unsigned multiplication. bra \*= imm32.  
   Opcode: 0x5C4a  
-  Cycles:  
+  Cycles: 4  
   Flags: See MULU ra, rb.
 
 - **MULI bra, imm32:** Signed multiplication. bra \*= imm32.  
   Opcode: 0x5C5a  
-  Cycles:  
+  Cycles: 4  
   Flags: See MULI ra, rb.
 
 - **DIVU bra, imm32:** Unsigned division. bra /= imm32.  
   Opcode: 0x5C6a  
-  Cycles:  
+  Cycles: 4  
   Flags: See DIVU ra, rb.
 
 - **DIVI bra, imm32:** Signed division. bra /= imm32.  
   Opcode: 0x5C7a  
-  Cycles:  
+  Cycles: 4  
   Flags: See DIVI ra, rb.
 
 - **MULU vra, imm8:** Unsigned multiplication. vra \*= imm8.  
   Opcode: 0x5C8a  
-  Cycles:  
+  Cycles: 3  
   Flags: See MULU ra, rb.
 
 - **MULI vra, imm8:** Signed multiplication. vra \*= imm8.  
   Opcode: 0x5C9a  
-  Cycles:  
+  Cycles: 3  
   Flags: See MULI ra, rb.
 
 - **DIVU vra, imm8:** Unsigned division. vra /= imm8.  
   Opcode: 0x5CAa  
-  Cycles:  
+  Cycles: 3  
   Flags: See DIVU ra, rb.
 
 - **DIVI vra, imm8:** Signed division. vra /= imm8.  
   Opcode: 0x5CBa  
-  Cycles:  
+  Cycles: 3  
   Flags: See DIVI ra, rb.
 
 - **RAND ra:** Fill ra with a pseudorandom LFSR-based random number.  
   Opcode: 0x600a  
-  Cycles:
+  Cycles: 2
 
 - **RAND bra:** Fill bra with a pseudorandom LFSR-based random number.  
   Opcode: 0x601a  
-  Cycles:
+  Cycles: 2
 
 - **RAND vra:** Fill vra with a pseudorandom LFSR-based random number.  
   Opcode: 0x602a  
-  Cycles:
+  Cycles: 2
 
 - **JP imm32:** Jump to address imm32.  
   Opcode: 0x8000  
-  Cycles:
+  Cycles: 4
 
 - **JR imm32:** Relative jump imm32 (interpreted as a signed integer) bytes forwards/backwards.  
   Opcode: 0x8001  
-  Cycles:
+  Cycles: 4
 
 - **JPZ imm32:** Jump to address imm32 iff the Zero flag is set.  
   Opcode: 0x8002  
-  Cycles:
+  Cycles: 5
 
-- **JNZ:** .Jump to address imm32 iff the Zero flag is reset.  
-  Opcode: 0x8003  
-  Cycles:
+- **JNZ imm32:** .Jump to address imm32 iff the Zero flag is reset.  
+  Opcode imm32: 0x8003  
+  Cycles imm32: 5
 
-- **JPC:** Jump to address imm32 iff the Carry flag is set.  
-  Opcode: 0x8004  
-  Cycles:
+- **JPC imm32:** Jump to address imm32 iff the Carry flag is set.  
+  Opcode imm32: 0x8004  
+  Cycles imm32: 5
 
-- **JNC:** Jump to address imm32 iff the Carry flag is reset.  
-  Opcode: 0x8005  
-  Cycles:
+- **JNC imm32:** Jump to address imm32 iff the Carry flag is reset.  
+  Opcode imm32: 0x8005  
+  Cycles imm32: 5
 
-- **JPO:** Jump to address imm32 iff the Overflow flag is set.  
-  Opcode: 0x8006  
-  Cycles:
+- **JPO imm32:** Jump to address imm32 iff the Overflow flag is set.  
+  Opcode imm32: 0x8006  
+  Cycles imm32: 5
 
-- **JNO:** Jump to address imm32 iff the Overflow flag is reset.  
-  Opcode: 0x8007  
-  Cycles:
+- **JNO imm32:** Jump to address imm32 iff the Overflow flag is reset.  
+  Opcode imm32: 0x8007  
+  Cycles imm32: 5
 
-- **JPP:** Jump to address imm32 iff the Parity flag is set.  
-  Opcode: 0x8008  
-  Cycles:
+- **JPP imm32:** Jump to address imm32 iff the Parity flag is set.  
+  Opcode imm32: 0x8008  
+  Cycles imm32: 5
 
-- **JNP:** Jump to address imm32 iff the Parity flag is reset.  
-  Opcode: 0x8009  
-  Cycles:
+- **JNP imm32:** Jump to address imm32 iff the Parity flag is reset.  
+  Opcode imm32: 0x8009  
+  Cycles imm32: 5
 
-- **JPN:** Jump to address imm32 iff the Negative flag is set.  
-  Opcode: 0x800A  
-  Cycles:
+- **JPN imm32:** Jump to address imm32 iff the Negative flag is set.  
+  Opcode imm32: 0x800A  
+  Cycles imm32: 5
 
-- **JNN:** Jump to address imm32 iff the Negative flag is reset.  
+- **JNN imm32:** Jump to address imm32 iff the Negative flag is reset.  
   Opcode: 0x800B  
-  Cycles:
+  Cycles: 5
 
 - **JP bra:** Jump to address bra.  
   Opcode: 0x801a  
-  Cycles:
+  Cycles: 2
 
 - **JR bra:** Relative jump bra (interpreted as a signed integer) bytes forwards/backwards.  
   Opcode: 0x802a  
-  Cycles:
+  Cycles: 2
 
 - **JPZ bra:** Jump to address bra iff the Zero flag is set.  
   Opcode: 0x803a  
-  Cycles:
+  Cycles: 3
 
 - **JNZ bra:** Jump to address bra iff the Zero flag is reset.  
   Opcode: 0x804a  
-  Cycles:
+  Cycles: 3
 
 - **JPC bra:** Jump to address bra iff the Carry flag is set.  
   Opcode: 0x805a  
-  Cycles:
+  Cycles: 3
 
 - **JNC bra:** Jump to address bra iff the Carry flag is reset.  
   Opcode: 0x806a  
-  Cycles:
+  Cycles: 3
 
 - **JPO bra:** Jump to address bra iff the Overflow flag is set.  
   Opcode: 0x807a  
-  Cycles:
+  Cycles: 3
 
 - **JNO bra:** Jump to address bra iff the Overflow flag is reset.  
   Opcode: 0x808a  
-  Cycles:
+  Cycles: 3
 
 - **JPP bra:** Jump to address bra iff the Parity flag is set.  
   Opcode: 0x809a  
-  Cycles:
+  Cycles: 3
 
 - **JNP bra:** Jump to address bra iff the Parity flag is reset.  
   Opcode: 0x80Aa  
-  Cycles:
+  Cycles: 3
 
 - **JPN bra:** Jump to address bra iff the Negative flag is set.  
   Opcode: 0x80Ba  
-  Cycles:
+  Cycles: 3
 
 - **JNN bra:** Jump to address bra iff the Negative flag is reset.  
   Opcode: 0x80Ca  
-  Cycles:
+  Cycles: 3
 
 - **CALL imm32:** Push the address of the instruction after CALL imm32 onto the stack, then jump to imm32.  
   Opcode: 0x8100  
-  Cycles:
+  Cycles: 5
 
 - **CLZ imm32:** Call imm32 if the Zero flag is set.  
   Opcode: 0x8101  
-  Cycles:
+  Cycles: 6
 
 - **CNZ imm32** Call imm32 if the Zero flag is reset.  
   Opcode: 0x8102  
-  Cycles:
+  Cycles: 6
 
 - **CLC imm32** Call imm32 if the Carry flag is set.  
   Opcode: 0x8103  
-  Cycles:
+  Cycles: 6
 
 - **CNC imm32** Call imm32 if the Carry flag is reset.  
   Opcode: 0x8104  
-  Cycles:
+  Cycles: 6
 
 - **CLO imm32** Call imm32 if the Overflow flag is set.  
   Opcode: 0x8105  
-  Cycles:
+  Cycles: 6
 
 - **CNO imm32** Call imm32 if the Overflow flag is reset.  
   Opcode: 0x8106  
-  Cycles:
+  Cycles: 6
 
 - **CLP imm32** Call imm32 if the Parity flag is set.  
   Opcode: 0x8107  
-  Cycles:
+  Cycles: 6
 
 - **CNP imm32** Call imm32 if the Parity flag is reset.  
   Opcode: 0x8108  
-  Cycles:
+  Cycles: 6
 
 - **CLN imm32** Call imm32 if the Negative flag is set.  
   Opcode: 0x8109  
-  Cycles:
+  Cycles: 6
 
 - **CNN imm32** Call imm32 if the Negative flag is reset.  
   Opcode: 0x810A  
-  Cycles:
+  Cycles: 6
 
 - **CALL bra:** Push the address of the instruction after CALL bra onto the stack, then jump to bra.  
   Opcode: 0x811a  
-  Cycles:
+  Cycles: 3
 
 - **RET:** Return from subroutine, setting the program counter to the value popped off the stack.  
   Opcode: 0x8113  
-  Cycles:
+  Cycles: 2
 
 - **RTZ:** Return if the Zero flag is set.  
   Opcode: 0x8114  
-  Cycles:
+  Cycles: 3
 
 - **RNZ:** Return if the Zero flag is reset.  
   Opcode: 0x8115  
-  Cycles:
+  Cycles: 3
 
 - **RTC:** Return if the Carry flag is set.  
   Opcode: 0x8116  
-  Cycles:
+  Cycles: 3
 
 - **RNC:** Return if the Carry flag is reset.  
   Opcode: 0x8117  
-  Cycles:
+  Cycles: 3
 
 - **RTO:** Return if the Overflow flag is set.  
   Opcode: 0x8118  
-  Cycles:
+  Cycles: 3
 
 - **RNO:** Return if the Overflow flag is reset.  
   Opcode: 0x8119  
-  Cycles:
+  Cycles: 3
 
 - **RTP:** Return if the Parity flag is set.  
   Opcode: 0x811A  
-  Cycles:
+  Cycles: 3
 
 - **RNP:** Return if the Parity flag is reset.  
   Opcode: 0x811B  
-  Cycles:
+  Cycles: 3
 
 - **RTN:** Return if the Negative flag is set.  
   Opcode: 0x811C  
-  Cycles:
+  Cycles: 3
 
 - **RNN:** Return if the Negative flag is reset.  
   Opcode: 0x811D  
-  Cycles:
+  Cycles: 3
 
 - **RETI:** Return from subroutine, then enable interrupts.  
   Opcode: 0x811E  
-  Cycles:
+  Cycles: 3
 
 - **CLZ bra:** Call bra if the Zero flag is set.  
   Opcode: 0x812a  
-  Cycles:
+  Cycles: 4
 
 - **CNZ bra:** Call bra if the Zero flag is reset.  
   Opcode: 0x813a  
-  Cycles:
+  Cycles: 4
 
 - **CLC bra:** Call bra if the Carry flag is set.  
   Opcode: 0x814a  
-  Cycles:
+  Cycles: 4
 
 - **CNC bra:** Call bra if the Carry flag is reset.  
   Opcode: 0x815a  
-  Cycles:
+  Cycles: 4
 
 - **CLO bra:** Call bra if the Overflow flag is set.  
   Opcode: 0x816a  
-  Cycles:
+  Cycles: 4
 
 - **CNO bra:** Call bra if the Overflow flag is reset.  
   Opcode: 0x817a  
-  Cycles:
+  Cycles: 4
 
 - **CLP bra:** Call bra if the Parity flag is set.  
   Opcode: 0x818a  
-  Cycles:
+  Cycles: 4
 
 - **CNP bra:** Call bra if the Parity flag is reset.  
   Opcode: 0x819a  
-  Cycles:
+  Cycles: 4
 
 - **CLN bra:** Call bra if the Negative flag is set.  
   Opcode: 0x81Aa  
-  Cycles:
+  Cycles: 4
 
 - **CNN bra:** Call bra if the Negative flag is reset.  
   Opcode: 0x81Ba  
-  Cycles:
+  Cycles: 4
 
 - **PUSH bra:** Push bra to the stack.  
   Opcode: 0x820a  
-  Cycles:
+  Cycles: 2
 
 - **POP bra:** Pop the top of the stack into bra.  
   Opcode: 0x820(a+3)  
-  Cycles:
+  Cycles: 2
 
 - **PEEK bra:** Load the top of the stack into bra without popping off the value.  
   Opcode: 0x820(a+6)  
-  Cycles:
+  Cycles: 2
 
 - **PUSH imm32:** Push imm32 to the stack.  
   Opcode: 0x8209  
-  Cycles:
+  Cycles: 4
 
 - **CLV:** Clear VRAM. Resets all bits in VRAM to 0.  
   Opcode: 0xFFFB  
-  Cycles:
+  Cycles: 2
 
 - **STOP:** Stop the CPU. Essentially a power-off message.  
   Opcode: 0xFFFC  
-  Cycles:
+  Cycles: 3
 
 - **EI:** Enable interrupts.  
   Opcode: 0xFFFD  
-  Cycles:
+  Cycles: 2
 
 - **DI:** Disable interrupts.  
   Opcode: 0xFFFE  
-  Cycles:
+  Cycles: 2
 
 - **HALT:** Halt the CPU, stopping CPU cycles until an external interrupt is received.  
   Opcode: 0xFFFF  
-  Cycles:
+  Cycles: 2
