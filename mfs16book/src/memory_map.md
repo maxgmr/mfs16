@@ -4,6 +4,8 @@ The MFS-16 has a 32-bit address bus used to address ROM, RAM and I/O. The start 
 
 In total, the MFS-16 has 8 MiB of ROM, 8 MiB of RAM, and 150 KiB of VRAM.
 
+Words and double words are stored as little-endian in ROM and RAM.
+
 | Start       | End         | Size    | Description                                                                                                                       |
 | ----------- | ----------- | ------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | 0x0000_0000 | 0x007F_FFFF | 8 MiB   | Read-only memory (ROM). Used for loaded programs currently being executed.                                                        |
