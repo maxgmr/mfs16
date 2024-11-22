@@ -31,3 +31,5 @@ A 16-bit virtual computer.
 - Change break conditions structure to be more toml-friendly (e.g. replace enums with structs with named fields)
 
 - Sound!
+
+- VRAM DMA
