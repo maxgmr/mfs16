@@ -6,7 +6,7 @@ Some programs may want to slow down the frame rate until the frame is ready to b
 
 When manual frame updates are enabled, the screen will not display the new VRAM state until the program writes to write-only address `0xFFFF_FFBB`. This triggers a manual frame update, updating the screen to reflect the new VRAM state.
 
-While manual frame updates prevent issues with flickering or invisible graphics, they can lead to choppy or inconsistent frames, so manual frame updates should only be enabled when needed.
+While manual frame updates prevent issues with flickering or invisible graphics, they can lead to choppy or inconsistent frames, so manual frame updates should only be enabled when needed. Ideally, programs should be aware of their timings and/or update the screen before the next frame.
 
 Manual frame updates can be disabled again by writing to the write-only address `0xFFFF_FFBC`.
 
