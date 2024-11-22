@@ -1,6 +1,6 @@
 # Introduction
 
-The MFS-16 is a system built around a virtual CPU. The project attempts to be an accurate virtual representation of a theoretical computing system that could be implemented as real hardware.
+The MFS-16 is a virtual computer, designed from scratch, with an original CPU instruction set and assembly language. The project attempts to be an accurate virtual representation of a theoretical computing system that could be implemented as real hardware.
 
 The instruction set, assembly language, and general system architecture are entirely original, with particular inspiration taken from the [Intel 8080](https://en.wikipedia.org/wiki/Intel_8080) and [Zilog Z80](https://en.wikipedia.org/wiki/Zilog_Z80) instruction sets.
 
