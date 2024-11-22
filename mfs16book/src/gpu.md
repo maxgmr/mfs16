@@ -6,13 +6,13 @@ The screen resolution is 640x480. Each pixel takes up 4 bits of VRAM, so VRAM is
 
 The MFS-16 has a display of 16 colours. Each pixel's 4 bits in VRAM denotes which palette colour that pixel is.
 
-![Default Colours](./image/default_colours.png "The default MFS-16 palette.")
-
-_The default MFS-16 palette._
-
 0x0 is the conventional background colour, and 0xF is the conventional foreground colour.
 
 The 16 colours can be anything, but by convention they map to the 16 standard ANSI terminal colours:
+
+![Default Colours](./image/default_colours.png "The default MFS-16 palette.")
+
+_The default MFS-16 palette._
 
 | VRAM Pixel Value | ANSI Colour    |
 | ---------------- | -------------- |
