@@ -21,6 +21,7 @@ use sdl2::{
 
 use crate::{arg_parser::Cli, config::UserConfig, debug::Debugger, palette::Rgb24Palette};
 
+// TODO add to config
 const SCALE: u32 = 2;
 
 const WINDOW_WIDTH: u32 = (DISPLAY_WIDTH as u32) * SCALE;
