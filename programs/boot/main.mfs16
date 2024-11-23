@@ -20,19 +20,27 @@ display_byte_x = 0x140:d; // 320 bytes wide
 vram_centre_x = 0xA0:d; // (320 bytes wide) / 2 = 60
 vram_centre_y = 0xF0:d; // (480 pixels high) / 2 = 240
 
-// Used for centreing the logo vertically.
+// Used for centring the logo.
 logo_x = 0x20:d; // 32 bytes wide
 logo_y = 0x40:d; // 64 bytes high
 
 half_l_x = 0x10:d;
 half_l_y = 0x20:d;
 
-// Used for centreing the test pattern vertically.
+// Used for centring the test pattern.
 test_pattern_x = 0x40:d; // 64 bytes wide (8 16-wide squares)
 test_pattern_y = 0x20:d; // 32 pixels high
 
 half_tp_x = 0x20:d;
 half_tp_y = 0x10:d;
+
+// Used for centring the text "MFS-16 Computing System".
+text_x = 0x45:d; // 23 chars * 3 byte width per char
+text_y = 0x08:d; // 8 rows per char
+
+half_tx_x = 0x22:d;
+half_tx_y = 0x04:d;
+
 
 // Keyboard interrupt handler
 0x0000_0200:d:
@@ -57,7 +65,51 @@ entry_point:
     call draw_logo;
 
 
-    // TODO Display MFS-16 text
+    // Display MFS-16 text
+    call centre_hl;
+    // Apply Y offset
+    push BC;
+    ld BC,half_tx_y;
+    mulu BC,row_len;
+    sub HL,BC;
+    pop BC;
+    // Apply X offset
+    sub HL,half_tx_x;
+
+    // Write text
+    push BC;
+    push DE;
+
+    ld BC,row_len;
+    ld DE,0x7777_7777:d;
+
+    call cap_m;
+    call cap_f;
+    call cap_s;
+    call hyphen;
+    call one;
+    call six;
+    call space;
+    call cap_c;
+    call o;
+    call m;
+    call p;
+    call u;
+    call t;
+    call i;
+    call n;
+    call g;
+    call space;
+    call cap_s;
+    call y;
+    call s;
+    call t;
+    call e;
+    call m;
+
+    pop BC;
+    pop DE;
+
 
     // Display test pattern
     call centre_hl;
@@ -66,6 +118,11 @@ entry_point:
     ld BC,half_tp_y;
     mulu BC,row_len;
     sub HL,BC;
+    // Move test pattern below text
+    ld BC,text_y;
+    add BC,40:d;
+    mulu BC,row_len;
+    add HL,BC;
     pop BC;
     // Apply X offset
     sub HL,half_tp_x;

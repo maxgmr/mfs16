@@ -1,0 +1,1750 @@
+jp font_end_loop;
+// HOW TO USE:
+// Set BC = row length.
+// Set DE = colour, e.g. for colour 4 set DE = 0x4444_4444.
+// Set HL = start index.
+
+vram_start = 0x0100_0000:d;
+// Characters are 3 bytes wide. (6 pixels; 5 for letter, 1 blank for space)
+char_width = 3:d;
+
+test_print:
+    push BC;
+    push DE;
+
+    // Title
+    ld DE,0xCCCC_CCCC:d;
+
+    call five;
+    call x;
+    call seven;
+    call space;
+    call cap_b;
+    call a;
+    call s;
+    call i;
+    call c;
+    call space;
+    call cap_f;
+    call o;
+    call n;
+    call t;
+    call space;
+    call cap_t;
+    call e;
+    call s;
+    call t;
+    call space;
+    call cap_p;
+    call r;
+    call i;
+    call n;
+    call t;
+    call newline;
+    call newline;
+
+    // Test chars
+    ld DE,0xFFFF_FFFF:d;
+
+    call cap_a;
+    call a;
+    call cap_b;
+    call b;
+    call cap_c;
+    call c;
+    call cap_d;
+    call d;
+    call cap_e;
+    call e;
+    call cap_f;
+    call f;
+    call cap_g;
+    call g;
+    call cap_h;
+    call h;
+    call cap_i;
+    call i;
+    call cap_j;
+    call j;
+    call cap_k;
+    call k;
+    call cap_l;
+    call l;
+    call cap_m;
+    call m;
+    call cap_n;
+    call n;
+    call cap_o;
+    call o;
+    call cap_p;
+    call p;
+    call cap_q;
+    call q;
+    call cap_r;
+    call r;
+    call cap_s;
+    call s;
+    call cap_t;
+    call t;
+    call cap_u;
+    call u;
+    call cap_v;
+    call v;
+    call cap_w;
+    call w;
+    call cap_x;
+    call x;
+    call cap_y;
+    call y;
+    call cap_z;
+    call z;
+    call newline;
+
+    call bang;
+    call dbl_quote;
+    call pound;
+    call dollar;
+    call percent;
+    call ampersand;
+    call single_quote;
+    call open_paren;
+    call close_paren;
+    call asterisk;
+    call plus;
+    call comma;
+    call hyphen;
+    call period;
+    call slash;
+    call zero;
+    call one;
+    call two;
+    call three;
+    call four;
+    call five;
+    call six;
+    call seven;
+    call eight;
+    call nine;
+    call colon;
+    call semicolon;
+    call less_than;
+    call equals;
+    call greater_than;
+    call question;
+    call at_sign;
+    call open_bracket;
+    call backslash;
+    call close_bracket;
+    call caret;
+    call underscore;
+    call backtick;
+    call open_brace;
+    call bar;
+    call close_brace;
+    call tilde;
+
+    call newline;
+    call newline;
+
+    pop DE;
+    pop BC;
+    ret;
+
+// ------- LETTER FUNCTIONS -------
+
+newline:
+    push BC;
+    push DE;
+    // Go to next line
+    mulu BC,9:d;
+    call next_line;
+
+    // Move cursor to start of next line
+    ld DE,HL;
+    sub DE,vram_start;
+    divu DE,BC;
+    sub HL,BC;
+
+    pop DE;
+    pop BC;
+    ret;
+
+backspace:
+    // Go to previous char
+    call back_char;
+    // Overwrite with blank
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call charline_top;
+    ret;
+
+cap_a:
+    call write_00100;
+    call write_01010;
+    call write_10001;
+    call write_10001;
+    call write_11111;
+    call write_10001;
+    call write_10001;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+a:
+    call write_00000;
+    call write_00000;
+    call write_01110;
+    call write_00001;
+    call write_01111;
+    call write_10001;
+    call write_01111;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_b:
+    call write_11110;
+    call write_10001;
+    call write_10001;
+    call write_11110;
+    call write_10001;
+    call write_10001;
+    call write_11110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+b:
+    call write_10000;
+    call write_10000;
+    call write_11110;
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_01110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_c:
+    call write_00111;
+    call write_01000;
+    call write_10000;
+    call write_10000;
+    call write_10000;
+    call write_01000;
+    call write_00111;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+c:
+    call write_00000;
+    call write_00000;
+    call write_01111;
+    call write_10000;
+    call write_10000;
+    call write_10000;
+    call write_01111;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_d:
+    call write_11100;
+    call write_10010;
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_10010;
+    call write_11100;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+d:
+    call write_00001;
+    call write_00001;
+    call write_01111;
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_01110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_e:
+    call write_11111;
+    call write_10000;
+    call write_10000;
+    call write_11110;
+    call write_10000;
+    call write_10000;
+    call write_11111;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+e:
+    call write_00000;
+    call write_00000;
+    call write_01110;
+    call write_10001;
+    call write_11111;
+    call write_10000;
+    call write_01111;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_f:
+    call write_11111;
+    call write_10000;
+    call write_10000;
+    call write_11110;
+    call write_10000;
+    call write_10000;
+    call write_10000;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+f:
+    call write_00000;
+    call write_00011;
+    call write_00100;
+    call write_00100;
+    call write_11111;
+    call write_00100;
+    call write_00100;
+    call write_11000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_g:
+    call write_01110;
+    call write_10001;
+    call write_10000;
+    call write_10000;
+    call write_10011;
+    call write_10001;
+    call write_01111;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+g:
+    call write_00000;
+    call write_00000;
+    call write_01110;
+    call write_10001;
+    call write_10001;
+    call write_01111;
+    call write_00001;
+    call write_01110;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_h:
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_11111;
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+h:
+    call write_10000;
+    call write_10000;
+    call write_10000;
+    call write_11110;
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_i:
+    call write_11111;
+    call write_00100;
+    call write_00100;
+    call write_00100;
+    call write_00100;
+    call write_00100;
+    call write_11111;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+i:
+    call write_00000;
+    call write_00100;
+    call write_00000;
+    call write_01100;
+    call write_00100;
+    call write_00100;
+    call write_01110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_j:
+    call write_11111;
+    call write_00010;
+    call write_00010;
+    call write_00010;
+    call write_00010;
+    call write_00010;
+    call write_11100;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+j:
+    call write_00000;
+    call write_00100;
+    call write_00000;
+    call write_01100;
+    call write_00100;
+    call write_00100;
+    call write_00100;
+    call write_11000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_k:
+    call write_10001;
+    call write_10010;
+    call write_10100;
+    call write_11000;
+    call write_10100;
+    call write_10010;
+    call write_10001;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+k:
+    call write_10000;
+    call write_10000;
+    call write_10001;
+    call write_10010;
+    call write_10100;
+    call write_11010;
+    call write_10001;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_l:
+    call write_10000;
+    call write_10000;
+    call write_10000;
+    call write_10000;
+    call write_10000;
+    call write_10000;
+    call write_11111;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+l:
+    call write_11000;
+    call write_01000;
+    call write_01000;
+    call write_01000;
+    call write_01000;
+    call write_01000;
+    call write_00110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_m:
+    call write_10001;
+    call write_11011;
+    call write_11011;
+    call write_10101;
+    call write_10101;
+    call write_10001;
+    call write_10001;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+m:
+    call write_00000;
+    call write_00000;
+    call write_11010;
+    call write_10101;
+    call write_10101;
+    call write_10101;
+    call write_10101;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_n:
+    call write_10001;
+    call write_10001;
+    call write_11001;
+    call write_10101;
+    call write_10011;
+    call write_10001;
+    call write_10001;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+n:
+    call write_00000;
+    call write_00000;
+    call write_10110;
+    call write_11001;
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_o:
+    call write_01110;
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_01110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+o:
+    call write_00000;
+    call write_00000;
+    call write_01110;
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_01110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_p:
+    call write_11110;
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_11110;
+    call write_10000;
+    call write_10000;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+p:
+    call write_00000;
+    call write_00000;
+    call write_01110;
+    call write_10001;
+    call write_10001;
+    call write_11110;
+    call write_10000;
+    call write_10000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_q:
+    call write_01110;
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_10101;
+    call write_01110;
+    call write_00011;
+    call next_char;
+    call charline_top;
+    ret;
+
+q:
+    call write_00000;
+    call write_00000;
+    call write_01110;
+    call write_10001;
+    call write_10001;
+    call write_01111;
+    call write_00001;
+    call write_00001;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_r:
+    call write_11110;
+    call write_10001;
+    call write_10001;
+    call write_11110;
+    call write_10100;
+    call write_10010;
+    call write_10001;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+r:
+    call write_00000;
+    call write_00000;
+    call write_10110;
+    call write_11001;
+    call write_10000;
+    call write_10000;
+    call write_10000;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_s:
+    call write_01110;
+    call write_10001;
+    call write_10000;
+    call write_01110;
+    call write_00001;
+    call write_10001;
+    call write_01110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+s:
+    call write_00000;
+    call write_00000;
+    call write_01111;
+    call write_10000;
+    call write_01110;
+    call write_00001;
+    call write_11110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_t:
+    call write_11111;
+    call write_00100;
+    call write_00100;
+    call write_00100;
+    call write_00100;
+    call write_00100;
+    call write_00100;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+t:
+    call write_10000;
+    call write_10000;
+    call write_10000;
+    call write_11100;
+    call write_10000;
+    call write_10000;
+    call write_01111;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_u:
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_01110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+u:
+    call write_00000;
+    call write_00000;
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_10011;
+    call write_01101;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_v:
+    call write_10001;
+    call write_10001;
+    call write_01010;
+    call write_01010;
+    call write_01010;
+    call write_00100;
+    call write_00100;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+v:
+    call write_00000;
+    call write_00000;
+    call write_10001;
+    call write_10001;
+    call write_01010;
+    call write_01010;
+    call write_00100;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_w:
+    call write_10001;
+    call write_10001;
+    call write_10101;
+    call write_10101;
+    call write_11011;
+    call write_11011;
+    call write_10001;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+w:
+    call write_00000;
+    call write_00000;
+    call write_10101;
+    call write_10101;
+    call write_10101;
+    call write_01010;
+    call write_01010;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_x:
+    call write_10001;
+    call write_01010;
+    call write_01010;
+    call write_00100;
+    call write_01010;
+    call write_01010;
+    call write_10001;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+x:
+    call write_00000;
+    call write_00000;
+    call write_10001;
+    call write_01010;
+    call write_00100;
+    call write_01010;
+    call write_10001;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_y:
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_01111;
+    call write_00001;
+    call write_00001;
+    call write_11110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+y:
+    call write_00000;
+    call write_00000;
+    call write_10001;
+    call write_10001;
+    call write_10001;
+    call write_01111;
+    call write_00001;
+    call write_11110;
+    call next_char;
+    call charline_top;
+    ret;
+
+cap_z:
+    call write_11111;
+    call write_00001;
+    call write_00010;
+    call write_00100;
+    call write_01000;
+    call write_10000;
+    call write_11111;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+z:
+    call write_00000;
+    call write_00000;
+    call write_11111;
+    call write_00010;
+    call write_00100;
+    call write_01000;
+    call write_11111;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+space:
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+bang:
+    call write_00100;
+    call write_00100;
+    call write_00100;
+    call write_00100;
+    call write_00100;
+    call write_00000;
+    call write_00100;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+dbl_quote:
+    call write_01010;
+    call write_01010;
+    call write_01010;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+pound:
+    call write_01010;
+    call write_01010;
+    call write_11111;
+    call write_01010;
+    call write_11111;
+    call write_01010;
+    call write_01010;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+dollar:
+    call write_00100;
+    call write_01111;
+    call write_10100;
+    call write_01110;
+    call write_00101;
+    call write_11110;
+    call write_00100;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+percent:
+    call write_01001;
+    call write_01010;
+    call write_00010;
+    call write_00100;
+    call write_01000;
+    call write_01010;
+    call write_10010;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+ampersand:
+    call write_01110;
+    call write_10000;
+    call write_01000;
+    call write_01111;
+    call write_10010;
+    call write_10001;
+    call write_01110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+single_quote:
+    call write_00100;
+    call write_00100;
+    call write_00100;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+open_paren:
+    call write_00110;
+    call write_01000;
+    call write_01000;
+    call write_01000;
+    call write_01000;
+    call write_01000;
+    call write_00110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+close_paren:
+    call write_01100;
+    call write_00010;
+    call write_00010;
+    call write_00010;
+    call write_00010;
+    call write_00010;
+    call write_01100;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+asterisk:
+    call write_01010;
+    call write_00100;
+    call write_01010;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+plus:
+    call write_00000;
+    call write_00100;
+    call write_00100;
+    call write_11111;
+    call write_00100;
+    call write_00100;
+    call write_00000;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+comma:
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00100;
+    call write_00100;
+    call write_01000;
+    call next_char;
+    call charline_top;
+    ret;
+
+hyphen:
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_01110;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+period:
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00100;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+slash:
+    call write_00001;
+    call write_00010;
+    call write_00010;
+    call write_00100;
+    call write_01000;
+    call write_01000;
+    call write_10000;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+zero:
+    call write_01110;
+    call write_10001;
+    call write_10011;
+    call write_10101;
+    call write_11001;
+    call write_10001;
+    call write_01110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+one:
+    call write_00100;
+    call write_01100;
+    call write_10100;
+    call write_00100;
+    call write_00100;
+    call write_00100;
+    call write_11111;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+two:
+    call write_01110;
+    call write_10001;
+    call write_10001;
+    call write_00010;
+    call write_00100;
+    call write_01000;
+    call write_11111;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+three:
+    call write_11111;
+    call write_00010;
+    call write_00100;
+    call write_01110;
+    call write_00001;
+    call write_00001;
+    call write_11110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+four:
+    call write_01010;
+    call write_01010;
+    call write_10010;
+    call write_11111;
+    call write_00010;
+    call write_00010;
+    call write_00010;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+five:
+    call write_11111;
+    call write_10000;
+    call write_10000;
+    call write_01110;
+    call write_00001;
+    call write_10001;
+    call write_01110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+six:
+    call write_01110;
+    call write_10001;
+    call write_10000;
+    call write_11110;
+    call write_10001;
+    call write_10001;
+    call write_01110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+seven:
+    call write_11111;
+    call write_00001;
+    call write_00010;
+    call write_11111;
+    call write_00100;
+    call write_01000;
+    call write_01000;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+eight:
+    call write_01110;
+    call write_10001;
+    call write_10001;
+    call write_01110;
+    call write_10001;
+    call write_10001;
+    call write_01110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+nine:
+    call write_01110;
+    call write_10001;
+    call write_10001;
+    call write_01111;
+    call write_00001;
+    call write_00001;
+    call write_11110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+colon:
+    call write_00000;
+    call write_00100;
+    call write_00100;
+    call write_00000;
+    call write_00000;
+    call write_00100;
+    call write_00100;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+semicolon:
+    call write_00000;
+    call write_00100;
+    call write_00100;
+    call write_00000;
+    call write_00000;
+    call write_00100;
+    call write_00100;
+    call write_01000;
+    call next_char;
+    call charline_top;
+    ret;
+
+less_than:
+    call write_00001;
+    call write_00010;
+    call write_00100;
+    call write_01000;
+    call write_00100;
+    call write_00010;
+    call write_00001;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+equals:
+    call write_00000;
+    call write_00000;
+    call write_01110;
+    call write_00000;
+    call write_01110;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+greater_than:
+    call write_10000;
+    call write_01000;
+    call write_00100;
+    call write_00010;
+    call write_00100;
+    call write_01000;
+    call write_10000;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+question:
+    call write_01110;
+    call write_10001;
+    call write_10001;
+    call write_00010;
+    call write_00100;
+    call write_00000;
+    call write_00100;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+at_sign:
+    call write_01110;
+    call write_10001;
+    call write_10011;
+    call write_10101;
+    call write_10111;
+    call write_10000;
+    call write_01111;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+open_bracket:
+    call write_01110;
+    call write_01000;
+    call write_01000;
+    call write_01000;
+    call write_01000;
+    call write_01000;
+    call write_01110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+backslash:
+    call write_10000;
+    call write_01000;
+    call write_01000;
+    call write_00100;
+    call write_00010;
+    call write_00010;
+    call write_00001;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+close_bracket:
+    call write_01110;
+    call write_00010;
+    call write_00010;
+    call write_00010;
+    call write_00010;
+    call write_00010;
+    call write_01110;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+caret:
+    call write_00100;
+    call write_01010;
+    call write_01010;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+underscore:
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_11111;
+    call next_char;
+    call charline_top;
+    ret;
+
+backtick:
+    call write_01000;
+    call write_00100;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+open_brace:
+    call write_00010;
+    call write_00100;
+    call write_00100;
+    call write_01000;
+    call write_00100;
+    call write_00100;
+    call write_00010;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+bar:
+    call write_00100;
+    call write_00100;
+    call write_00100;
+    call write_00100;
+    call write_00100;
+    call write_00100;
+    call write_00100;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+close_brace:
+    call write_01000;
+    call write_00100;
+    call write_00100;
+    call write_00010;
+    call write_00100;
+    call write_00100;
+    call write_01000;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+tilde:
+    call write_00000;
+    call write_01000;
+    call write_10101;
+    call write_00010;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call write_00000;
+    call next_char;
+    call charline_top;
+    ret;
+
+unknown:
+    call write_11111;
+    call write_11111;
+    call write_11111;
+    call write_11111;
+    call write_11111;
+    call write_11111;
+    call write_11111;
+    call write_11111;
+    call next_char;
+    call charline_top;
+    ret;
+
+    
+// ------- END OF LETTERS -------
+
+charline_top:
+    sub HL,BC;
+    sub HL,BC;
+    sub HL,BC;
+    sub HL,BC;
+    sub HL,BC;
+    sub HL,BC;
+    sub HL,BC;
+    sub HL,BC;
+    ret;
+
+next_line:
+    add HL,BC;
+    ret;
+
+next_char:
+    add HL,char_width;
+    ret;
+
+back_char:
+    sub HL,char_width;
+    ret;
+
+write_00000:
+    push BC;
+    ld BC,0x00_0000:d;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_00001:
+    push BC;
+    ld BC,0xF0_0000:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_00010:
+    push BC;
+    ld BC,0x00_0F00:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_00011:
+    push BC;
+    ld BC,0xF0_0F00:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_00100:
+    push BC;
+    ld BC,0x00_F000:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_00101:
+    push BC;
+    ld BC,0xF0_F000:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_00110:
+    push BC;
+    ld BC,0x00_FF00:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_00111:
+    push BC;
+    ld BC,0xF0_FF00:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_01000:
+    push BC;
+    ld BC,0x00_000F:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_01001:
+    push BC;
+    ld BC,0xF0_000F:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_01010:
+    push BC;
+    ld BC,0x00_0F0F:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_01011:
+    push BC;
+    ld BC,0xF0_0F0F:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_01100:
+    push BC;
+    ld BC,0x00_F00F:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_01101:
+    push BC;
+    ld BC,0xF0_F00F:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_01110:
+    push BC;
+    ld BC,0x00_FF0F:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_01111:
+    push BC;
+    ld BC,0xF0_FF0F:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_10000:
+    push BC;
+    ld BC,0x00_00F0:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_10001:
+    push BC;
+    ld BC,0xF0_00F0:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_10010:
+    push BC;
+    ld BC,0x00_0FF0:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_10011:
+    push BC;
+    ld BC,0xF0_0FF0:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_10100:
+    push BC;
+    ld BC,0x00_F0F0:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_10101:
+    push BC;
+    ld BC,0xF0_F0F0:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_10110:
+    push BC;
+    ld BC,0x00_FFF0:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_10111:
+    push BC;
+    ld BC,0xF0_FFF0:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_11000:
+    push BC;
+    ld BC,0x00_00FF:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_11001:
+    push BC;
+    ld BC,0xF0_00FF:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_11010:
+    push BC;
+    ld BC,0x00_0FFF:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_11011:
+    push BC;
+    ld BC,0xF0_0FFF:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_11100:
+    push BC;
+    ld BC,0x00_F0FF:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_11101:
+    push BC;
+    ld BC,0xF0_F0FF:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_11110:
+    push BC;
+    ld BC,0x00_FFFF:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+write_11111:
+    push BC;
+    ld BC,0xF0_FFFF:d;
+    and BC,DE;
+    vld [HL],BC;
+    pop BC;
+    call next_line;
+    ret;
+
+font_end_loop:
+    halt;
+    jp font_end_loop;
