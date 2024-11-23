@@ -1,0 +1,21 @@
+/*
+    MFS-16 BOOT PROGRAM
+
+    Presents a list of found programs, allowing the user to select which program they
+    wish to boot.
+*/
+jp entry_point;
+
+// Keyboard interrupt handler
+0x0000_0200:d:
+    // TODO
+reti;
+
+entry_point:
+    // TODO display logo
+    // TODO display test pattern
+    // TODO load list of programs
+
+main_loop:
+    halt;
+jp main_loop;
