@@ -1,6 +1,8 @@
 // The MFS-16 colour test pattern.
 row_len = 0x140:d;
 
+jp test_pattern_end;
+
 // Set HL = top-left corner of test pattern location on screen.
 // Messes with A.
 draw_test_pattern:
@@ -147,3 +149,5 @@ draw_row:
     vldd [HL],BC;
     add HL,DE;
 ret;
+
+test_pattern_end:

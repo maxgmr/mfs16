@@ -6,6 +6,27 @@
 */
 jp entry_point;
 
+// CONSTANTS
+// Some values are calculated statically. This is uglier but faster.
+vram_start = 0x0100_0000:d;
+row_len = 0x140:d;
+
+display_px_x = 0x280:d; // 640 pixels wide
+display_px_y = 0x1E0:d; // 480 pixels high
+
+display_byte_x = 0x140:d; // 320 bytes wide
+
+// The centre of the screen in terms of VRAM indicies.
+vram_centre_x = 0xA0:d; // (320 bytes wide) / 2 = 60
+vram_centre_y = 0xF0:d; // (480 pixels high) / 2 = 240
+
+// Used for centreing the test pattern vertically.
+test_pattern_x = 0x40:d; // 64 bytes wide (8 16-wide squares)
+test_pattern_y = 0x20:d; // 32 pixels high
+
+half_tp_x = 0x20:d;
+half_tp_y = 0x10:d;
+
 // Keyboard interrupt handler
 0x0000_0200:d:
     // TODO
@@ -13,9 +34,29 @@ reti;
 
 entry_point:
     // TODO display logo
-    // TODO display test pattern
+
+    // Display test pattern
+    call centre_hl;
+    // Apply test pattern offset to centre
+    push BC;
+    ld BC,row_len;
+    mulu BC,half_tp_y;
+    sub HL,BC;
+    pop BC;
+    sub HL,half_tp_x;
+    call draw_test_pattern;
+
     // TODO load list of programs
 
 main_loop:
     halt;
 jp main_loop;
+
+// Position HL in the centre of VRAM.
+// Modifies HL (obviously).
+centre_hl:
+    ld HL,vram_centre_y;
+    mulu HL,row_len;
+    add HL,vram_start;
+    add HL,vram_centre_x;
+ret;

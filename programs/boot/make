@@ -1,4 +1,4 @@
 #!/bin/bash
 
-rm -f programs/boot
-cargo r -p mfs16assembler programs/boot/main.mfs16 programs/boot/logo.mfs16 -o programs/boot
+rm -f programs/boot.bin
+cargo r -p mfs16assembler programs/boot/test_pattern.mfs16 programs/boot/main.mfs16 programs/boot/logo.mfs16 -o programs/boot.bin
