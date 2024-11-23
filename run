@@ -1,0 +1,3 @@
+#!/bin/bash
+
+cargo r --release -p mfs16desktop -- $1 $2
