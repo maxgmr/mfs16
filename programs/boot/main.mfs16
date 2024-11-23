@@ -20,6 +20,13 @@ display_byte_x = 0x140:d; // 320 bytes wide
 vram_centre_x = 0xA0:d; // (320 bytes wide) / 2 = 60
 vram_centre_y = 0xF0:d; // (480 pixels high) / 2 = 240
 
+// Used for centreing the logo vertically.
+logo_x = 0x20:d; // 32 bytes wide
+logo_y = 0x40:d; // 64 bytes high
+
+half_l_x = 0x10:d;
+half_l_y = 0x20:d;
+
 // Used for centreing the test pattern vertically.
 test_pattern_x = 0x40:d; // 64 bytes wide (8 16-wide squares)
 test_pattern_y = 0x20:d; // 32 pixels high
@@ -34,19 +41,40 @@ reti;
 
 entry_point:
     // TODO display logo
+    call centre_hl;
+    // Apply Y offset
+    // Move 1.5 * logo height above screen centre
+    push BC;
+    ld BC,logo_y;
+    add BC,half_l_y;
+    mulu BC,row_len;
+    sub HL,BC;
+    pop BC;
+
+    // Apply X offset
+    sub HL,half_l_x;
+
+    call draw_logo;
+
+
+    // TODO Display MFS-16 text
 
     // Display test pattern
     call centre_hl;
-    // Apply test pattern offset to centre
+    // Apply Y offset
     push BC;
-    ld BC,row_len;
-    mulu BC,half_tp_y;
+    ld BC,half_tp_y;
+    mulu BC,row_len;
     sub HL,BC;
     pop BC;
+    // Apply X offset
     sub HL,half_tp_x;
+
     call draw_test_pattern;
 
     // TODO load list of programs
+
+    // TODO enable keyboard interrupts
 
 main_loop:
     halt;

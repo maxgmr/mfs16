@@ -1,4 +1,10 @@
 // The MFS-16 logo.
+logo_height = 64:d;
+logo_width = 64:d;
+
+num_hl_incs_per_row = 32:d;
+logo_screen_row_len = 0x140:d;
+
 zz = 0x00:b;
 zr = 0x09:b;
 zb = 0x0C:b;
@@ -22,6 +28,67 @@ yb = 0xBC:b;
 gg = 0xAA:b;
 zg = 0x0A:b;
 gz = 0xA0:b;
+
+// Set HL = top-left corner of logo location on screen.
+draw_logo:
+    push BC;
+    push DE;
+    push HL;
+
+    ld DE,logo_data;
+
+    // For each row...
+    ld BC,logo_height;
+    draw_logo_row_loop:
+        pss BC;
+        jpz draw_logo_row_loop_end;
+
+        // ...draw that row.
+        call draw_logo_row;
+
+        // Move HL back to start of row.
+        sub HL,num_hl_incs_per_row;
+
+        // Go to the next row.
+        add HL,logo_screen_row_len;
+
+        dec BC;
+        jp draw_logo_row_loop;
+    draw_logo_row_loop_end:
+
+    pop HL;
+    pop DE;
+    pop BC;
+ret;
+
+// Draw a row of the MFS-16 logo.
+draw_logo_row:
+    push BC;
+
+    // For each group of 8 pixels in this row...
+    ld BC,logo_width;
+    push HL;
+    ld HL,BC;
+    divu HL,8:d;
+    ld BC,HL;
+    pop HL;
+    draw_logo_pixel_loop:
+        pss BC;
+        jpz draw_logo_pixel_loop_end;
+        push BC;
+
+        // ...read the next 8 pixels data from ROM
+        ldi C,[DE];
+        ldi B,[DE];
+        vldi [HL],BC;
+
+        pop BC;
+        dec BC;
+        jp draw_logo_pixel_loop;
+    draw_logo_pixel_loop_end:
+
+    pop BC;
+ret;
 
 0x0000_0300:d:
 logo_data:
