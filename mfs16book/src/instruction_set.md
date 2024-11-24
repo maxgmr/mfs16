@@ -4,6 +4,8 @@ This is the list of MFS-16 CPU instructions. Each opcode is 16 bits + the length
 
 Instructions do not affect CPU flags unless otherwise specified. Any flags omitted by an instruction's list of affected flags are unaffected by the instruction.
 
+Conditional instructions can take different amounts of cycles, depending on whether or not the condition is satisfied.
+
 "iff" is short for "if and only if".
 
 ## Legend
