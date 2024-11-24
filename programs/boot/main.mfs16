@@ -124,21 +124,8 @@ entry_point:
     call newline;
     add HL,logo_x_padding;
 
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
+    ld A,15:w;
+    call hyphen_line;
     call newline;
     add HL,logo_x_padding;
 
@@ -159,8 +146,29 @@ entry_point:
     call newline;
     call newline;
 
+    // Padding
+    inc HL;
     ld A,27:w;
     call hyphen_line;
+
+    // Print memcheck OK message
+    call newline;
+    // Padding
+    inc HL;
+    ld DE,0x7777_7777:d;
+    call m;
+    call e;
+    call m;
+    call c;
+    call h;
+    call e;
+    call c;
+    call k;
+    call space;
+    ld DE,0x2222_2222:d;
+    call cap_o;
+    call cap_k;
+    call newline;
 
     pop DE;
     pop BC;
@@ -355,7 +363,7 @@ handle_ram_check:
     jp memcheck_fail;
     ram_check_passed:
     // Bright green
-    ld DE,0xAAAA_AAAA:d;
+    ld DE,0x2222_2222:d;
     call cap_o;
     call cap_k;
     call bang;
@@ -430,8 +438,8 @@ handle_rom_check:
     ld DE,0xFFFF_FFFF:d;
     jp memcheck_fail;
     rom_check_passed:
-    // Bright green
-    ld DE,0xAAAA_AAAA:d;
+    // Green
+    ld DE,0x2222_2222:d;
     call cap_o;
     call cap_k;
     call bang;
@@ -456,11 +464,14 @@ memcheck_fail:
     call newline;
     call newline;
 
+    // Padding
+    inc HL;
     ld A,27:w;
     call hyphen_line;
 
     call newline;
 
+    inc HL;
     call b;
     call o;
     call o;
@@ -489,6 +500,34 @@ memcheck_fail:
     call a;
     call i;
     call l;
+    call newline;
+
+    inc HL;
+    // Bright red
+    ld DE,0x9999_9999:d;
+    call cap_d;
+    call period;
+    call cap_o;
+    call period;
+    call cap_a;
+    call period;
+    call space;
+    call hyphen;
+    call space;
+    call cap_r;
+    call period;
+    call cap_i;
+    call period;
+    call cap_p;
+    call period;
+    call space;
+    ld DE,0xFFFF_FFFF:d;
+    call open_paren;
+    call asterisk;
+    call o;
+    call asterisk;
+    call close_paren;
+
 
 memcheck_fail_loop:
     halt;
