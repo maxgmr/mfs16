@@ -71,21 +71,8 @@ entry_point:
     call newline;
     add HL,logo_x_padding;
 
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
-    call hyphen;
+    ld A,15:w;
+    call hyphen_line;
     call newline;
     add HL,logo_x_padding;
 
@@ -159,7 +146,24 @@ entry_point:
     pop BC;
 
     // Test pattern
+    // Extra X padding
+    add HL,6:d;
     call draw_test_pattern;
+
+    push BC;
+    push DE;
+    // Set row len and colour
+    ld BC,row_len;
+    ld DE,0xFFFF_FFFF:d;
+
+    call newline;
+    call newline;
+
+    ld A,27:w;
+    call hyphen_line;
+
+    pop DE;
+    pop BC;
 
     // TODO load program header
 
@@ -318,7 +322,7 @@ handle_ram_check:
     call d;
     call bang;
     ld DE,0xFFFF_FFFF:d;
-    jp ram_check_done;
+    jp memcheck_fail;
     bad_ram_2:
     // Bright red
     ld DE,0x9999_9999:d;
@@ -348,7 +352,7 @@ handle_ram_check:
     call d;
     call bang;
     ld DE,0xFFFF_FFFF:d;
-    jp ram_check_done;
+    jp memcheck_fail;
     ram_check_passed:
     // Bright green
     ld DE,0xAAAA_AAAA:d;
@@ -394,7 +398,7 @@ handle_rom_check:
     call e;
     call bang;
     ld DE,0xFFFF_FFFF:d;
-    jp rom_check_done;
+    jp memcheck_fail;
     bad_rom_2:
     // Bright red
     ld DE,0x9999_9999:d;
@@ -424,7 +428,7 @@ handle_rom_check:
     call e;
     call bang;
     ld DE,0xFFFF_FFFF:d;
-    jp rom_check_done;
+    jp memcheck_fail;
     rom_check_passed:
     // Bright green
     ld DE,0xAAAA_AAAA:d;
@@ -434,3 +438,58 @@ handle_rom_check:
     ld DE,0xFFFF_FFFF:d;
     rom_check_done:
 ret;
+
+// Set A = number of hyphens to print
+hyphen_line:
+    pss A;
+    hyphen_line_loop:
+        jpz hyphen_line_loop_end;
+        call hyphen; 
+        dec A;
+        jp hyphen_line_loop;
+    hyphen_line_loop_end:
+ret;
+
+memcheck_fail:
+    call newline;
+    call newline;
+    call newline;
+    call newline;
+
+    ld A,27:w;
+    call hyphen_line;
+
+    call newline;
+
+    call b;
+    call o;
+    call o;
+    call t;
+    call space;
+    call a;
+    call b;
+    call o;
+    call r;
+    call t;
+    call e;
+    call d;
+    call space;
+    call hyphen;
+    call space;
+    call m;
+    call e;
+    call m;
+    call c;
+    call h;
+    call e;
+    call c;
+    call k;
+    call space;
+    call f;
+    call a;
+    call i;
+    call l;
+
+memcheck_fail_loop:
+    halt;
+jp memcheck_fail_loop;
