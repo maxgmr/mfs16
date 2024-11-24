@@ -125,12 +125,12 @@ pub fn run_emulator(
                 // Do debugging stuff if the instruction is done
                 if (debug || cpu_debug) && computer.cpu.instr_is_done() {
                     if hit_breakpoint {
-                        if !debugger.add_state_after_breakpoint(&computer) {
+                        if !debugger.add_state_after_breakpoint(&mut computer) {
                             emu_should_quit.store(true, Ordering::SeqCst);
                             break;
                         }
                     } else {
-                        debugger.add_state(&computer);
+                        debugger.add_state(&mut computer);
                         if debugger.criteria.is_satisfied(&computer) {
                             hit_breakpoint = true;
                         }

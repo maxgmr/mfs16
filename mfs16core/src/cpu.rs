@@ -206,20 +206,20 @@ impl Cpu {
 
     /// Read a single byte from MMU at the program counter, advancing the program counter
     /// accordingly.
-    pub fn read_next_byte(&mut self, mmu: &Mmu) {
+    pub fn read_next_byte(&mut self, mmu: &mut Mmu) {
         self.last_byte = mmu.read_byte(self.pc.address());
         self.pc.wrapping_inc();
     }
 
     /// Read a single word from MMU at the program counter, advancing the program counter
     /// accordingly.
-    pub fn read_next_word(&mut self, mmu: &Mmu) {
+    pub fn read_next_word(&mut self, mmu: &mut Mmu) {
         self.update_last_word(mmu.read_word(self.pc.address()));
         self.pc.wrapping_add(2);
     }
 
     /// Read a single word from MMU pointed to by the provided address.
-    fn read_word_at_addr(&mut self, mmu: &Mmu, addr: u32) {
+    fn read_word_at_addr(&mut self, mmu: &mut Mmu, addr: u32) {
         self.update_last_word(mmu.read_word(addr));
     }
 

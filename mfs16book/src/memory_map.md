@@ -11,6 +11,7 @@ Words and double words are stored as little-endian in ROM and RAM.
 | 0x0000_0000 | 0x007F_FFFF | 8 MiB   | Read-only memory (ROM). Used for loaded programs currently being executed.                                                        |
 | 0x0080_0000 | 0x00FF_FFFF | 8 MiB   | Random-access memory (RAM). General-purpose memory which can be read from or written to.                                          |
 | 0x0100_0000 | 0x0102_5800 | 150 KiB | Video RAM (VRAM). Used for setting the pixels of the screen.                                                                      |
+| 0xFFFF_FFBA | 0xFFFF_FFBA | 1 B     | Error register. Write-only. Each bit corresponds to a triggered non-fatal error.                                                  |
 | 0xFFFF_FFBB | 0xFFFF_FFBB | 1 B     | Manual frame update address. Write-only. Write to this address to send a manual frame update.                                     |
 | 0xFFFF_FFBC | 0xFFFF_FFBC | 1 B     | Disable manual frame updates address. Write-only. Write to this address to disable manual frame updates.                          |
 | 0xFFFF_FFBD | 0xFFFF_FFBD | 1 B     | Enable manual frame updates address. Write-only. Write to this address to enable manual frame updates.                            |

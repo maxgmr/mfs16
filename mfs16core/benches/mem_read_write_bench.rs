@@ -7,7 +7,7 @@ pub fn read_next_word_benchmark(c: &mut Criterion) {
 
     // Loop reading memory
     c.bench_function("read next word", |b| {
-        b.iter(|| test_c.cpu.read_next_word(&test_c.mmu))
+        b.iter(|| test_c.cpu.read_next_word(&mut test_c.mmu))
     });
 }
 

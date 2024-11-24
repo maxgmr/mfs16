@@ -360,7 +360,7 @@ fn ld_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
 }
 
 #[inline(always)]
-fn ld_ra_imm16(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
+fn ld_ra_imm16(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
         2 => cpu.set_reg(ra, cpu.last_word),
@@ -378,7 +378,7 @@ fn ld_bra_imm16(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
 }
 
 #[inline(always)]
-fn ld_bra_imm32(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32) {
+fn ld_bra_imm32(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
         2 => cpu.read_next_word(mmu),
@@ -388,7 +388,7 @@ fn ld_bra_imm32(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32) {
 }
 
 #[inline(always)]
-fn ld_vra_imm8(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8) {
+fn ld_vra_imm8(cpu: &mut Cpu, mmu: &mut Mmu, vra: Reg8) {
     match cpu.step_num {
         1 => cpu.read_next_byte(mmu),
         2 => cpu.set_vreg(vra, cpu.last_byte),
@@ -415,7 +415,7 @@ fn ld_ra_brb(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32) {
 }
 
 #[inline(always)]
-fn ldr_ra_imm32(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
+fn ldr_ra_imm32(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
         2 => cpu.read_next_word(mmu),
@@ -514,7 +514,7 @@ fn ld_imm32_ra(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16) {
 }
 
 #[inline(always)]
-fn ld_ra_imm32(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
+fn ld_ra_imm32(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
         2 => cpu.read_next_word(mmu),
@@ -599,7 +599,7 @@ fn alu_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8, operation: AluOp) {
 }
 
 #[inline(always)]
-fn alu_ra_imm16(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, operation: AluOp) {
+fn alu_ra_imm16(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, operation: AluOp) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
         2 => {
@@ -613,7 +613,7 @@ fn alu_ra_imm16(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, operation: AluOp) {
 }
 
 #[inline(always)]
-fn alu_bra_imm32(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, operation: AluOp) {
+fn alu_bra_imm32(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, operation: AluOp) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
         2 => cpu.read_next_word(mmu),
@@ -628,7 +628,7 @@ fn alu_bra_imm32(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, operation: AluOp) {
 }
 
 #[inline(always)]
-fn alu_vra_imm8(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8, operation: AluOp) {
+fn alu_vra_imm8(cpu: &mut Cpu, mmu: &mut Mmu, vra: Reg8, operation: AluOp) {
     match cpu.step_num {
         1 => cpu.read_next_byte(mmu),
         2 => {
@@ -642,7 +642,7 @@ fn alu_vra_imm8(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8, operation: AluOp) {
 }
 
 #[inline(always)]
-fn alu_ra_brb(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, brb: Reg32, operation: AluOp) {
+fn alu_ra_brb(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32, operation: AluOp) {
     match cpu.step_num {
         1 => cpu.read_word_at_addr(mmu, cpu.breg(brb)),
         2 => {
@@ -689,7 +689,7 @@ fn pss_vra(cpu: &mut Cpu, vra: Reg8) {
 }
 
 #[inline(always)]
-fn pss_imm16(cpu: &mut Cpu, mmu: &Mmu) {
+fn pss_imm16(cpu: &mut Cpu, mmu: &mut Mmu) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
         2 => {
@@ -701,7 +701,7 @@ fn pss_imm16(cpu: &mut Cpu, mmu: &Mmu) {
 }
 
 #[inline(always)]
-fn pss_imm32(cpu: &mut Cpu, mmu: &Mmu) {
+fn pss_imm32(cpu: &mut Cpu, mmu: &mut Mmu) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
         2 => cpu.read_next_word(mmu),
@@ -714,7 +714,7 @@ fn pss_imm32(cpu: &mut Cpu, mmu: &Mmu) {
 }
 
 #[inline(always)]
-fn pss_imm8(cpu: &mut Cpu, mmu: &Mmu) {
+fn pss_imm8(cpu: &mut Cpu, mmu: &mut Mmu) {
     match cpu.step_num {
         1 => cpu.read_next_byte(mmu),
         2 => {
@@ -797,7 +797,7 @@ fn alu_ra_brb_dbl(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32, operation
 }
 
 #[inline(always)]
-fn alu_ra_imm16_dbl(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, operation: AluDblOp) {
+fn alu_ra_imm16_dbl(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, operation: AluDblOp) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
         2 => {
@@ -812,7 +812,7 @@ fn alu_ra_imm16_dbl(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, operation: AluDblOp) {
 }
 
 #[inline(always)]
-fn alu_bra_imm32_dbl(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, operation: AluDblOp) {
+fn alu_bra_imm32_dbl(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, operation: AluDblOp) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
         2 => cpu.read_next_word(mmu),
@@ -828,7 +828,7 @@ fn alu_bra_imm32_dbl(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, operation: AluDblOp) 
 }
 
 #[inline(always)]
-fn alu_vra_imm8_dbl(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8, operation: AluDblOp) {
+fn alu_vra_imm8_dbl(cpu: &mut Cpu, mmu: &mut Mmu, vra: Reg8, operation: AluDblOp) {
     match cpu.step_num {
         1 => cpu.read_next_byte(mmu),
         2 => {
@@ -879,7 +879,7 @@ fn cmp_vra_vrb(cpu: &mut Cpu, vra: Reg8, vrb: Reg8) {
 }
 
 #[inline(always)]
-fn cmp_ra_imm16(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
+fn cmp_ra_imm16(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
         2 => {
@@ -892,7 +892,7 @@ fn cmp_ra_imm16(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
 }
 
 #[inline(always)]
-fn cmp_bra_imm32(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32) {
+fn cmp_bra_imm32(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
         2 => cpu.read_next_word(mmu),
@@ -906,7 +906,7 @@ fn cmp_bra_imm32(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32) {
 }
 
 #[inline(always)]
-fn cmp_vra_imm8(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8) {
+fn cmp_vra_imm8(cpu: &mut Cpu, mmu: &mut Mmu, vra: Reg8) {
     match cpu.step_num {
         1 => cpu.read_next_byte(mmu),
         2 => {
@@ -919,7 +919,7 @@ fn cmp_vra_imm8(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8) {
 }
 
 #[inline(always)]
-fn cmp_imm16_ra(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
+fn cmp_imm16_ra(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
         2 => {
@@ -932,7 +932,7 @@ fn cmp_imm16_ra(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16) {
 }
 
 #[inline(always)]
-fn cmp_imm32_bra(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32) {
+fn cmp_imm32_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
         2 => cpu.read_next_word(mmu),
@@ -946,7 +946,7 @@ fn cmp_imm32_bra(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32) {
 }
 
 #[inline(always)]
-fn cmp_imm8_vra(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8) {
+fn cmp_imm8_vra(cpu: &mut Cpu, mmu: &mut Mmu, vra: Reg8) {
     match cpu.step_num {
         1 => cpu.read_next_byte(mmu),
         2 => {
@@ -959,7 +959,7 @@ fn cmp_imm8_vra(cpu: &mut Cpu, mmu: &Mmu, vra: Reg8) {
 }
 
 #[inline(always)]
-fn cmp_ra_brb(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, brb: Reg32) {
+fn cmp_ra_brb(cpu: &mut Cpu, mmu: &mut Mmu, ra: Reg16, brb: Reg32) {
     match cpu.step_num {
         1 => cpu.read_word_at_addr(mmu, cpu.breg(brb)),
         2 => {
@@ -972,7 +972,7 @@ fn cmp_ra_brb(cpu: &mut Cpu, mmu: &Mmu, ra: Reg16, brb: Reg32) {
 }
 
 #[inline(always)]
-fn cmp_bra_rb(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, rb: Reg16) {
+fn cmp_bra_rb(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, rb: Reg16) {
     match cpu.step_num {
         1 => cpu.read_word_at_addr(mmu, cpu.breg(bra)),
         2 => {
@@ -993,7 +993,7 @@ fn bit_ra_b(cpu: &mut Cpu, ra: Reg16, b: u8) {
 }
 
 #[inline(always)]
-fn bit_bra_b(cpu: &mut Cpu, mmu: &Mmu, bra: Reg32, b: u8) {
+fn bit_bra_b(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, b: u8) {
     match cpu.step_num {
         1 => cpu.read_word_at_addr(mmu, cpu.breg(bra)),
         2 => cpu.change_flag(Flag::Zero, !test_bit(cpu.last_word, b as u16)),
@@ -1112,7 +1112,7 @@ fn rand_vra(cpu: &mut Cpu, vra: Reg8) {
 }
 
 #[inline(always)]
-fn jp_imm32(cpu: &mut Cpu, mmu: &Mmu) {
+fn jp_imm32(cpu: &mut Cpu, mmu: &mut Mmu) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
         2 => cpu.read_next_word(mmu),
@@ -1122,7 +1122,7 @@ fn jp_imm32(cpu: &mut Cpu, mmu: &Mmu) {
 }
 
 #[inline(always)]
-fn jr_imm32(cpu: &mut Cpu, mmu: &Mmu) {
+fn jr_imm32(cpu: &mut Cpu, mmu: &mut Mmu) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
         2 => cpu.read_next_word(mmu),
@@ -1132,7 +1132,7 @@ fn jr_imm32(cpu: &mut Cpu, mmu: &Mmu) {
 }
 
 #[inline(always)]
-fn cond_jump_imm32(cpu: &mut Cpu, mmu: &Mmu, flag: Flag, expected: bool) {
+fn cond_jump_imm32(cpu: &mut Cpu, mmu: &mut Mmu, flag: Flag, expected: bool) {
     match cpu.step_num {
         1 => cpu.read_next_word(mmu),
         2 => cpu.read_next_word(mmu),

@@ -1,6 +1,24 @@
 # I/O
 
-## Manual Frame Updates
+## Error Register (0xFFFF_FFBA)
+
+Bits in the error register get set if a non-fatal error occurs during program execution. This register is read-only, and reading the register resets all the bits back to 0.
+
+This register is typically used for error handling and user-friendly error reports.
+
+### Error Types:
+
+-**IllegalRead:** This bit is set when a program attempts to read from write-only memory or an unused memory address.
+
+-**IllegalWrite:** This bit is set when a program attempts to write to read-only memory or an unused memory address.
+
+Each bit corresponds to a different error:
+
+| 7 6 5 4 3 2 | 1            | 0           |
+| ----------- | ------------ | ----------- |
+|             | IllegalWrite | IllegalRead |
+
+## Manual Frame Updates (0xFFFF_FFBB-0xFFFF_FFBD)
 
 Some programs may want to slow down the frame rate until the frame is ready to be displayed. Do to this, programs can write to write-only address `0xFFFF_FFBD` to enable manual frame updates.
 
@@ -10,7 +28,7 @@ While manual frame updates prevent issues with flickering or invisible graphics,
 
 Manual frame updates can be disabled again by writing to the write-only address `0xFFFF_FFBC`.
 
-## Keyboard Input
+## Keyboard Input (0xFFFF_FFBE - 0xFFFF_FFFD)
 
 The keyboard register consists of 64 bytes of memory located at the range \[`0xFFFF_FFBE`-`0xFFFF_FFFD`\]. Each byte corresponds to a physical key on the computer keyboard. When a key's bit is set, that key is currently being pressed. When a key's bit is reset, that key is not currently being pressed.
 

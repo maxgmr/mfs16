@@ -48,7 +48,7 @@ impl Debugger {
 
     /// Add the given [Computer]'s current state to history after the breakpoint was reached.
     /// Returns false if should stop.
-    pub fn add_state_after_breakpoint(&mut self, computer: &Computer) -> bool {
+    pub fn add_state_after_breakpoint(&mut self, computer: &mut Computer) -> bool {
         if self.after_break_history.len() >= self.cycles_after_break {
             return false;
         }
@@ -62,7 +62,7 @@ impl Debugger {
     }
 
     /// Add the given [Computer]'s current state to history.
-    pub fn add_state(&mut self, computer: &Computer) {
+    pub fn add_state(&mut self, computer: &mut Computer) {
         if self.history.len() >= self.history_size {
             self.history.pop_front();
         }
@@ -233,7 +233,7 @@ pub struct MemRange {
 }
 impl MemRange {
     /// Get this range of memory from the given [Computer].
-    fn grab(self, computer: &Computer) -> (Self, Vec<u8>) {
+    fn grab(self, computer: &mut Computer) -> (Self, Vec<u8>) {
         let mut result = Vec::with_capacity((self.end - self.start) as usize);
         for address in self.start..self.end {
             result.push(computer.mmu.read_byte(address));
@@ -264,7 +264,7 @@ pub struct ComputerState {
 }
 impl ComputerState {
     /// Create a new [ComputerState] from a given [Computer] and [MemRange]s.
-    fn from_computer(computer: &Computer, mem_ranges: &[MemRange], cpu_only: bool) -> Self {
+    fn from_computer(computer: &mut Computer, mem_ranges: &[MemRange], cpu_only: bool) -> Self {
         if cpu_only {
             Self {
                 num_cycles: None,
@@ -292,7 +292,7 @@ impl ComputerState {
 
     /// Read [PC_BYTES_SIZE] bytes from a given [Computer], starting at the [Computer]'s program
     /// counter.
-    fn read_pc_bytes(computer: &Computer) -> [u8; PC_BYTES_SIZE] {
+    fn read_pc_bytes(computer: &mut Computer) -> [u8; PC_BYTES_SIZE] {
         let mut result = [0_u8; PC_BYTES_SIZE];
         for (index, item) in result.iter_mut().enumerate().take(PC_BYTES_SIZE) {
             *item = computer

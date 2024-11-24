@@ -10,6 +10,8 @@ The interrupt types are listed from highest to lowest priority.
 
 - **Keyboard:** When _any_ bit in the keyboard register changes from 0 to 1, the Keyboard interrupt is triggered.
 
+- **Error:** When _any_ bit in the error register changes from 0 to 1, (i.e., an error occurs), the Error interrupt is triggered.
+
 ## Interrupt Handling Logic
 
 The CPU performs the following actions every cycle:
@@ -43,9 +45,9 @@ The interrupt at bit 0 is handled with the highest priority, and the interrupt a
 
 This register must be set explicitly by writing to address `0xFFFF_FFFE`.
 
-| 7 6 5 4 3 2 | 1        | 0     |
-| ----------- | -------- | ----- |
-|             | Keyboard | Frame |
+| 7 6 5 4 3 | 2     | 1        | 0     |
+| --------- | ----- | -------- | ----- |
+|           | Error | Keyboard | Frame |
 
 ## Interrupt Register
 
