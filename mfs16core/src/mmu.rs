@@ -126,7 +126,7 @@ impl Mmu {
             ROM_OFFSET..ROM_END if self.rom.is_writable() => {
                 self.rom.write_byte(address - ROM_OFFSET as u32, value)
             }
-            RAM_OFFSET..RAM_END if self.rom.is_writable() => {
+            RAM_OFFSET..RAM_END if self.ram.is_writable() => {
                 self.ram.write_byte(address - RAM_OFFSET as u32, value)
             }
             VRAM_OFFSET..VRAM_END => self.gpu.write_byte(address - VRAM_OFFSET as u32, value),
