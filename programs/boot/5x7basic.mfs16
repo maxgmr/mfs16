@@ -12,7 +12,7 @@ newline:
     push BC;
     push DE;
     // Go to next line
-    mulu BC,9:d;
+    mulu BC,10:d;
     call next_line;
 
     // Move cursor to start of next line

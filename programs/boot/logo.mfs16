@@ -90,7 +90,7 @@ draw_logo_row:
     pop BC;
 ret;
 
-0x0000_0600:d:
+0x0000_1000:d:
 logo_data:
 [
 // black = 0

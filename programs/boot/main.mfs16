@@ -12,13 +12,19 @@ dbl_row_len = 0x280:d;
 
 err_reg = 0xFFFF_FFBA:d;
 
+ie_reg = 0xFFFF_FFFE:d;
+
 rom_start = 0x0000_0000:d;
-rom_size = 0x0080_0000:d;
+rom_end =   0x0080_0000:d;
 ram_start = 0x0080_0000:d;
-ram_size = 0x007F_FFFF:d;
+ram_end =   0x0100_0000:d;
 
 // Width of logo + 8px padding.
 logo_x_padding = 36:d;
+
+// Frame interrupt handler
+0x0000_0100:d:
+reti;
 
 // Keyboard interrupt handler
 0x0000_0200:d:
@@ -86,7 +92,7 @@ entry_point:
     // Cyan
     ld DE,0x6666_6666:d;
     call eight;
-    ld DE,0xFFFF_FFFF:d;
+    ld DE,0x7777_7777:d;
     call space;
     call cap_m;
     call i;
@@ -102,45 +108,7 @@ entry_point:
 
     // Check ROM
     call check_rom;
-    cmp A,1:w;
-    jpz bad_rom_1;
-    cmp A,2:w;
-    jpz bad_rom_2;
-    jp rom_check_passed;
-    bad_rom_1:
-    // Bright red
-    ld DE,0x9999_9999:d;
-    call e;
-    call r;
-    call r;
-    call o;
-    call r;
-    call space;
-    call one;
-    call bang;
-    ld DE,0xFFFF_FFFF:d;
-    jp rom_check_done;
-    bad_rom_2:
-    // Bright red
-    ld DE,0x9999_9999:d;
-    call e;
-    call r;
-    call r;
-    call o;
-    call r;
-    call space;
-    call two;
-    call bang;
-    ld DE,0xFFFF_FFFF:d;
-    jp rom_check_done;
-    rom_check_passed:
-    // Bright green
-    ld DE,0xAAAA_AAAA:d;
-    call cap_o;
-    call cap_k;
-    call bang;
-    ld DE,0xFFFF_FFFF:d;
-    rom_check_done:
+    call handle_rom_check;
 
     call newline;
     add HL,logo_x_padding;
@@ -148,7 +116,7 @@ entry_point:
     // Cyan
     ld DE,0x6666_6666:d;
     call eight;
-    ld DE,0xFFFF_FFFF:d;
+    ld DE,0x7777_7777:d;
     call space;
     call cap_m;
     call i;
@@ -158,14 +126,37 @@ entry_point:
     call cap_a;
     call cap_m;
 
+    call space;
+    call hyphen;
+    call space;
+
     // Check RAM
-    // call check_ram;
+    call check_ram;
+    call handle_ram_check;
 
     call newline;
     add HL,logo_x_padding;
 
-    pop BC;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call newline;
+    add HL,logo_x_padding;
+
     pop DE;
+    pop BC;
 
     // Test pattern
     call draw_test_pattern;
@@ -182,6 +173,62 @@ main_loop:
     halt;
 jp main_loop;
 
+// Ensure that the size of RAM matches what is expected. Also sets all RAM to zero.
+// Set A = 0 if OK, set A = 1 if RAM is not readable, set A = 2 if RAM is not writable
+check_ram:
+    push BC;
+    push DE;
+    push HL;
+
+    // Clear error register
+    ld A,[err_reg];
+    
+    // Break out of loop if able to write to address
+    ld HL,ram_start;
+    ld BC,err_reg;
+    // Don't overwrite the stack! If the area of RAM dedicated to the stack wasn't 
+    // working, we'd have known by now...
+    ld DE,SP;
+    check_ram_loop:
+        cmp HL,DE;
+        jnn check_ram_loop_end;
+
+        // Should be able to read without error
+        ldi A,[HL];
+        ld A,[BC];
+        pss A0;
+        jnz ram_not_readable;
+
+        // Should be able to write without error
+        ldi [HL],0:w;
+        ld A,[BC];
+        pss A0;
+        jnz ram_not_writable;
+
+
+        jp check_ram_loop;
+    check_ram_loop_end:
+
+    // Made it to expected RAM end. Everything was OK.
+    ld A,0:w;
+    jp check_ram_done;
+
+    // An address was not readable- RAM does not match expected size.
+    ram_not_readable:
+        ld A,1:w;
+
+    // An address was not writable- RAM does not match expected size.
+    ram_not_writable:
+        ld A,2:w;
+    jp check_ram_done;
+
+    check_ram_done:
+
+    pop HL;
+    pop DE;
+    pop BC;
+ret;
+
 // Ensure that the size of ROM matches what is expected.
 // Set A = 0 if OK, set A = 1 if ROM is writable, set A = 2 if ROM is not readable
 check_rom:
@@ -194,19 +241,21 @@ check_rom:
     
     // Break out of loop if able to write to address
     ld HL,rom_start;
+    ld BC,err_reg;
+    ld DE,rom_end;
     check_rom_loop:
-        cmp HL,rom_size;
+        cmp HL,DE;
         jnn check_rom_loop_end;
 
         // Should be able to read without error
-        ld A,[HL];
-        ld A,[err_reg];
+        ldi A,[HL];
+        ld A,[BC];
         pss A0;
         jnz rom_not_readable;
 
         // Expect error whilst writing
         ldi [HL],A;
-        ld A,[err_reg];
+        ld A,[BC];
         pss A0;
         jpz rom_writable;
 
@@ -234,6 +283,154 @@ check_rom:
     pop BC;
 ret;
 
-// Print HL as hex.
-print_hl:
+// Print message depending on status of RAM check.
+handle_ram_check:
+    cmp A,1:w;
+    jpz bad_ram_1;
+    cmp A,2:w;
+    jpz bad_ram_2;
+    jp ram_check_passed;
+    bad_ram_1:
+    // Bright red
+    ld DE,0x9999_9999:d;
+    call e;
+    call r;
+    call r;
+    call o;
+    call r;
+    call space;
+    call hyphen;
+    call space;
+    call cap_r;
+    call cap_a;
+    call cap_m;
+    call space;
+    call r;
+    call e;
+    call a;
+    call d;
+    call space;
+    call f;
+    call a;
+    call i;
+    call l;
+    call e;
+    call d;
+    call bang;
+    ld DE,0xFFFF_FFFF:d;
+    jp ram_check_done;
+    bad_ram_2:
+    // Bright red
+    ld DE,0x9999_9999:d;
+    call e;
+    call r;
+    call r;
+    call o;
+    call r;
+    call space;
+    call hyphen;
+    call space;
+    call cap_r;
+    call cap_a;
+    call cap_m;
+    call space;
+    call w;
+    call r;
+    call i;
+    call t;
+    call e;
+    call space;
+    call f;
+    call a;
+    call i;
+    call l;
+    call e;
+    call d;
+    call bang;
+    ld DE,0xFFFF_FFFF:d;
+    jp ram_check_done;
+    ram_check_passed:
+    // Bright green
+    ld DE,0xAAAA_AAAA:d;
+    call cap_o;
+    call cap_k;
+    call bang;
+    ld DE,0xFFFF_FFFF:d;
+    ram_check_done:
+ret;
+
+// Print message depending on status of ROM check.
+handle_rom_check:
+    cmp A,1:w;
+    jpz bad_rom_1;
+    cmp A,2:w;
+    jpz bad_rom_2;
+    jp rom_check_passed;
+    bad_rom_1:
+    // Bright red
+    ld DE,0x9999_9999:d;
+    call e;
+    call r;
+    call r;
+    call o;
+    call r;
+    call space;
+    call hyphen;
+    call space;
+    call cap_r;
+    call cap_o;
+    call cap_m;
+    call space;
+    call i;
+    call s;
+    call space;
+    call r;
+    call e;
+    call a;
+    call d;
+    call a;
+    call b;
+    call l;
+    call e;
+    call bang;
+    ld DE,0xFFFF_FFFF:d;
+    jp rom_check_done;
+    bad_rom_2:
+    // Bright red
+    ld DE,0x9999_9999:d;
+    call e;
+    call r;
+    call r;
+    call o;
+    call r;
+    call space;
+    call hyphen;
+    call space;
+    call cap_r;
+    call cap_o;
+    call cap_m;
+    call space;
+    call n;
+    call o;
+    call t;
+    call space;
+    call r;
+    call e;
+    call a;
+    call d;
+    call a;
+    call b;
+    call l;
+    call e;
+    call bang;
+    ld DE,0xFFFF_FFFF:d;
+    jp rom_check_done;
+    rom_check_passed:
+    // Bright green
+    ld DE,0xAAAA_AAAA:d;
+    call cap_o;
+    call cap_k;
+    call bang;
+    ld DE,0xFFFF_FFFF:d;
+    rom_check_done:
 ret;
