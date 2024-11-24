@@ -10,6 +10,14 @@ vram_start = 0x0100_0000:d;
 row_len = 0x140:d;
 dbl_row_len = 0x280:d;
 
+rom_start = 0x0000_0000:d;
+rom_size = 0x0080_0000:d;
+ram_start = 0x0080_0000:d;
+ram_size = 0x007F_FFFF:d;
+
+// Width of logo + 8px padding.
+logo_x_padding = 36:d;
+
 // Keyboard interrupt handler
 0x0000_0200:d:
     // TODO
@@ -17,19 +25,19 @@ reti;
 
 entry_point:
     ld HL,vram_start;
-    // LOGO
+    // Logo
     // Add 2px of padding on X and Y
     inc HL;
     add HL,dbl_row_len;
     // Draw logo
     call draw_logo;
 
-    // MFS-16 Computer
+    // System info text
     ld HL,vram_start;
     // Add 2px of padding on Y
     add HL,dbl_row_len;
     // Move X coord to end of logo + 8px of padding
-    add HL,36:d;
+    add HL,logo_x_padding;
     // Draw name text
     push BC;
     push DE;
@@ -53,32 +61,119 @@ entry_point:
     call e;
     call r;
     call newline;
-    // Move X coord to end of logo + 8px of padding
-    add HL,36:d;
+    add HL,logo_x_padding;
 
-    call underscore;
-    call underscore;
-    call underscore;
-    call underscore;
-    call underscore;
-    call underscore;
-    call underscore;
-    call underscore;
-    call underscore;
-    call underscore;
-    call underscore;
-    call underscore;
-    call underscore;
-    call underscore;
-    call underscore;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
+    call hyphen;
     call newline;
+    add HL,logo_x_padding;
+
+    // Cyan
+    ld DE,0x6666_6666:d;
+    call eight;
+    ld DE,0xFFFF_FFFF:d;
+    call space;
+    call cap_m;
+    call i;
+    call cap_b;
+    call space;
+    call cap_r;
+    call cap_o;
+    call cap_m;
+
+    call space;
+    call hyphen;
+    call space;
+
+    // Check ROM
+    push HL;
+    call check_rom;
+    cmp A,1:w;
+    jpz bad_rom_1;
+    cmp A,2:w;
+    jpz bad_rom_2;
+    jp rom_check_passed;
+    bad_rom_1:
+    pop HL;
+    // Bright red
+    ld DE,0x9999_9999:d;
+    call e;
+    call r;
+    call r;
+    call o;
+    call r;
+    call space;
+    call one;
+    call bang;
+    ld DE,0xFFFF_FFFF:d;
+    push HL;
+    jp rom_check_done;
+    bad_rom_2:
+    pop HL;
+    // Bright red
+    ld DE,0x9999_9999:d;
+    call e;
+    call r;
+    call r;
+    call o;
+    call r;
+    call space;
+    call two;
+    call bang;
+    ld DE,0xFFFF_FFFF:d;
+    push HL;
+    jp rom_check_done;
+    rom_check_passed:
+    pop HL;
+    // Bright green
+    ld DE,0xAAAA_AAAA:d;
+    call cap_o;
+    call cap_k;
+    call bang;
+    ld DE,0xFFFF_FFFF:d;
+    push HL;
+    rom_check_done:
+    pop HL;
+
     call newline;
-    // Move X coord to end of logo + 8px of padding
-    add HL,36:d;
+    add HL,logo_x_padding;
+
+    // Cyan
+    ld DE,0x6666_6666:d;
+    call eight;
+    ld DE,0xFFFF_FFFF:d;
+    call space;
+    call cap_m;
+    call i;
+    call cap_b;
+    call space;
+    call cap_r;
+    call cap_a;
+    call cap_m;
+
+    // Check RAM
+    // call check_ram;
+
+    call newline;
+    add HL,logo_x_padding;
+
     pop BC;
     pop DE;
 
-    // TEST PATTERN
+    // Test pattern
     call draw_test_pattern;
 
     // TODO load program header
@@ -92,3 +187,72 @@ entry_point:
 main_loop:
     halt;
 jp main_loop;
+
+// Ensure that the size of ROM matches what is expected.
+// Set A = 0 if OK, set A = 1 if ROM is writable, set A = 2 if ROM is not readable
+// If error, HL is set to the address where the error occurred.
+check_rom:
+    push BC;
+    push DE;
+
+    // Set B = test val
+    ld B,0xDEAD:w;
+    
+    // Break out of loop if able to write to address
+    ld HL,rom_start;
+    check_rom_loop:
+        cmp HL,rom_size;
+        jnn check_rom_loop_end;
+        
+        /*
+            Check for two words at a time in order to test for non-readable sectors.
+            The boot ROM does not have two HALT instructions in a row, so if both
+            words == 0xFFFF, then there is a problem.
+        */ 
+        ldi D,[HL];
+        ldd E,[HL];
+        cmp DE,0xFFFF_FFFF:d;
+        jpz rom_not_readable;
+
+        // Ensure that ROM is not writable
+        // Attempt to write 0xDEAD to address
+        ld [HL],B;
+        // Load the new word into C
+        ldi C,[HL];
+        // If C is different from D, then the ROM was changed!
+        cmp C,D;
+        jnz rom_writable;
+
+        // Attempt to write 0xDEAD to address
+        ld [HL],B;
+        // Load the new word into C
+        ldi C,[HL];
+        // If C is different from E, then the ROM was changed!
+        cmp C,E;
+        jpn rom_writable;
+
+        jp check_rom_loop;
+    check_rom_loop_end:
+
+    // Made it to expected ROM end. Everything was OK.
+    ld A,0:w;
+    jp check_rom_done;
+
+    // An address was writable- ROM does not match expected size.
+    rom_writable:
+        ld A,1:w;
+    jp check_rom_done;
+
+    // An address was not readable- ROM does not match expected size.
+    rom_not_readable:
+        ld A,2:w;
+
+    check_rom_done:
+
+    pop DE;
+    pop BC;
+ret;
+
+// Print HL as hex.
+print_hl:
+ret;
