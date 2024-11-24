@@ -152,6 +152,7 @@ impl Mmu {
                 self.ram.read_word(address - RAM_OFFSET as u32)
             }
             VRAM_OFFSET..VRAM_END => self.gpu.read_word(address - VRAM_OFFSET as u32),
+            ERR_REG_ADDR => self.consume_err_reg() as u16,
             IE_REGISTER_ADDR => self.ie_register as u16,
             INTERRUPT_REGISTER_ADDR => self.interrupt_register as u16,
             _ => combine_u8_le(self.read_byte(address), self.read_byte(address + 1)),
@@ -190,6 +191,7 @@ impl Mmu {
                 self.ram.read_dword(address - RAM_OFFSET as u32)
             }
             VRAM_OFFSET..VRAM_END => self.gpu.read_dword(address - VRAM_OFFSET as u32),
+            ERR_REG_ADDR => self.consume_err_reg() as u32,
             IE_REGISTER_ADDR => self.ie_register as u32,
             INTERRUPT_REGISTER_ADDR => self.interrupt_register as u32,
             _ => combine_u16_le(
