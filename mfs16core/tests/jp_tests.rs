@@ -166,16 +166,10 @@ fn cond_call_ret_bra_helper(
     // Read unsatisfied call instr
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0002));
-    // Evaluate conditional
-    c.cycle();
-    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0002));
-    // Don't push to stack!
+    // Evaluate conditional- don't push to stack or jump!
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0002));
     assert_eq!(c.cpu.sp.address(), STACK_ZERO);
-    // Don't jump!
-    c.cycle();
-    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0002));
 
     // Conditional met; try calling again
     c.cpu.change_flag(flag, expected);
@@ -213,20 +207,10 @@ fn cond_call_ret_imm_helper(
     // Read unsatisfied call instr + dword
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0002));
-    c.cycle();
-    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0004));
-    c.cycle();
-    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0006));
-    // Evaluate conditional
-    c.cycle();
-    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0006));
-    // Don't push to stack!
-    c.cycle();
-    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0006));
-    assert_eq!(c.cpu.sp.address(), STACK_ZERO);
     // Don't jump!
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0006));
+    assert_eq!(c.cpu.sp.address(), STACK_ZERO);
 
     // Conditional met; try calling again
     c.cpu.change_flag(flag, expected);
@@ -234,11 +218,11 @@ fn cond_call_ret_imm_helper(
     // Read satisfied call instr + dword
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0008));
+    // Evaluate conditional
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0008));
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_000A));
-    c.cycle();
-    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_000C));
-    // Evaluate conditional
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_000C));
     // Push to stack!
@@ -257,11 +241,7 @@ fn cond_call_ret_imm_helper(
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(INTENDED_ADDR + 2));
     assert_eq!(c.cpu.sp.address(), STACK_END - 4);
-    // Evaluate conditional
-    c.cycle();
-    assert_eq!(c.cpu.pc, Addr::new_default_range(INTENDED_ADDR + 2));
-    assert_eq!(c.cpu.sp.address(), STACK_END - 4);
-    // Don't return!
+    // Evaluate conditional- don't return!
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(INTENDED_ADDR + 2));
     assert_eq!(c.cpu.sp.address(), STACK_END - 4);
@@ -360,19 +340,7 @@ fn imm_test_helper(flag: Flag, expected: bool, instr: Instruction) {
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0002));
 
-    // Read lsw of dword
-    c.cycle();
-    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0004));
-
-    // Read msw of dword
-    c.cycle();
-    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0006));
-
-    // Evaluate conditional
-    c.cycle();
-    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0006));
-
-    // Don't jump!
+    // Evaluate conditional- don't jump!
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0006));
 
@@ -383,15 +351,15 @@ fn imm_test_helper(flag: Flag, expected: bool, instr: Instruction) {
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0008));
 
+    // Evaluate conditional
+    c.cycle();
+    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0008));
+
     // Read lsw of dword
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_000A));
 
     // Read msw of dword
-    c.cycle();
-    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_000C));
-
-    // Evaluate conditional
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_000C));
 
@@ -413,11 +381,7 @@ fn bra_test_helper(flag: Flag, expected: bool, instr_hl: Instruction, instr_bc: 
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0002));
 
-    // Evaluate conditional
-    c.cycle();
-    assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0002));
-
-    // Don't jump!
+    // Evaluate conditional- don't jump!
     c.cycle();
     assert_eq!(c.cpu.pc, Addr::new_default_range(0x00_0002));
 

@@ -1134,14 +1134,16 @@ fn jr_imm32(cpu: &mut Cpu, mmu: &mut Mmu) {
 #[inline(always)]
 fn cond_jump_imm32(cpu: &mut Cpu, mmu: &mut Mmu, flag: Flag, expected: bool) {
     match cpu.step_num {
-        1 => cpu.read_next_word(mmu),
-        2 => cpu.read_next_word(mmu),
-        3 => cpu.check_conditional(flag, expected),
-        4 => {
-            if cpu.last_conditional_satisfied {
-                cpu.jump(get_dword_from_last(cpu))
+        1 => {
+            cpu.check_conditional(flag, expected);
+            if !cpu.last_conditional_satisfied {
+                cpu.step_num = 4;
+                cpu.pc.wrapping_add(4);
             }
         }
+        2 => cpu.read_next_word(mmu),
+        3 => cpu.read_next_word(mmu),
+        4 => cpu.jump(get_dword_from_last(cpu)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
@@ -1165,12 +1167,13 @@ fn jr_bra(cpu: &mut Cpu, bra: Reg32) {
 #[inline(always)]
 fn cond_jump_bra(cpu: &mut Cpu, bra: Reg32, flag: Flag, expected: bool) {
     match cpu.step_num {
-        1 => cpu.check_conditional(flag, expected),
-        2 => {
-            if cpu.last_conditional_satisfied {
-                cpu.jump(cpu.breg(bra));
+        1 => {
+            cpu.check_conditional(flag, expected);
+            if !cpu.last_conditional_satisfied {
+                cpu.step_num = 2;
             }
         }
+        2 => cpu.jump(cpu.breg(bra)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
@@ -1189,19 +1192,17 @@ fn call_imm32(cpu: &mut Cpu, mmu: &mut Mmu) {
 #[inline(always)]
 fn cond_call_imm32(cpu: &mut Cpu, mmu: &mut Mmu, flag: Flag, expected: bool) {
     match cpu.step_num {
-        1 => cpu.read_next_word(mmu),
+        1 => {
+            cpu.check_conditional(flag, expected);
+            if !cpu.last_conditional_satisfied {
+                cpu.pc.wrapping_add(4);
+                cpu.step_num = 5;
+            }
+        }
         2 => cpu.read_next_word(mmu),
-        3 => cpu.check_conditional(flag, expected),
-        4 => {
-            if cpu.last_conditional_satisfied {
-                cpu.push_stack(mmu, cpu.pc.address());
-            }
-        }
-        5 => {
-            if cpu.last_conditional_satisfied {
-                cpu.jump(get_dword_from_last(cpu));
-            }
-        }
+        3 => cpu.read_next_word(mmu),
+        4 => cpu.push_stack(mmu, cpu.pc.address()),
+        5 => cpu.jump(get_dword_from_last(cpu)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
@@ -1226,12 +1227,13 @@ fn ret(cpu: &mut Cpu, mmu: &mut Mmu) {
 #[inline(always)]
 fn cond_ret(cpu: &mut Cpu, mmu: &mut Mmu, flag: Flag, expected: bool) {
     match cpu.step_num {
-        1 => cpu.check_conditional(flag, expected),
-        2 => {
-            if cpu.last_conditional_satisfied {
-                cpu.pc = Addr::new_default_range(cpu.pop_stack(mmu));
+        1 => {
+            cpu.check_conditional(flag, expected);
+            if !cpu.last_conditional_satisfied {
+                cpu.step_num = 2;
             }
         }
+        2 => cpu.pc = Addr::new_default_range(cpu.pop_stack(mmu)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
@@ -1248,17 +1250,14 @@ fn reti(cpu: &mut Cpu, mmu: &mut Mmu) {
 #[inline(always)]
 fn cond_call_bra(cpu: &mut Cpu, mmu: &mut Mmu, bra: Reg32, flag: Flag, expected: bool) {
     match cpu.step_num {
-        1 => cpu.check_conditional(flag, expected),
-        2 => {
-            if cpu.last_conditional_satisfied {
-                cpu.push_stack(mmu, cpu.pc.address());
+        1 => {
+            cpu.check_conditional(flag, expected);
+            if !cpu.last_conditional_satisfied {
+                cpu.step_num = 3;
             }
         }
-        3 => {
-            if cpu.last_conditional_satisfied {
-                cpu.jump(cpu.breg(bra));
-            }
-        }
+        2 => cpu.push_stack(mmu, cpu.pc.address()),
+        3 => cpu.jump(cpu.breg(bra)),
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
 }
