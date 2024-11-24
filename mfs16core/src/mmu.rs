@@ -101,8 +101,12 @@ impl Mmu {
     /// Read a byte from a given address.
     pub fn read_byte(&mut self, address: u32) -> u8 {
         match address.try_into().unwrap() {
-            ROM_OFFSET..ROM_END => self.rom.read_byte(address - ROM_OFFSET as u32),
-            RAM_OFFSET..RAM_END => self.ram.read_byte(address - RAM_OFFSET as u32),
+            ROM_OFFSET..ROM_END if self.rom.is_readable() => {
+                self.rom.read_byte(address - ROM_OFFSET as u32)
+            }
+            RAM_OFFSET..RAM_END if self.ram.is_readable() => {
+                self.ram.read_byte(address - RAM_OFFSET as u32)
+            }
             VRAM_OFFSET..VRAM_END => self.gpu.read_byte(address - VRAM_OFFSET as u32),
             ERR_REG_ADDR => self.consume_err_reg(),
             KB_REG_START..KB_REG_END => self.kb_reg.read_byte(address - KB_REG_START as u32),
@@ -119,8 +123,12 @@ impl Mmu {
     /// Write a byte to a given address.
     pub fn write_byte(&mut self, address: u32, value: u8) {
         match address.try_into().unwrap() {
-            ROM_OFFSET..ROM_END => self.rom.write_byte(address - ROM_OFFSET as u32, value),
-            RAM_OFFSET..RAM_END => self.ram.write_byte(address - RAM_OFFSET as u32, value),
+            ROM_OFFSET..ROM_END if self.rom.is_writable() => {
+                self.rom.write_byte(address - ROM_OFFSET as u32, value)
+            }
+            RAM_OFFSET..RAM_END if self.rom.is_writable() => {
+                self.ram.write_byte(address - RAM_OFFSET as u32, value)
+            }
             VRAM_OFFSET..VRAM_END => self.gpu.write_byte(address - VRAM_OFFSET as u32, value),
             MAN_FRAME_UPDATE_ADDR => self.gpu.set_frame_update_flag(),
             MAN_FRAME_DISABLE_ADDR => self.gpu.man_frame_disable(),
@@ -137,8 +145,12 @@ impl Mmu {
     /// Read a word starting at a given address.
     pub fn read_word(&mut self, address: u32) -> u16 {
         match address.try_into().unwrap() {
-            ROM_OFFSET..ROM_END => self.rom.read_word(address - ROM_OFFSET as u32),
-            RAM_OFFSET..RAM_END => self.ram.read_word(address - RAM_OFFSET as u32),
+            ROM_OFFSET..ROM_END if self.rom.is_readable() => {
+                self.rom.read_word(address - ROM_OFFSET as u32)
+            }
+            RAM_OFFSET..RAM_END if self.ram.is_readable() => {
+                self.ram.read_word(address - RAM_OFFSET as u32)
+            }
             VRAM_OFFSET..VRAM_END => self.gpu.read_word(address - VRAM_OFFSET as u32),
             IE_REGISTER_ADDR => self.ie_register as u16,
             INTERRUPT_REGISTER_ADDR => self.interrupt_register as u16,
@@ -149,8 +161,12 @@ impl Mmu {
     /// Write a word to a given address.
     pub fn write_word(&mut self, address: u32, value: u16) {
         match address.try_into().unwrap() {
-            ROM_OFFSET..ROM_END => self.rom.write_word(address - ROM_OFFSET as u32, value),
-            RAM_OFFSET..RAM_END => self.ram.write_word(address - RAM_OFFSET as u32, value),
+            ROM_OFFSET..ROM_END if self.rom.is_writable() => {
+                self.rom.write_word(address - ROM_OFFSET as u32, value)
+            }
+            RAM_OFFSET..RAM_END if self.ram.is_writable() => {
+                self.ram.write_word(address - RAM_OFFSET as u32, value)
+            }
             VRAM_OFFSET..VRAM_END => self.gpu.write_word(address - VRAM_OFFSET as u32, value),
             MAN_FRAME_UPDATE_ADDR => self.gpu.set_frame_update_flag(),
             MAN_FRAME_DISABLE_ADDR => self.gpu.man_frame_disable(),
@@ -167,8 +183,12 @@ impl Mmu {
     /// Read a double word starting at a given address.
     pub fn read_dword(&mut self, address: u32) -> u32 {
         match address.try_into().unwrap() {
-            ROM_OFFSET..ROM_END => self.rom.read_dword(address - ROM_OFFSET as u32),
-            RAM_OFFSET..RAM_END => self.ram.read_dword(address - RAM_OFFSET as u32),
+            ROM_OFFSET..ROM_END if self.rom.is_readable() => {
+                self.rom.read_dword(address - ROM_OFFSET as u32)
+            }
+            RAM_OFFSET..RAM_END if self.ram.is_readable() => {
+                self.ram.read_dword(address - RAM_OFFSET as u32)
+            }
             VRAM_OFFSET..VRAM_END => self.gpu.read_dword(address - VRAM_OFFSET as u32),
             IE_REGISTER_ADDR => self.ie_register as u32,
             INTERRUPT_REGISTER_ADDR => self.interrupt_register as u32,
@@ -182,8 +202,12 @@ impl Mmu {
     /// Write a double word to a given address.
     pub fn write_dword(&mut self, address: u32, value: u32) {
         match address.try_into().unwrap() {
-            ROM_OFFSET..ROM_END => self.rom.write_dword(address - ROM_OFFSET as u32, value),
-            RAM_OFFSET..RAM_END => self.ram.write_dword(address - RAM_OFFSET as u32, value),
+            ROM_OFFSET..ROM_END if self.rom.is_writable() => {
+                self.rom.write_dword(address - ROM_OFFSET as u32, value)
+            }
+            RAM_OFFSET..RAM_END if self.ram.is_writable() => {
+                self.ram.write_dword(address - RAM_OFFSET as u32, value)
+            }
             VRAM_OFFSET..VRAM_END => self.gpu.write_dword(address - VRAM_OFFSET as u32, value),
             MAN_FRAME_UPDATE_ADDR => self.gpu.set_frame_update_flag(),
             MAN_FRAME_DISABLE_ADDR => self.gpu.man_frame_disable(),
