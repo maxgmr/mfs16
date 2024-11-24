@@ -1,0 +1,10 @@
+#!/bin/bash
+
+cd /home/$USER/computer/dev/mfs16/mfs16book &&
+    mdbook build &&
+    rm -rf /home/$USER/computer/dev/maxgmr.github.io/book &&
+    cp -r /home/$USER/computer/dev/mfs16/mfs16book/book /home/$USER/computer/dev/maxgmr.github.io/ &&
+    cd /home/$USER/computer/dev/maxgmr.github.io &&
+    git commit *book* -m "update mfs16 book" &&
+    git pull origin main &&
+    git push origin main
