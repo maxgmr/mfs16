@@ -1,46 +1,14 @@
 /*
     MFS-16 BOOT PROGRAM
 
-    Presents a list of found programs, allowing the user to select which program they
-    wish to boot.
+    Presents the loaded program header information, prompting the user to begin.
 */
 jp entry_point;
 
 // CONSTANTS
-// Some values are calculated statically. This is uglier but faster.
 vram_start = 0x0100_0000:d;
 row_len = 0x140:d;
-
-display_px_x = 0x280:d; // 640 pixels wide
-display_px_y = 0x1E0:d; // 480 pixels high
-
-display_byte_x = 0x140:d; // 320 bytes wide
-
-// The centre of the screen in terms of VRAM indicies.
-vram_centre_x = 0xA0:d; // (320 bytes wide) / 2 = 60
-vram_centre_y = 0xF0:d; // (480 pixels high) / 2 = 240
-
-// Used for centring the logo.
-logo_x = 0x20:d; // 32 bytes wide
-logo_y = 0x40:d; // 64 bytes high
-
-half_l_x = 0x10:d;
-half_l_y = 0x20:d;
-
-// Used for centring the test pattern.
-test_pattern_x = 0x40:d; // 64 bytes wide (8 16-wide squares)
-test_pattern_y = 0x20:d; // 32 pixels high
-
-half_tp_x = 0x20:d;
-half_tp_y = 0x10:d;
-
-// Used for centring the text "MFS-16 Computing System".
-text_x = 0x45:d; // 23 chars * 3 byte width per char
-text_y = 0x08:d; // 8 rows per char
-
-half_tx_x = 0x22:d;
-half_tx_y = 0x04:d;
-
+dbl_row_len = 0x280:d;
 
 // Keyboard interrupt handler
 0x0000_0200:d:
@@ -48,41 +16,27 @@ half_tx_y = 0x04:d;
 reti;
 
 entry_point:
-    // TODO display logo
-    call centre_hl;
-    // Apply Y offset
-    // Move 1.5 * logo height above screen centre
-    push BC;
-    ld BC,logo_y;
-    add BC,half_l_y;
-    mulu BC,row_len;
-    sub HL,BC;
-    pop BC;
-
-    // Apply X offset
-    sub HL,half_l_x;
-
+    ld HL,vram_start;
+    // LOGO
+    // Add 2px of padding on X and Y
+    inc HL;
+    add HL,dbl_row_len;
+    // Draw logo
     call draw_logo;
 
-
-    // Display MFS-16 text
-    call centre_hl;
-    // Apply Y offset
-    push BC;
-    ld BC,half_tx_y;
-    mulu BC,row_len;
-    sub HL,BC;
-    pop BC;
-    // Apply X offset
-    sub HL,half_tx_x;
-
-    // Write text
+    // MFS-16 Computer
+    ld HL,vram_start;
+    // Add 2px of padding on Y
+    add HL,dbl_row_len;
+    // Move X coord to end of logo + 8px of padding
+    add HL,36:d;
+    // Draw name text
     push BC;
     push DE;
-
+    // Set row len and colour
     ld BC,row_len;
-    ld DE,0x7777_7777:d;
-
+    ld DE,0xFFFF_FFFF:d;
+    // Draw letters
     call cap_m;
     call cap_f;
     call cap_s;
@@ -96,52 +50,45 @@ entry_point:
     call p;
     call u;
     call t;
-    call i;
-    call n;
-    call g;
-    call space;
-    call cap_s;
-    call y;
-    call s;
-    call t;
     call e;
-    call m;
+    call r;
+    call newline;
+    // Move X coord to end of logo + 8px of padding
+    add HL,36:d;
 
+    call underscore;
+    call underscore;
+    call underscore;
+    call underscore;
+    call underscore;
+    call underscore;
+    call underscore;
+    call underscore;
+    call underscore;
+    call underscore;
+    call underscore;
+    call underscore;
+    call underscore;
+    call underscore;
+    call underscore;
+    call newline;
+    call newline;
+    // Move X coord to end of logo + 8px of padding
+    add HL,36:d;
     pop BC;
     pop DE;
 
-
-    // Display test pattern
-    call centre_hl;
-    // Apply Y offset
-    push BC;
-    ld BC,half_tp_y;
-    mulu BC,row_len;
-    sub HL,BC;
-    // Move test pattern below text
-    ld BC,text_y;
-    add BC,40:d;
-    mulu BC,row_len;
-    add HL,BC;
-    pop BC;
-    // Apply X offset
-    sub HL,half_tp_x;
-
+    // TEST PATTERN
     call draw_test_pattern;
 
-    // TODO load list of programs
+    // TODO load program header
+
+    // TODO calc checksum
 
     // TODO enable keyboard interrupts
+
+    // TODO draw BOOT OK text
 
 main_loop:
     halt;
 jp main_loop;
-
-// Position HL in the centre of VRAM.
-// Modifies HL (obviously).
-centre_hl:
-    ld HL,vram_centre_y;
-    mulu HL,row_len;
-    add HL,vram_start;
-    add HL,vram_centre_x;
-ret;

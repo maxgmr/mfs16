@@ -20,43 +20,43 @@ draw_test_pattern:
     ld BC,0x0000_0000:d;
     call draw_square;
 
-    add HL,8:d;
+    add HL,4:d;
 
     // Red square
     ld BC,0x1111_1111:d;
     call draw_square;
 
-    add HL,8:d;
+    add HL,4:d;
 
     // Green square
     ld BC,0x2222_2222:d;
     call draw_square;
 
-    add HL,8:d;
+    add HL,4:d;
 
     // Yellow square
     ld BC,0x3333_3333:d;
     call draw_square;
 
-    add HL,8:d;
+    add HL,4:d;
 
     // Blue square
     ld BC,0x4444_4444:d;
     call draw_square;
 
-    add HL,8:d;
+    add HL,4:d;
 
     // Magenta square
     ld BC,0x5555_5555:d;
     call draw_square;
 
-    add HL,8:d;
+    add HL,4:d;
 
     // Cyan square
     ld BC,0x6666_6666:d;
     call draw_square;
 
-    add HL,8:d;
+    add HL,4:d;
 
     // White square
     ld BC,0x7777_7777:d;
@@ -65,9 +65,9 @@ draw_test_pattern:
     // Move back to start of test pattern
     pop HL;
 
-    // Move down 16 rows
+    // Move down 8 rows
     push DE;
-    mulu DE,16:d;
+    mulu DE,8:d;
     add HL,DE;
     pop DE;
 
@@ -75,43 +75,43 @@ draw_test_pattern:
     ld BC,0x8888_8888:d;
     call draw_square;
 
-    add HL,8:d;
+    add HL,4:d;
 
     // Bright red square
     ld BC,0x9999_9999:d;
     call draw_square;
 
-    add HL,8:d;
+    add HL,4:d;
 
     // Bright green square
     ld BC,0xAAAA_AAAA:d;
     call draw_square;
 
-    add HL,8:d;
+    add HL,4:d;
 
     // Bright yellow square
     ld BC,0xBBBB_BBBB:d;
     call draw_square;
 
-    add HL,8:d;
+    add HL,4:d;
 
     // Bright blue square
     ld BC,0xCCCC_CCCC:d;
     call draw_square;
 
-    add HL,8:d;
+    add HL,4:d;
 
     // Bright magenta square
     ld BC,0xDDDD_DDDD:d;
     call draw_square;
 
-    add HL,8:d;
+    add HL,4:d;
 
     // Bright cyan square
     ld BC,0xEEEE_EEEE:d;
     call draw_square;
 
-    add HL,8:d;
+    add HL,4:d;
 
     // Bright white square
     ld BC,0xFFFF_FFFF:d;
@@ -122,10 +122,10 @@ draw_test_pattern:
     pop HL;
 ret;
 
-// Draw 16x16 square.
+// Draw 8x8 square.
 // Set HL = start of square, BC = colour, DE = row_len
 draw_square:
-    ld A,16:w;
+    ld A,8:w;
     pss A;
     draw_row_loop:
         jpz draw_row_loop_end;
@@ -136,17 +136,16 @@ draw_square:
 
     // Move HL back to start
     push DE;
-    mulu DE,16:d;
+    mulu DE,8:d;
     sub HL,DE;
     pop DE;
 
 ret;
 
-// Draw 16-pixel-long row, then move HL 1 row down.
+// Draw 8-pixel-long row, then move HL 1 row down.
 // Set HL = start of row, BC = colour, DE = row_len
 draw_row:
-    vldi [HL],BC;
-    vldd [HL],BC;
+    vld [HL],BC;
     add HL,DE;
 ret;
 
