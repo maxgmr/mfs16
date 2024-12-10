@@ -1085,7 +1085,7 @@ fn reset_all_flags(cpu: &mut Cpu) {
 fn rand_ra(cpu: &mut Cpu, ra: Reg16) {
     match cpu.step_num {
         1 => {
-            ra.set(cpu, lfsr_rand(cpu) as u16);
+            ra.set(cpu, xorshift_rand(cpu) as u16);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -1095,7 +1095,7 @@ fn rand_ra(cpu: &mut Cpu, ra: Reg16) {
 fn rand_bra(cpu: &mut Cpu, bra: Reg32) {
     match cpu.step_num {
         1 => {
-            bra.set(cpu, lfsr_rand(cpu));
+            bra.set(cpu, xorshift_rand(cpu));
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }
@@ -1105,7 +1105,7 @@ fn rand_bra(cpu: &mut Cpu, bra: Reg32) {
 fn rand_vra(cpu: &mut Cpu, vra: Reg8) {
     match cpu.step_num {
         1 => {
-            vra.set(cpu, lfsr_rand(cpu) as u8);
+            vra.set(cpu, xorshift_rand(cpu) as u8);
         }
         _ => invalid_step_panic(cpu.instr, cpu.step_num),
     }

@@ -6,16 +6,19 @@ use crate::{
     Addr,
 };
 
-/// Generate a LFSR-based pseudorandom number.
-pub fn lfsr_rand(cpu: &Cpu) -> u32 {
+/// Generate a Xorshift-based pseudorandom number.
+pub fn xorshift_rand(cpu: &Cpu) -> u32 {
     let mut state = (cpu.total_cycles as u32)
-        .rotate_left(cpu.pc.address())
-        .wrapping_add(cpu.pc.address());
-    for _ in 0..32 {
-        let mut new_bit = state ^ (state >> 2) ^ (state >> 3) ^ (state >> 5);
-        new_bit &= 1;
-        state = (state >> 1) | (new_bit << 31);
-    }
+        + (cpu.reg(crate::Reg16::A) as u32)
+        + (cpu.reg(crate::Reg16::B) as u32)
+        + (cpu.reg(crate::Reg16::C) as u32)
+        + (cpu.reg(crate::Reg16::D) as u32)
+        + (cpu.reg(crate::Reg16::E) as u32)
+        + (cpu.reg(crate::Reg16::H) as u32)
+        + (cpu.reg(crate::Reg16::L) as u32);
+    state ^= state << 13;
+    state ^= state >> 17;
+    state ^= state << 5;
     state
 }
 
