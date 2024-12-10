@@ -50,11 +50,15 @@ load_bg:
 
     load_bg_loop:
 
+    halt;
     rand B;
-    cmp 0xC000:w,B;
+    rsb B,15;
+    cmp 0x7777:w,B;
     jpn draw_lbg;
+    // Draw dark colour
     ld C,bg_colour;
     jp colour_pick_done;
+    // Draw light colour
     draw_lbg:
     ld C,lbg_colour;
     colour_pick_done:
