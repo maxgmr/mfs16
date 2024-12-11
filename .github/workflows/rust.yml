@@ -11,9 +11,6 @@ jobs:
   build_and_test:
     name: mfs16 - latest
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain: [stable, beta, nightly]
 
     steps:
     - uses: actions/checkout@v4
