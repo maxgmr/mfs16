@@ -2,7 +2,7 @@
 
 A 16-bit virtual computer, made from scratch with an original CPU architecture, instruction set, and assembly language.
 
-The documentation for this project can be found [here](https://maxgmr.ca/book/index.html).
+## [Documentation](https://maxgmr.ca/book/index.html)
 
 ## TODO
 
