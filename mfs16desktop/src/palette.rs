@@ -126,6 +126,7 @@ impl HexPalette {
     pub fn from_str<S: AsRef<str>>(str: S) -> Option<Self> {
         match str.as_ref().to_lowercase().as_str() {
             "gruvbox" => Some(preset_palettes::GRUVBOX),
+            "gruvbox_light" => Some(preset_palettes::GRUVBOX_LIGHT),
             "default" => Some(preset_palettes::DEFAULT),
             _ => None,
         }

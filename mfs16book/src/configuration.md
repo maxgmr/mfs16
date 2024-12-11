@@ -12,6 +12,23 @@ However, this path can be overridden by setting the `MFS16DESKTOP_CONFIG` enviro
 
 ## Configuration Options
 
+### Palette Settings
+
+- **preset_palette:** The preset MFS-16 colour palette to be used.
+
+  This allows for easy switching between certain predefined colour schemes. The preset palettes are defined in the table below- simply replace the string in the config file with any one of the preset names in the table.
+
+| Preset Name   |
+| ------------- |
+| default       |
+| gruvbox       |
+| gruvbox_light |
+
+```toml
+[palette_settings]
+preset_palette = "Gruvbox" # case-insensitive
+```
+
 ### Path Settings
 
 - **data_path:** The path to the data directory where files are stored.
