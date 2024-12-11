@@ -1,5 +1,8 @@
 ie_register_addr = 0xFFFF_FFFE:d;
 
+enable_man_frame_addr = 0xFFFF_FFBD:d;
+disable_man_frame_addr = 0xFFFF_FFBC:d;
+
 bg_data_start = 0x0088_0000:d;
 bg_data_end = 0x008A_5800:d;
 
@@ -11,11 +14,15 @@ vram_end = 0x0102_5800:d;
 row_len = 0x140:d;
 col_len = 0xF0:d;
 
-my_colour = 0xDDDD_DDDD:d;
+my_colour = 0xEEEE_EEEE:d;
 my_speed = 1:d;
 
 bg_colour = 0x2222:w;
 lbg_colour = 0xAAAA:w;
+flower_colour_1 = 0x99AA:w;
+flower_colour_2 = 0xAABB:w;
+flower_colour_3 = 0xBB22:w;
+flower_colour_4 = 0x2299:w;
 w_colour = 0x4444:w;
 
 jp entry_point;
@@ -43,6 +50,9 @@ prompt_user_start:
 ret;
 
 load_bg:
+    // Disable frame updates to avoid screen tearing
+    ld [enable_man_frame_addr],A;
+
     push DE;
     push BC;
 
@@ -50,10 +60,17 @@ load_bg:
 
     load_bg_loop:
 
-    halt;
     rand B;
     rsb B,15;
-    cmp 0x7777:w,B;
+    cmp 0x7F00:w,B;
+    jpn draw_flower_1;
+    cmp 0x7E00:w,B;
+    jpn draw_flower_2;
+    cmp 0x7D00:w,B;
+    jpn draw_flower_3;
+    cmp 0x7C00:w,B;
+    jpn draw_flower_4;
+    cmp 0x7000:w,B;
     jpn draw_lbg;
     // Draw dark colour
     ld C,bg_colour;
@@ -61,6 +78,23 @@ load_bg:
     // Draw light colour
     draw_lbg:
     ld C,lbg_colour;
+    jp colour_pick_done;
+    // Draw flower 1
+    draw_flower_1:
+    ld C,flower_colour_1;
+    jp colour_pick_done;
+    // Draw flower 2
+    draw_flower_2:
+    ld C,flower_colour_2;
+    jp colour_pick_done;
+    // Draw flower 3
+    draw_flower_3:
+    ld C,flower_colour_3;
+    jp colour_pick_done;
+    // Draw flower 4
+    draw_flower_4:
+    ld C,flower_colour_4;
+
     colour_pick_done:
 
     ldi [DE],C;
@@ -71,6 +105,9 @@ load_bg:
 
     pop BC;
     pop DE;
+
+    // Re-enable frame updates
+    ld [disable_man_frame_addr],A;
 ret;
 
 draw_bg:
@@ -97,6 +134,7 @@ ret;
 
 move_character:
     push BC;
+    push HL;
     call erase_character;
 
     // Check up/w/k
@@ -114,6 +152,13 @@ move_character:
     mulu BC,my_speed;
     mulu BC,2:d;
     sub DE,BC;
+
+    // Check if hit top of screen (DE <= VRAM start)
+    cmp vram_start,DE;
+    jpn done;
+
+    call move_screen_up;
+
     jp done;
     not_up:
 
@@ -132,6 +177,16 @@ move_character:
     mulu BC,my_speed;
     mulu BC,2:d;
     add DE,BC;
+
+    // Check if hit bottom of screen (DE > VRAM end)
+    ld HL,row_len;
+    mulu HL,8:d;
+    add HL,DE;
+    cmp vram_end,HL;
+    jnn done;
+
+    call move_screen_down;
+
     jp done;
     not_down:
 
@@ -146,8 +201,19 @@ move_character:
     call check_scancode;
     jpz not_left;
     is_left:
+    // Set HL to start of current row
+    ld HL,DE;
+    call hl_to_row_start;
+
     ld BC,my_speed;
     sub DE,BC;
+
+    // Check if hit left of screen (DE <= start of row)
+    cmp HL,DE;
+    jpn done;
+
+    call move_screen_left;
+
     jp done;
     not_left:
 
@@ -162,12 +228,26 @@ move_character:
     call check_scancode;
     jpz not_right;
     is_right:
+    // Set HL to start of next row
+    ld HL,DE;
+    add HL,row_len;
+    call hl_to_row_start;
+    sub HL,4:d;
+
     ld BC,my_speed;
     add DE,BC;
+
+    // Check if hit right of screen (DE > start of next row)
+    cmp HL,DE;
+    jnn done;
+
+    call move_screen_right;
+
     not_right:
 
     done:
     call draw_character;
+    pop HL;
     pop BC;
 ret;
 
@@ -273,6 +353,109 @@ draw_character:
 
     pop BC;
     pop DE;
+ret;
+
+move_screen_up:
+    call load_bg;
+    call draw_bg;
+
+    // Move character to bottom of screen, preserving x offset.
+    push BC;
+    push HL;
+
+    // BC = x offset
+    ld BC,DE;
+    add BC,row_len;
+    add BC,row_len;
+    sub BC,vram_start;
+    divu BC,row_len;
+
+    // HL = 8 rows
+    ld HL,row_len;
+    mulu HL,8:d;
+
+    // Move DE off the bottom of the screen, then move 9 rows up
+    ld DE,vram_end;
+    sub DE,HL;
+
+    // Add x offset back to DE
+    add DE,BC;
+
+    pop HL;
+    pop BC;
+
+    call draw_character;
+ret;
+
+move_screen_down:
+    call load_bg;
+    call draw_bg;
+
+    // Move character to top of screen, preserving x offset.
+    push BC;
+
+    // BC = x offset
+    ld BC,DE;
+    add BC,row_len;
+    add BC,row_len;
+    sub BC,vram_start;
+    divu BC,row_len;
+
+    // Move DE to top of screen
+    ld DE,vram_start;
+    
+    // Add x offset back to DE
+    add DE,BC;
+    
+    pop BC;
+    call draw_character;
+ret;
+
+move_screen_left:
+    call load_bg;
+    call draw_bg;
+
+    // Move character to rightmost spot of current row
+    push HL;
+    ld HL,DE;
+    add HL,row_len;
+    add HL,row_len;
+    call hl_to_row_start;
+    sub HL,4:d;
+    ld DE,HL;
+    pop HL;
+
+    call draw_character;
+ret;
+
+move_screen_right:
+    call load_bg;
+    call draw_bg;
+
+    // Move character to leftmost spot of current row
+    push HL;
+    ld HL,DE;
+    call hl_to_row_start;
+    ld DE,HL;
+    pop HL;
+
+    call draw_character;
+ret;
+
+// Move HL to row start.
+hl_to_row_start:
+    push BC;
+    push DE;
+
+    ld DE,HL;
+    sub DE,vram_start;
+    // Set BC = "progress" in row
+    divu DE,row_len;
+    // Subtract this progress from HL
+    sub HL,BC;
+
+    pop DE;
+    pop BC;
 ret;
 
 // Move DE to centre of screen.
