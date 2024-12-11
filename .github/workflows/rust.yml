@@ -11,11 +11,16 @@ jobs:
   build_and_test:
     name: mfs16 - latest
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain: [stable, beta, nightly]
 
     steps:
     - uses: actions/checkout@v4
+    - name: Install SDL2 library
+      run: sudo apt-get install libsdl2-dev
     - name: Toolchain setup
-      run: rustup update stable && rustup default stable
+      run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
     - name: Build
       run: cargo build --verbose
     - name: Run tests
