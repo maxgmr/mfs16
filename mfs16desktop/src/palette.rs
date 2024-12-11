@@ -3,6 +3,8 @@ use std::default::Default;
 use hex_color::HexColor;
 use serde::{Deserialize, Serialize};
 
+mod preset_palettes;
+
 /// A 16-colour palette of RGB24 colours.
 #[derive(Debug, Clone)]
 pub struct Rgb24Palette {
@@ -117,6 +119,18 @@ pub struct HexPalette {
     bright_white: HexColor,
 }
 impl HexPalette {
+    /// Get the preset [HexPalette] corresponding to the given string, returning [None] if the
+    /// string does not match any preset palette.
+    ///
+    /// String matching is case-insensitive.
+    pub fn from_str<S: AsRef<str>>(str: S) -> Option<Self> {
+        match str.as_ref().to_lowercase().as_str() {
+            "gruvbox" => Some(preset_palettes::GRUVBOX),
+            "default" => Some(preset_palettes::DEFAULT),
+            _ => None,
+        }
+    }
+
     /// Get the [HexColor] corresponding to the given nibble.
     pub fn hex_color_from_nib(&self, byte: u8, is_high_nibble: bool) -> &HexColor {
         match if is_high_nibble {
@@ -146,23 +160,6 @@ impl HexPalette {
 }
 impl Default for HexPalette {
     fn default() -> Self {
-        Self {
-            black: HexColor::rgb(0x00, 0x00, 0x00),
-            red: HexColor::rgb(0x80, 0x00, 0x00),
-            green: HexColor::rgb(0x00, 0x80, 0x00),
-            yellow: HexColor::rgb(0x80, 0x80, 0x00),
-            blue: HexColor::rgb(0x00, 0x00, 0x80),
-            magenta: HexColor::rgb(0x80, 0x00, 0x80),
-            cyan: HexColor::rgb(0x00, 0x80, 0x80),
-            white: HexColor::rgb(0xC0, 0xC0, 0xC0),
-            bright_black: HexColor::rgb(0x80, 0x80, 0x80),
-            bright_red: HexColor::rgb(0xFF, 0x00, 0x00),
-            bright_green: HexColor::rgb(0x00, 0xFF, 0x00),
-            bright_yellow: HexColor::rgb(0xFF, 0xFF, 0x00),
-            bright_blue: HexColor::rgb(0x00, 0x00, 0xFF),
-            bright_magenta: HexColor::rgb(0xFF, 0x00, 0xFF),
-            bright_cyan: HexColor::rgb(0x00, 0xFF, 0xFF),
-            bright_white: HexColor::rgb(0xFF, 0xFF, 0xFF),
-        }
+        preset_palettes::DEFAULT
     }
 }

@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     debug::{BreakCriteria, MemRange},
+    palette::HexPalette,
     scancodes,
     utils::expand_path,
 };
@@ -15,6 +16,20 @@ use crate::{
 pub const DEFAULT_CONFIG_NAME: &str = "default";
 pub const DEFAULT_CONFIG_EXT: &str = "toml";
 pub const CONFIG_NAME: &str = "config";
+
+/// The colour palette settings.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct PaletteSettings {
+    pub preset_palette: String,
+    pub custom_palette: CustomPalette,
+}
+
+/// The custom, user-defined colour palette.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CustomPalette {
+    pub enabled: bool,
+    pub palette: HexPalette,
+}
 
 /// The path settings.
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -41,6 +56,7 @@ pub struct DebuggerSettings {
 /// The user configuration settings.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UserConfig {
+    pub palette_settings: PaletteSettings,
     pub path_settings: PathSettings,
     pub key_bindings: KeyBindings,
     pub debugger_settings: DebuggerSettings,
@@ -93,10 +109,28 @@ impl UserConfig {
         }
         Ok(self)
     }
+
+    /// Get the currently-selected palette of the config.
+    pub fn palette(&self) -> Option<HexPalette> {
+        if self.palette_settings.custom_palette.enabled {
+            // Use custom palette
+            return Some(self.palette_settings.custom_palette.palette.clone());
+        }
+
+        // Use preset palette
+        HexPalette::from_str(&self.palette_settings.preset_palette)
+    }
 }
 impl Default for UserConfig {
     fn default() -> Self {
         Self {
+            palette_settings: PaletteSettings {
+                preset_palette: String::from("default"),
+                custom_palette: CustomPalette {
+                    enabled: false,
+                    palette: HexPalette::default(),
+                },
+            },
             path_settings: PathSettings { data_path: None },
             key_bindings: KeyBindings {
                 exit: Scancode::Escape,

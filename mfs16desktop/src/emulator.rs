@@ -19,7 +19,12 @@ use sdl2::{
     video::Window,
 };
 
-use crate::{arg_parser::Cli, config::UserConfig, debug::Debugger, palette::Rgb24Palette};
+use crate::{
+    arg_parser::Cli,
+    config::UserConfig,
+    debug::Debugger,
+    palette::{HexPalette, Rgb24Palette},
+};
 
 // TODO add to config
 const SCALE: u32 = 2;
@@ -69,9 +74,6 @@ pub fn run_emulator(
     let emu_thread = std::thread::spawn(move || {
         // Move the computer into the thread
         let mut computer = computer;
-
-        // Don't want to spam console if too slow
-        let mut too_slow_printed = false;
 
         // Set up debugger
         let mut debugger = Debugger::new(
@@ -158,15 +160,13 @@ pub fn run_emulator(
                 }
             }
 
-            if !too_slow_printed && (cycles_start.elapsed() >= emu_frame_duration) {
+            if (debug || cpu_debug) && (cycles_start.elapsed() >= emu_frame_duration) {
                 println!(
-                    "Warning: emulator is unable to keep up with FPS!\nTime limit \
-                    for {} cycles: {:?}\nActual time: {:?}",
+                    "Time limit for {} cycles: {:?}\nActual time: {:?}",
                     cycles_per_frame,
                     emu_frame_duration,
                     cycles_start.elapsed()
                 );
-                too_slow_printed = true;
             }
         }
 
@@ -205,8 +205,17 @@ pub fn run_emulator(
     )?;
 
     // Get colour palette
-    // TODO load this palette from config instead
-    let palette = Rgb24Palette::default();
+    let palette = Rgb24Palette::from_hex_palette(match config.palette() {
+        Some(p) => p,
+        None => {
+            // Print warning if palette in config doesn't match anything
+            println!(
+                "Warning: No preset palette matches given config value \"{}\".",
+                config.palette_settings.preset_palette
+            );
+            HexPalette::default()
+        }
+    });
 
     // Create pixel array
     let mut pixels = vec![0_u8; DISPLAY_WIDTH * DISPLAY_HEIGHT * BYTES_PER_RGB24_PIXEL];
