@@ -3,7 +3,7 @@
 By default, the user configuration file for MFS-16 desktop is found in one of the following locations:
 
 - **Linux:** `~/.config/mfs16desktop/config.toml`
-- **macOS:** `/Users/<USER>/Library/Caches/com.maxgmr.mfs16desktop/config.toml`
+- **macOS:** `/Users/<USER>/Library/Caches/ca.maxgmr.mfs16desktop/config.toml`
 - **Windows:**`C:\Users\<USER>\AppData\Roaming\maxgmr\mfs16desktop\config\config.toml`
 
 However, this path can be overridden by setting the `MFS16DESKTOP_CONFIG` environment variable.
@@ -31,7 +31,7 @@ preset_palette = "Gruvbox" # case-insensitive
 
 ### Path Settings
 
-- **data_path:** The path to the data directory where files are stored.
+- **data_path:** The path to the data directory where the [virtual hard drives](./drives.md) are stored.
 
 ```toml
 [path_settings]

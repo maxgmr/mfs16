@@ -7,6 +7,7 @@
 - [Instruction Set](./instruction_set.md)
 - [Memory Map](./memory_map.md)
 - [I/O](./io.md)
+- [Drives](./drives.md)
 - [GPU](./gpu.md)
 - [MFS-16 Assembly](./mfs16asm.md)
 - [Demo Programs](./demo_programs.md)
