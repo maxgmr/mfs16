@@ -7,11 +7,11 @@ repository = "https://github.com/maxgmr/mfs16"
 license-file = "LICENSE"
 
 [dependencies]
-camino = "1"
-clap = { version = "4", features = ["cargo", "derive", "string"] }
-color-eyre = "0"
+camino = "1.1.9"
+clap = { version = "4.5.27", features = ["cargo", "derive", "string"] }
+color-eyre = "0.6.3"
 mfs16core = { path = "../mfs16core" }
-regex = "1"
+regex = "1.11.1"
 
 [dev-dependencies]
-pretty_assertions = "1"
+pretty_assertions = "1.4.1"

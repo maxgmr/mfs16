@@ -8,18 +8,18 @@ build = "build.rs"
 license-file = "LICENSE"
 
 [dependencies]
-camino = { version = "1", features = ["serde1"] }
-clap = { version = "4", features = ["cargo", "derive", "string"] }
-color-eyre = "0"
-config = "0"
-crossbeam = "0"
-directories = "5"
-hex_color = { version = "3", features = ["serde"] }
+camino = { version = "1.1.9", features = ["serde1"] }
+clap = { version = "4.5.27", features = ["cargo", "derive", "string"] }
+color-eyre = "0.6.3"
+config = "0.15.7"
+crossbeam = "0.8.4"
+directories = "5.0.1"
+hex_color = { version = "3.0.0", features = ["serde"] }
 mfs16core = { path = "../mfs16core" }
-sdl2 = "0"
-serde = { version = "1", features = ["derive"] }
-shellexpand = "3"
-toml = "0"
+sdl2 = { version = "0", features = ["bundled", "static-link"] }
+serde = { version = "1.0.217", features = ["derive"] }
+shellexpand = "3.1.0"
+toml = "0.8.19"
 
 [build-dependencies]
-vergen = { version = "9", features = ["build", "si"] }
+vergen = { version = "9.0.4", features = ["build", "si"] }
