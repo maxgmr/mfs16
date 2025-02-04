@@ -22,17 +22,22 @@ A number from 0-255 denoting the drive number.
 
 The name of the drive. Up to 16 characters of ASCII-encoded text. A `null` byte signals an early end to the name.
 
-### 0x21..=0x28 - Drive Size
+### 0x21..=0x22 - Block Size
 
-The size of the drive in bytes, stored little-endian.
+The number of bytes per block, stored little-endian.
 
-### 0x29 - Flags
+### 0x23..=0x24 - Block Count
+
+The number of blocks on the drive, stored little-endian.
+
+### 0x25 - Drive Flags
 
 The flags of the drive device itself. Each bit corresponds to a given flag:
 
-| 7 6 5 4 3 2 | 1         | 0        |
-| ----------- | --------- | -------- |
-|             | WriteFail | ReadFail |
+| 7 6 5 4 3 | 2    | 1         | 0        |
+| --------- | ---- | --------- | -------- |
+|           | Busy | WriteFail | ReadFail |
 
 - **ReadFail**: This flag is set if a read operation failed.
 - **WriteFail**: This flag is set if a write operation failed.
+- **Busy**: This flag is set if the drive is currently performing an operation.
