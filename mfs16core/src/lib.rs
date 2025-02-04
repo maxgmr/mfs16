@@ -3,6 +3,7 @@
 
 mod computer;
 mod cpu;
+mod drive;
 mod gpu;
 pub mod helpers;
 mod keyboard;
