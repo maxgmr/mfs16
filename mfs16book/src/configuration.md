@@ -4,7 +4,7 @@ By default, the user configuration file for MFS-16 desktop is found in one of th
 
 - **Linux:** `~/.config/mfs16desktop/config.toml`
 - **macOS:** `/Users/<USER>/Library/Caches/ca.maxgmr.mfs16desktop/config.toml`
-- **Windows:**`C:\Users\<USER>\AppData\Roaming\maxgmr\mfs16desktop\config\config.toml`
+- **Windows:**`C:\Users\<USER>\AppData\Local\maxgmr\mfs16desktop\config\config.toml`
 
 However, this path can be overridden by setting the `MFS16DESKTOP_CONFIG` environment variable.
 
