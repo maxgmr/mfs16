@@ -123,6 +123,28 @@ impl Drive {
 
         Ok(())
     }
+
+    // GETTERS
+
+    /// Get the number of this drive.
+    pub fn drive_number(&self) -> u8 {
+        self.header.drive_number()
+    }
+
+    /// Get the name of this drive.
+    pub fn drive_name(&self) -> &str {
+        self.header.drive_name()
+    }
+
+    /// Get the block size of this drive.
+    pub fn block_size(&self) -> u16 {
+        self.header.block_size()
+    }
+
+    /// Get the block count of this drive.
+    pub fn block_count(&self) -> u16 {
+        self.header.block_count()
+    }
 }
 
 #[cfg(test)]
