@@ -1,42 +1,46 @@
 # I/O
 
-## DMA Registers (0xFFFF_FFAA-0xFFFF_FFB3)
+## DMA Registers (0xFFFF_FFA2-0xFFFF_FFAF)
 
 These registers are used for [direct memory access (DMA)](https://en.wikipedia.org/wiki/Direct_memory_access), which allows virtual drives to access the main system memory independently from the CPU, allowing the CPU to perform other tasks in the meantime.
+
+A DMA transfer of one drive block (512 bytes) takes 128 cycles, which is much faster than individually reading/writing the values!
+
+Note that the MMU locks all memory reads and writes during the 128 cycles of a DMA transfer.
 
 The boot values of these registers are **not defined!** the values of these registers **must** be set **explicitly**.
 
 ### DMA Read Registers
 
-- **0xFFFF_FFAA:** Initiate DMA Read  
+- **0xFFFF_FFA2:** Initiate DMA Read  
    Write to this write-only address to initiate a DMA read.  
    Ensure that the parameters in the registers below have been set before initiation!
 
-- **0xFFFF_FFAB:** Drive Number  
+- **0xFFFF_FFA3:** Drive Number  
    The number of the drive to be read from.
 
-- **0xFFFF_FFAC:** Block Number  
+- **0xFFFF_FFA4:** Block Number  
    The number of the drive block to read.
 
-- **0xFFFF_FFAD-0xFFFF_FFAE:** RAM Read Start Address  
+- **0xFFFF_FFA5-0xFFFF_FFA8:** RAM Read Start Address  
    The drive block data is read into RAM starting at this address (little-endian).
 
 ### DMA Write Registers
 
-- **0xFFFF_FFAF:** Initiate DMA Write  
+- **0xFFFF_FFA9:** Initiate DMA Write  
    Write to this write-only address to initiate a DMA write.  
    Ensure that the parameters in the registers below have been set before initiation!
 
-- **0xFFFF_FFB0:** Drive Number  
+- **0xFFFF_FFAA:** Drive Number  
    The number of the drive to be written to.
 
-- **0xFFFF_FFB1:** Block Number  
+- **0xFFFF_FFAB:** Block Number  
    The number of the drive block to overwritten.
 
-- **0xFFFF_FFAD-0xFFFF_FFAE:** RAM Write Start Address  
+- **0xFFFF_FFAC-0xFFFF_FFAF:** RAM Write Start Address  
    The data in RAM starting at this address (little-endian) overwrites the chosen drive block.
 
-## VRAM DMA Registers (0xFFFF_FFB4-0xFFFF_FFB9)
+## VRAM DMA Registers (0xFFFF_FFB0-0xFFFF_FFB9)
 
 _Not yet implemented... VRAM DMA coming soon!_
 
