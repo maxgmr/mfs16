@@ -24,7 +24,7 @@ The name of the drive. Up to 16 characters of ASCII-encoded text. A `null` byte 
 
 ### 0x21..=0x22 - Block Size
 
-The number of bytes per block, stored little-endian.
+The number of bytes per block, stored little-endian. MFS-16 drives have a block size of 512.
 
 ### 0x23..=0x24 - Block Count
 
