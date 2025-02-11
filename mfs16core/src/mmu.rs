@@ -3,6 +3,7 @@
 use std::{default::Default, fmt::Display};
 
 use crate::{
+    computer::{BLOCK_SIZE, DMA_BYTES_PER_CYCLE},
     gpu::Gpu,
     helpers::{combine_u16_le, combine_u8_le},
     keyboard::{KbReg, KB_REG_SIZE},
@@ -13,11 +14,14 @@ use crate::{
 /// This byte is returned when the memory can't be read for any reason.
 pub const NOT_READABLE_BYTE: u8 = 0xFF;
 
+/// The number of cycles the DMA transfer takes.
+pub const DMA_TRANSFER_CYCLES: usize = BLOCK_SIZE / DMA_BYTES_PER_CYCLE;
+
 const ROM_END: usize = ROM_OFFSET + ROM_SIZE;
 const RAM_END: usize = RAM_OFFSET + RAM_SIZE;
 const VRAM_END: usize = VRAM_OFFSET + VRAM_SIZE;
 
-const DMA_R_RAM_ADDR_SIZE: usize = 2;
+const DMA_R_RAM_ADDR_SIZE: usize = 4;
 /// Write to this address to initiate a drive DMA read.
 pub const DMA_R_INIT_ADDR: usize = DMA_R_DRIVE_NUM_ADDR - 1;
 /// This address stores the number of the read drive.
@@ -28,7 +32,7 @@ pub const DMA_R_BLOCK_ADDR: usize = DMA_R_RAM_ADDR_START - 1;
 pub const DMA_R_RAM_ADDR_START: usize = DMA_R_RAM_ADDR_END - DMA_R_RAM_ADDR_SIZE;
 const DMA_R_RAM_ADDR_END: usize = DMA_W_INIT_ADDR;
 
-const DMA_W_RAM_ADDR_SIZE: usize = 2;
+const DMA_W_RAM_ADDR_SIZE: usize = 4;
 /// Write to this address to initiate a drive DMA write.
 pub const DMA_W_INIT_ADDR: usize = DMA_W_DRIVE_NUM_ADDR - 1;
 /// This address stores the number of the write drive.
@@ -40,14 +44,14 @@ pub const DMA_W_RAM_ADDR_START: usize = DMA_W_RAM_ADDR_END - DMA_W_RAM_ADDR_SIZE
 const DMA_W_RAM_ADDR_END: usize = VRAM_DMA_R_INIT_ADDR;
 
 // TODO
-const VRAM_DMA_R_RAM_ADDR_SIZE: usize = 2;
+const VRAM_DMA_R_RAM_ADDR_SIZE: usize = 4;
 /// Write to this address to initiate a VRAM DMA read.
 pub const VRAM_DMA_R_INIT_ADDR: usize = VRAM_DMA_R_RAM_ADDR_START - 1;
 /// This address stores the location in RAM to which the VRAM will be read (little-endian).
 pub const VRAM_DMA_R_RAM_ADDR_START: usize = VRAM_DMA_R_RAM_ADDR_END - VRAM_DMA_R_RAM_ADDR_SIZE;
 const VRAM_DMA_R_RAM_ADDR_END: usize = VRAM_DMA_W_INIT_ADDR;
 
-const VRAM_DMA_W_RAM_ADDR_SIZE: usize = 2;
+const VRAM_DMA_W_RAM_ADDR_SIZE: usize = 4;
 /// Write to this address to initiate a VRAM DMA write.
 pub const VRAM_DMA_W_INIT_ADDR: usize = VRAM_DMA_W_RAM_ADDR_START - 1;
 /// This area stores the location in RAM from which the VRAM will be written (little-endian).
@@ -93,6 +97,9 @@ pub struct Mmu {
     pub ie_register: u8,
     /// The interrupt register. Denotes which interrupts have been triggered.
     pub interrupt_register: u8,
+    /// The number of cycles until the current DMA transfer is complete. If 0, then no DMA transfer
+    /// is currently underway.
+    pub dma_cycles_remaining: usize,
     /// If true, print debug messages to stderr.
     pub debug: bool,
 }
@@ -104,6 +111,19 @@ impl Mmu {
             ram: Memory::new_empty(RAM_SIZE, true, true),
             ..Self::default()
         }
+    }
+
+    /// Perform one clock cycle.
+    pub fn cycle(&mut self) {
+        if self.is_locked() {
+            self.dma_cycles_remaining -= 1;
+        }
+    }
+
+    /// Check if the MMU is locked.
+    #[inline(always)]
+    pub fn is_locked(&self) -> bool {
+        self.dma_cycles_remaining > 0
     }
 
     /// Enable debug mode.
@@ -137,6 +157,10 @@ impl Mmu {
 
     /// Read a byte from a given address.
     pub fn read_byte(&mut self, address: u32) -> u8 {
+        if self.is_locked() {
+            return self.illegal_read(address, "read a byte while locked");
+        }
+
         match address.try_into().unwrap() {
             ROM_OFFSET..ROM_END if self.rom.is_readable() => {
                 self.rom.read_byte(address - ROM_OFFSET as u32)
@@ -149,16 +173,16 @@ impl Mmu {
             KB_REG_START..KB_REG_END => self.kb_reg.read_byte(address - KB_REG_START as u32),
             IE_REGISTER_ADDR => self.ie_register,
             INTERRUPT_REGISTER_ADDR => self.interrupt_register,
-            _ => {
-                self.set_error(MfsError::IllegalRead);
-                print_warning_message("read a byte", address, self.debug);
-                NOT_READABLE_BYTE
-            }
+            _ => self.illegal_read(address, "read a byte"),
         }
     }
 
     /// Write a byte to a given address.
     pub fn write_byte(&mut self, address: u32, value: u8) {
+        if self.is_locked() {
+            return self.illegal_write(address, "write a byte while locked");
+        }
+
         match address.try_into().unwrap() {
             ROM_OFFSET..ROM_END if self.rom.is_writable() => {
                 self.rom.write_byte(address - ROM_OFFSET as u32, value)
@@ -172,15 +196,16 @@ impl Mmu {
             MAN_FRAME_ENABLE_ADDR => self.gpu.man_frame_enable(),
             IE_REGISTER_ADDR => self.ie_register = value,
             INTERRUPT_REGISTER_ADDR => self.interrupt_register = value,
-            _ => {
-                self.set_error(MfsError::IllegalWrite);
-                print_warning_message("write a byte", address, self.debug);
-            }
+            _ => self.illegal_write(address, "write a byte"),
         };
     }
 
     /// Read a word starting at a given address.
     pub fn read_word(&mut self, address: u32) -> u16 {
+        if self.is_locked() {
+            return self.illegal_read(address, "read a word while locked");
+        }
+
         match address.try_into().unwrap() {
             ROM_OFFSET..ROM_END if self.rom.is_readable() => {
                 self.rom.read_word(address - ROM_OFFSET as u32)
@@ -192,12 +217,16 @@ impl Mmu {
             ERR_REG_ADDR => self.consume_err_reg() as u16,
             IE_REGISTER_ADDR => self.ie_register as u16,
             INTERRUPT_REGISTER_ADDR => self.interrupt_register as u16,
-            _ => combine_u8_le(self.read_byte(address), self.read_byte(address + 1)),
+            _ => self.illegal_read(address, "read a word"),
         }
     }
 
     /// Write a word to a given address.
     pub fn write_word(&mut self, address: u32, value: u16) {
+        if self.is_locked() {
+            return self.illegal_write(address, "write a word while locked");
+        }
+
         match address.try_into().unwrap() {
             ROM_OFFSET..ROM_END if self.rom.is_writable() => {
                 self.rom.write_word(address - ROM_OFFSET as u32, value)
@@ -211,15 +240,16 @@ impl Mmu {
             MAN_FRAME_ENABLE_ADDR => self.gpu.man_frame_enable(),
             IE_REGISTER_ADDR => self.ie_register = value as u8,
             INTERRUPT_REGISTER_ADDR => self.interrupt_register = value as u8,
-            _ => {
-                self.set_error(MfsError::IllegalWrite);
-                print_warning_message("write a word", address, self.debug);
-            }
+            _ => self.illegal_write(address, "write a word"),
         };
     }
 
     /// Read a double word starting at a given address.
     pub fn read_dword(&mut self, address: u32) -> u32 {
+        if self.is_locked() {
+            return self.illegal_read(address, "read a double word while locked");
+        }
+
         match address.try_into().unwrap() {
             ROM_OFFSET..ROM_END if self.rom.is_readable() => {
                 self.rom.read_dword(address - ROM_OFFSET as u32)
@@ -231,15 +261,16 @@ impl Mmu {
             ERR_REG_ADDR => self.consume_err_reg() as u32,
             IE_REGISTER_ADDR => self.ie_register as u32,
             INTERRUPT_REGISTER_ADDR => self.interrupt_register as u32,
-            _ => combine_u16_le(
-                combine_u8_le(self.read_byte(address), self.read_byte(address + 1)),
-                combine_u8_le(self.read_byte(address + 2), self.read_byte(address + 3)),
-            ),
+            _ => self.illegal_read(address, "read a double word"),
         }
     }
 
     /// Write a double word to a given address.
     pub fn write_dword(&mut self, address: u32, value: u32) {
+        if self.is_locked() {
+            return self.illegal_write(address, "write a double word while locked");
+        }
+
         match address.try_into().unwrap() {
             ROM_OFFSET..ROM_END if self.rom.is_writable() => {
                 self.rom.write_dword(address - ROM_OFFSET as u32, value)
@@ -253,22 +284,33 @@ impl Mmu {
             MAN_FRAME_ENABLE_ADDR => self.gpu.man_frame_enable(),
             IE_REGISTER_ADDR => self.ie_register = value as u8,
             INTERRUPT_REGISTER_ADDR => self.interrupt_register = value as u8,
-            _ => {
-                self.set_error(MfsError::IllegalWrite);
-                print_warning_message("write a double word", address, self.debug);
-            }
+            _ => self.illegal_write(address, "write a double word"),
         };
     }
 
     /// Write a double word to VRAM only.
     pub fn write_dword_vram(&mut self, address: u32, value: u32) {
+        if self.is_locked() {
+            return self.illegal_write(address, "VRAM write while locked");
+        }
+
         match address.try_into().unwrap() {
             VRAM_OFFSET..VRAM_END => self.gpu.write_dword(address - VRAM_OFFSET as u32, value),
-            _ => {
-                self.set_error(MfsError::IllegalWrite);
-                print_warning_message("VRAM write outside of VRAM", address, self.debug);
-            }
+            _ => self.illegal_write(address, "VRAM write outside of VRAM"),
         }
+    }
+
+    /// What to do when an illegal write is performed.
+    fn illegal_write(&mut self, address: u32, msg: &'static str) {
+        self.set_error(MfsError::IllegalWrite);
+        print_warning_message(msg, address, self.debug);
+    }
+
+    /// What to do when an illegal read is performed.
+    fn illegal_read<T: ErrVal>(&mut self, address: u32, msg: &'static str) -> T {
+        self.set_error(MfsError::IllegalRead);
+        print_warning_message(msg, address, self.debug);
+        <T>::ERR_VAL
     }
 }
 impl Default for Mmu {
@@ -281,10 +323,24 @@ impl Default for Mmu {
             kb_reg: KbReg::default(),
             ie_register: 0x00,
             interrupt_register: 0x00,
+            dma_cycles_remaining: 0,
             debug: false,
         }
     }
 }
+
+trait ErrVal {
+    /// The value that represents an "error" value for that type when reading from memory.
+    const ERR_VAL: Self;
+}
+macro_rules! impl_err_val {
+    ($($t:ty),+) => {
+        $(impl ErrVal for $t {
+            const ERR_VAL: $t = <$t>::MAX;
+        })+
+    }
+}
+impl_err_val!(u8, u16, u32);
 
 /// Print a warning message if debugging is allowed.
 pub fn print_warning_message(verb: &'static str, address: u32, debug: bool) {
