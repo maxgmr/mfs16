@@ -1,5 +1,6 @@
 use crate::{
     cpu::Cpu,
+    drive::Drive,
     keyboard::KbCode,
     mmu::{Interrupt, Mmu},
     Addr,
@@ -36,12 +37,14 @@ pub const BLOCK_SIZE: usize = 512;
 pub const DMA_BYTES_PER_CYCLE: usize = 4;
 
 /// The MFS-16 virtual computer.
-#[derive(Default, Debug, PartialEq, Clone)]
+#[derive(Default, Debug)]
 pub struct Computer {
     /// The central processing unit of the computer.
     pub cpu: Cpu,
     /// The memory management unit of the computer.
     pub mmu: Mmu,
+    /// All the drives connected to the computer.
+    drives: Vec<Drive>,
     /// The cycle counter.
     pub cycles: u128,
     /// Will print debug messages to stdout when true.
@@ -77,6 +80,12 @@ impl Computer {
     /// The display width in pixels.
     pub const DISPLAY_WIDTH: usize = DISPLAY_WIDTH;
 
+    /// The drive block size.
+    pub const BLOCK_SIZE: usize = BLOCK_SIZE;
+
+    /// The DMA transfer speed.
+    pub const DMA_BYTES_PER_CYCLE: usize = DMA_BYTES_PER_CYCLE;
+
     /// Create a new [Computer] with empty memory.
     pub fn new(debug: bool) -> Self {
         Self {
@@ -89,9 +98,23 @@ impl Computer {
         }
     }
 
+    /// Insert a [Drive] into the computer, failing if a drive with that number already exists.
+    pub fn insert_drive(&mut self, drive: Drive) -> Result<(), String> {
+        if self.find_drive(drive.drive_number()).is_none() {
+            return Err(format!(
+                "Failed to insert drive: Drive with number {} already exists!",
+                drive.drive_number()
+            ));
+        }
+
+        self.drives.push(drive);
+        Ok(())
+    }
+
     /// Perform one clock cycle.
     pub fn cycle(&mut self) {
         self.cpu.cycle(&mut self.mmu);
+        self.mmu.cycle();
         self.cycles += 1;
     }
 
@@ -122,5 +145,12 @@ impl Computer {
                 println!("`{}` released", kbc);
             }
         }
+    }
+
+    /// Find the [Drive] with the given drive number.
+    pub fn find_drive(&self, drive_number: u8) -> Option<&Drive> {
+        self.drives
+            .iter()
+            .find(|inserted_drive| inserted_drive.drive_number() == drive_number)
     }
 }
