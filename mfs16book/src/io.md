@@ -35,7 +35,7 @@ The boot values of these registers are **not defined!** the values of these regi
    The number of the drive to be written to.
 
 - **0xFFFF_FFAB:** Block Number  
-   The number of the drive block to overwritten.
+   The number of the drive block to be overwritten.
 
 - **0xFFFF_FFAC-0xFFFF_FFAF:** RAM Write Start Address  
    The data in RAM starting at this address (little-endian) overwrites the chosen drive block.
