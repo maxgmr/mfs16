@@ -1,5 +1,45 @@
 # I/O
 
+## DMA Registers (0xFFFF_FFAA-0xFFFF_FFB3)
+
+These registers are used for [direct memory access (DMA)](https://en.wikipedia.org/wiki/Direct_memory_access), which allows virtual drives to addess the main system memory independently from the CPU, allowing the CPU to perform other tasks in the meantime.
+
+The boot values of these registers are **not defined!** the values of these registers **must** be set **explicitly**.
+
+### DMA Read Registers
+
+- **0xFFFF_FFAA:** Initiate DMA Read  
+   Write to this write-only address to initiate a DMA read.  
+   Ensure that the parameters in the registers below have been set before initiation!
+
+- **0xFFFF_FFAB:** Drive Number  
+   The number of the drive to be read from.
+
+- **0xFFFF_FFAC:** Block Number  
+   The number of the drive block to read.
+
+- **0xFFFF_FFAD-0xFFFF_FFAE:** RAM Read Start Address  
+   The drive block data is read into RAM starting at this address (little-endian).
+
+### DMA Write Registers
+
+- **0xFFFF_FFAF:** Initiate DMA Write  
+   Write to this write-only address to initiate a DMA write.  
+   Ensure that the parameters in the registers below have been set before initiation!
+
+- **0xFFFF_FFB0:** Drive Number  
+   The number of the drive to be written to.
+
+- **0xFFFF_FFB1:** Block Number  
+   The number of the drive block to overwritten.
+
+- **0xFFFF_FFAD-0xFFFF_FFAE:** RAM Write Start Address  
+   The data in RAM starting at this address (little-endian) overwrites the chosen drive block.
+
+## VRAM DMA Registers (0xFFFF_FFB4-0xFFFF_FFB9)
+
+_Not yet implemented... VRAM DMA coming soon!_
+
 ## Error Register (0xFFFF_FFBA)
 
 Bits in the error register get set if a non-fatal error occurs during program execution. This register is read-only, and reading the register resets all the bits back to 0.
