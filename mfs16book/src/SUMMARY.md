@@ -1,6 +1,7 @@
 # Summary
 
 - [Introduction](./introduction.md)
+- [Quick Start - Linux](./quick_start_linux.md)
 - [Configuration](./configuration.md)
 - [CPU](./cpu.md)
 - [Interrupts](./interrupts.md)
