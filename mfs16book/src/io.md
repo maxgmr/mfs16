@@ -2,7 +2,7 @@
 
 ## DMA Registers (0xFFFF_FFAA-0xFFFF_FFB3)
 
-These registers are used for [direct memory access (DMA)](https://en.wikipedia.org/wiki/Direct_memory_access), which allows virtual drives to addess the main system memory independently from the CPU, allowing the CPU to perform other tasks in the meantime.
+These registers are used for [direct memory access (DMA)](https://en.wikipedia.org/wiki/Direct_memory_access), which allows virtual drives to access the main system memory independently from the CPU, allowing the CPU to perform other tasks in the meantime.
 
 The boot values of these registers are **not defined!** the values of these registers **must** be set **explicitly**.
 
