@@ -48,6 +48,7 @@ const NUM_BREGS: u8 = 3;
 // - [instruction_parser.rs]    Add to instr_to_bytes
 // - [parser_tests.rs]          Add a to_bytes_test
 // - [parser_tests.rs]          (OPTIONAL) Add a parser_test
+// - [mfs16book]                Add documentation!
 
 /// Enum for accessing the different CPU instructions.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
