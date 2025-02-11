@@ -29,6 +29,12 @@ pub const DISPLAY_HEIGHT: usize = 480;
 /// Display width
 pub const DISPLAY_WIDTH: usize = 640;
 
+/// Drive block size
+pub const BLOCK_SIZE: usize = 512;
+
+/// The speed of DMA transfer
+pub const DMA_BYTES_PER_CYCLE: usize = 4;
+
 /// The MFS-16 virtual computer.
 #[derive(Default, Debug, PartialEq, Clone)]
 pub struct Computer {
