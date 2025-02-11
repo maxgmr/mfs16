@@ -17,23 +17,60 @@ const ROM_END: usize = ROM_OFFSET + ROM_SIZE;
 const RAM_END: usize = RAM_OFFSET + RAM_SIZE;
 const VRAM_END: usize = VRAM_OFFSET + VRAM_SIZE;
 
+const DMA_R_RAM_ADDR_SIZE: usize = 2;
+/// Write to this address to initiate a drive DMA read.
+pub const DMA_R_INIT_ADDR: usize = DMA_R_DRIVE_NUM_ADDR - 1;
+/// This address stores the number of the read drive.
+pub const DMA_R_DRIVE_NUM_ADDR: usize = DMA_R_BLOCK_ADDR - 1;
+/// This address stores the number of the block which will be read.
+pub const DMA_R_BLOCK_ADDR: usize = DMA_R_RAM_ADDR_START - 1;
+/// This area stores the location in RAM to which the drive DMA will be written (little-endian).
+pub const DMA_R_RAM_ADDR_START: usize = DMA_R_RAM_ADDR_END - DMA_R_RAM_ADDR_SIZE;
+const DMA_R_RAM_ADDR_END: usize = DMA_W_INIT_ADDR;
+
+const DMA_W_RAM_ADDR_SIZE: usize = 2;
+/// Write to this address to initiate a drive DMA write.
+pub const DMA_W_INIT_ADDR: usize = DMA_W_DRIVE_NUM_ADDR - 1;
+/// This address stores the number of the write drive.
+pub const DMA_W_DRIVE_NUM_ADDR: usize = DMA_W_BLOCK_ADDR - 1;
+/// This address stores the number of the block which will be written to.
+pub const DMA_W_BLOCK_ADDR: usize = DMA_W_RAM_ADDR_START - 1;
+/// This area stores the location in RAM which will be written to the drive (little-endian).
+pub const DMA_W_RAM_ADDR_START: usize = DMA_W_RAM_ADDR_END - DMA_W_RAM_ADDR_SIZE;
+const DMA_W_RAM_ADDR_END: usize = VRAM_DMA_R_INIT_ADDR;
+
+// TODO
+const VRAM_DMA_R_RAM_ADDR_SIZE: usize = 2;
+/// Write to this address to initiate a VRAM DMA read.
+pub const VRAM_DMA_R_INIT_ADDR: usize = VRAM_DMA_R_RAM_ADDR_START - 1;
+/// This address stores the location in RAM to which the VRAM will be read (little-endian).
+pub const VRAM_DMA_R_RAM_ADDR_START: usize = VRAM_DMA_R_RAM_ADDR_END - VRAM_DMA_R_RAM_ADDR_SIZE;
+const VRAM_DMA_R_RAM_ADDR_END: usize = VRAM_DMA_W_INIT_ADDR;
+
+const VRAM_DMA_W_RAM_ADDR_SIZE: usize = 2;
+/// Write to this address to initiate a VRAM DMA write.
+pub const VRAM_DMA_W_INIT_ADDR: usize = VRAM_DMA_W_RAM_ADDR_START - 1;
+/// This area stores the location in RAM from which the VRAM will be written (little-endian).
+pub const VRAM_DMA_W_RAM_ADDR_START: usize = VRAM_DMA_W_RAM_ADDR_END - VRAM_DMA_R_RAM_ADDR_SIZE;
+const VRAM_DMA_W_RAM_ADDR_END: usize = ERR_REG_ADDR;
+
 /// Address of the error register.
-pub const ERR_REG_ADDR: usize = 0xFFFF_FFBA;
+pub const ERR_REG_ADDR: usize = MAN_FRAME_UPDATE_ADDR - 1;
 
 /// Write to this address to send a manual frame update.
-pub const MAN_FRAME_UPDATE_ADDR: usize = 0xFFFF_FFBB;
+pub const MAN_FRAME_UPDATE_ADDR: usize = MAN_FRAME_DISABLE_ADDR - 1;
 /// Write to this address to turn off manual frame updates.
-pub const MAN_FRAME_DISABLE_ADDR: usize = 0xFFFF_FFBC;
+pub const MAN_FRAME_DISABLE_ADDR: usize = MAN_FRAME_ENABLE_ADDR - 1;
 /// Write to this address to turn on manual frame updates.
-pub const MAN_FRAME_ENABLE_ADDR: usize = 0xFFFF_FFBD;
+pub const MAN_FRAME_ENABLE_ADDR: usize = KB_REG_START - 1;
 
 /// Start address of the keyboard register.
-pub const KB_REG_START: usize = 0xFFFF_FFBE;
+pub const KB_REG_START: usize = IE_REGISTER_ADDR - KB_REG_SIZE;
 
-const KB_REG_END: usize = KB_REG_START + KB_REG_SIZE;
+const KB_REG_END: usize = IE_REGISTER_ADDR;
 
 /// Address of the interrupt enable register.
-pub const IE_REGISTER_ADDR: usize = 0xFFFF_FFFE;
+pub const IE_REGISTER_ADDR: usize = INTERRUPT_REGISTER_ADDR - 1;
 /// Address of the interrupt register.
 pub const INTERRUPT_REGISTER_ADDR: usize = 0xFFFF_FFFF;
 
