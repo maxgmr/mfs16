@@ -113,8 +113,8 @@ impl Computer {
 
     /// Perform one clock cycle.
     pub fn cycle(&mut self) {
-        self.cpu.cycle(&mut self.mmu);
         self.mmu.cycle();
+        self.cpu.cycle(&mut self.mmu);
         self.cycles += 1;
     }
 

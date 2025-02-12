@@ -5,7 +5,6 @@ use std::{default::Default, fmt::Display};
 use crate::{
     computer::{BLOCK_SIZE, DMA_BYTES_PER_CYCLE},
     gpu::Gpu,
-    helpers::{combine_u16_le, combine_u8_le},
     keyboard::{KbReg, KB_REG_SIZE},
     memory::Memory,
     RAM_OFFSET, RAM_SIZE, ROM_OFFSET, ROM_SIZE, VRAM_OFFSET, VRAM_SIZE,
@@ -55,7 +54,7 @@ const VRAM_DMA_W_RAM_ADDR_SIZE: usize = 4;
 /// Write to this address to initiate a VRAM DMA write.
 pub const VRAM_DMA_W_INIT_ADDR: usize = VRAM_DMA_W_RAM_ADDR_START - 1;
 /// This area stores the location in RAM from which the VRAM will be written (little-endian).
-pub const VRAM_DMA_W_RAM_ADDR_START: usize = VRAM_DMA_W_RAM_ADDR_END - VRAM_DMA_R_RAM_ADDR_SIZE;
+pub const VRAM_DMA_W_RAM_ADDR_START: usize = VRAM_DMA_W_RAM_ADDR_END - VRAM_DMA_W_RAM_ADDR_SIZE;
 const VRAM_DMA_W_RAM_ADDR_END: usize = ERR_REG_ADDR;
 
 /// Address of the error register.
@@ -87,6 +86,18 @@ pub struct Mmu {
     pub ram: Memory,
     /// The graphics processing unit of the computer.
     pub gpu: Gpu,
+    /// DMA read: the number of the drive to read from.
+    pub dma_r_drive_num_reg: u8,
+    /// DMA read: the number of the drive block to read.
+    pub dma_r_block_num_reg: u8,
+    /// DMA read: the drive block data is read into RAM starting at this address.
+    pub dma_r_ram_start_reg: u32,
+    /// DMA write: the number of the drive to write to.
+    pub dma_w_drive_num_reg: u8,
+    /// DMA write: the number of the drive block to be overwritten.
+    pub dma_w_block_num_reg: u8,
+    /// DMA write: the data in RAM starting at this address overwrites the chosen drive block.
+    pub dma_w_ram_start_reg: u32,
     /// The error register. Bits are toggled on when an error is triggered, and bits are toggled
     /// off when errors are consumed.
     pub err_reg: u8,
@@ -97,9 +108,14 @@ pub struct Mmu {
     pub ie_register: u8,
     /// The interrupt register. Denotes which interrupts have been triggered.
     pub interrupt_register: u8,
-    /// The number of cycles until the current DMA transfer is complete. If 0, then no DMA transfer
-    /// is currently underway.
-    pub dma_cycles_remaining: usize,
+    /// The number of cycles until the current DMA read is complete. If 0, then no DMA read is
+    /// currently underway.
+    pub dma_read_cycles_remaining: usize,
+    /// The number of cycles until the current DMA write is complete. If 0, then no DMA write is
+    /// currently underway.
+    pub dma_write_cycles_remaining: usize,
+    /// The current block being read to or written from in the DMA transfer.
+    pub current_dma_block: [u8; BLOCK_SIZE],
     /// If true, print debug messages to stderr.
     pub debug: bool,
 }
@@ -115,15 +131,17 @@ impl Mmu {
 
     /// Perform one clock cycle.
     pub fn cycle(&mut self) {
-        if self.is_locked() {
-            self.dma_cycles_remaining -= 1;
+        if self.dma_read_cycles_remaining > 0 {
+            self.dma_read_cycles_remaining -= 1;
+        } else if self.dma_write_cycles_remaining > 0 {
+            self.dma_write_cycles_remaining -= 1;
         }
     }
 
     /// Check if the MMU is locked.
     #[inline(always)]
     pub fn is_locked(&self) -> bool {
-        self.dma_cycles_remaining > 0
+        (self.dma_read_cycles_remaining > 0) || (self.dma_write_cycles_remaining > 0)
     }
 
     /// Enable debug mode.
@@ -155,6 +173,18 @@ impl Mmu {
         result
     }
 
+    /// Start a DMA read. The MMU is ticked before the CPU, so 1 must be added so the CPU cannot
+    /// access the MMU for the entire DMA time.
+    fn dma_read(&mut self) {
+        self.dma_read_cycles_remaining = DMA_TRANSFER_CYCLES + 1;
+    }
+
+    /// Start a DMA write. The MMU is ticked before the CPU, so 1 must be added so the CPU cannot
+    /// access the MMU for the entire DMA time.
+    fn dma_write(&mut self) {
+        self.dma_write_cycles_remaining = DMA_TRANSFER_CYCLES + 1;
+    }
+
     /// Read a byte from a given address.
     pub fn read_byte(&mut self, address: u32) -> u8 {
         if self.is_locked() {
@@ -169,6 +199,10 @@ impl Mmu {
                 self.ram.read_byte(address - RAM_OFFSET as u32)
             }
             VRAM_OFFSET..VRAM_END => self.gpu.read_byte(address - VRAM_OFFSET as u32),
+            DMA_R_DRIVE_NUM_ADDR => self.dma_r_drive_num_reg,
+            DMA_R_BLOCK_ADDR => self.dma_r_block_num_reg,
+            DMA_W_DRIVE_NUM_ADDR => self.dma_w_drive_num_reg,
+            DMA_W_BLOCK_ADDR => self.dma_w_block_num_reg,
             ERR_REG_ADDR => self.consume_err_reg(),
             KB_REG_START..KB_REG_END => self.kb_reg.read_byte(address - KB_REG_START as u32),
             IE_REGISTER_ADDR => self.ie_register,
@@ -191,6 +225,12 @@ impl Mmu {
                 self.ram.write_byte(address - RAM_OFFSET as u32, value)
             }
             VRAM_OFFSET..VRAM_END => self.gpu.write_byte(address - VRAM_OFFSET as u32, value),
+            DMA_R_INIT_ADDR => self.dma_read(),
+            DMA_R_DRIVE_NUM_ADDR => self.dma_r_drive_num_reg = value,
+            DMA_R_BLOCK_ADDR => self.dma_r_block_num_reg = value,
+            DMA_W_INIT_ADDR => self.dma_write(),
+            DMA_W_DRIVE_NUM_ADDR => self.dma_w_drive_num_reg = value,
+            DMA_W_BLOCK_ADDR => self.dma_w_block_num_reg = value,
             MAN_FRAME_UPDATE_ADDR => self.gpu.set_frame_update_flag(),
             MAN_FRAME_DISABLE_ADDR => self.gpu.man_frame_disable(),
             MAN_FRAME_ENABLE_ADDR => self.gpu.man_frame_enable(),
@@ -258,6 +298,8 @@ impl Mmu {
                 self.ram.read_dword(address - RAM_OFFSET as u32)
             }
             VRAM_OFFSET..VRAM_END => self.gpu.read_dword(address - VRAM_OFFSET as u32),
+            DMA_R_RAM_ADDR_START => self.dma_r_ram_start_reg,
+            DMA_W_RAM_ADDR_START => self.dma_w_ram_start_reg,
             ERR_REG_ADDR => self.consume_err_reg() as u32,
             IE_REGISTER_ADDR => self.ie_register as u32,
             INTERRUPT_REGISTER_ADDR => self.interrupt_register as u32,
@@ -279,6 +321,8 @@ impl Mmu {
                 self.ram.write_dword(address - RAM_OFFSET as u32, value)
             }
             VRAM_OFFSET..VRAM_END => self.gpu.write_dword(address - VRAM_OFFSET as u32, value),
+            DMA_R_RAM_ADDR_START => self.dma_r_ram_start_reg = value,
+            DMA_W_RAM_ADDR_START => self.dma_w_ram_start_reg = value,
             MAN_FRAME_UPDATE_ADDR => self.gpu.set_frame_update_flag(),
             MAN_FRAME_DISABLE_ADDR => self.gpu.man_frame_disable(),
             MAN_FRAME_ENABLE_ADDR => self.gpu.man_frame_enable(),
@@ -319,11 +363,19 @@ impl Default for Mmu {
             rom: Memory::new_empty(ROM_SIZE, true, false),
             ram: Memory::new_empty(RAM_SIZE, true, true),
             gpu: Gpu::default(),
+            dma_r_drive_num_reg: 0x00,
+            dma_r_block_num_reg: 0x00,
+            dma_r_ram_start_reg: 0x0000_0000,
+            dma_w_drive_num_reg: 0x00,
+            dma_w_block_num_reg: 0x00,
+            dma_w_ram_start_reg: 0x0000_0000,
             err_reg: 0x00,
             kb_reg: KbReg::default(),
             ie_register: 0x00,
             interrupt_register: 0x00,
-            dma_cycles_remaining: 0,
+            dma_read_cycles_remaining: 0,
+            dma_write_cycles_remaining: 0,
+            current_dma_block: [0x00; BLOCK_SIZE],
             debug: false,
         }
     }
@@ -440,6 +492,141 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use super::*;
+
+    macro_rules! impl_checks {
+        ($chk_name:ident, $t:ty, $mmu_w_fn:ident, $mmu_r_fn:ident) => {
+            fn $chk_name(mmu: &mut Mmu, addr: usize, val: $t) {
+                mmu.$mmu_w_fn(addr as u32, val);
+                assert_eq!(mmu.$mmu_r_fn(addr as u32), val);
+                assert_eq!(mmu.err_reg, 0);
+            }
+        };
+    }
+
+    impl_checks!(check_write_byte, u8, write_byte, read_byte);
+    // impl_checks!(check_write_word, u16, write_word, read_word);
+    impl_checks!(check_write_dword, u32, write_dword, read_dword);
+
+    fn assert_dma_off(mmu: &mut Mmu) {
+        assert_eq!(mmu.dma_write_cycles_remaining, 0);
+        assert_eq!(mmu.dma_read_cycles_remaining, 0);
+        assert!(!mmu.is_locked());
+    }
+
+    fn assert_mmu_locked(mmu: &mut Mmu) {
+        mmu.write_byte(RAM_OFFSET as u32, 0xAB);
+        assert!(mmu.consume_err_reg() != 0);
+        mmu.write_word(RAM_OFFSET as u32, 0xABCD);
+        assert!(mmu.consume_err_reg() != 0);
+        mmu.write_dword(RAM_OFFSET as u32, 0xABCD_EF01);
+        assert!(mmu.consume_err_reg() != 0);
+
+        assert_eq!(mmu.read_byte(RAM_OFFSET as u32), <u8>::ERR_VAL);
+        assert!(mmu.consume_err_reg() != 0);
+        assert_eq!(mmu.read_word(RAM_OFFSET as u32), <u16>::ERR_VAL);
+        assert!(mmu.consume_err_reg() != 0);
+        assert_eq!(mmu.read_dword(RAM_OFFSET as u32), <u32>::ERR_VAL);
+        assert!(mmu.consume_err_reg() != 0);
+
+        assert!(mmu.is_locked());
+    }
+
+    fn assert_mmu_unlocked(mmu: &mut Mmu) {
+        const EXPECTED_BYTE: u8 = 0xAB;
+        const EXPECTED_WORD: u16 = 0xABCD;
+        const EXPECTED_DWORD: u32 = 0xABCD_EF01;
+
+        assert_eq!(mmu.read_byte(RAM_OFFSET as u32), 0);
+        assert!(mmu.consume_err_reg() == 0);
+        assert_eq!(mmu.read_word(RAM_OFFSET as u32), 0);
+        assert!(mmu.consume_err_reg() == 0);
+        assert_eq!(mmu.read_dword(RAM_OFFSET as u32), 0);
+        assert!(mmu.consume_err_reg() == 0);
+
+        mmu.write_byte(RAM_OFFSET as u32, EXPECTED_BYTE);
+        assert!(mmu.consume_err_reg() == 0);
+        assert_eq!(mmu.read_byte(RAM_OFFSET as u32), EXPECTED_BYTE);
+        assert!(mmu.consume_err_reg() == 0);
+
+        mmu.write_word(RAM_OFFSET as u32, EXPECTED_WORD);
+        assert!(mmu.consume_err_reg() == 0);
+        assert_eq!(mmu.read_word(RAM_OFFSET as u32), EXPECTED_WORD);
+        assert!(mmu.consume_err_reg() == 0);
+
+        mmu.write_dword(RAM_OFFSET as u32, EXPECTED_DWORD);
+        assert!(mmu.consume_err_reg() == 0);
+        assert_eq!(mmu.read_dword(RAM_OFFSET as u32), EXPECTED_DWORD);
+        assert!(mmu.consume_err_reg() == 0);
+
+        assert!(!mmu.is_locked());
+    }
+
+    #[test]
+    fn test_dma_regs() {
+        let mut mmu = Mmu::default();
+
+        assert_dma_off(&mut mmu);
+
+        check_write_byte(&mut mmu, DMA_R_DRIVE_NUM_ADDR, 0x01);
+        check_write_byte(&mut mmu, DMA_R_BLOCK_ADDR, 0x23);
+        check_write_dword(&mut mmu, DMA_R_RAM_ADDR_START, 0x0080_1234);
+
+        assert_dma_off(&mut mmu);
+
+        check_write_byte(&mut mmu, DMA_W_DRIVE_NUM_ADDR, 0x45);
+        check_write_byte(&mut mmu, DMA_W_BLOCK_ADDR, 0x67);
+        check_write_dword(&mut mmu, DMA_W_RAM_ADDR_START, 0x0080_5678);
+
+        assert_dma_off(&mut mmu);
+
+        // Read-only
+        assert_eq!(mmu.read_byte(DMA_W_INIT_ADDR as u32), <u8>::ERR_VAL);
+        assert!(mmu.consume_err_reg() != 0);
+        assert_eq!(mmu.read_byte(DMA_R_INIT_ADDR as u32), <u8>::ERR_VAL);
+        assert!(mmu.consume_err_reg() != 0);
+    }
+
+    #[test]
+    fn test_dma() {
+        let mut mmu = Mmu::default();
+
+        assert_dma_off(&mut mmu);
+
+        // Test DMA write
+        assert_eq!(mmu.dma_write_cycles_remaining, 0);
+        mmu.write_byte(DMA_W_INIT_ADDR as u32, 0x00);
+
+        assert_eq!(mmu.dma_read_cycles_remaining, 0);
+        assert_eq!(mmu.dma_write_cycles_remaining, DMA_TRANSFER_CYCLES + 1);
+        assert!(mmu.is_locked());
+        for i in 0..DMA_TRANSFER_CYCLES {
+            mmu.cycle();
+            assert_mmu_locked(&mut mmu);
+            println!("MMU was locked properly for CPU cycle {}.", i + 1);
+        }
+        mmu.cycle();
+        assert_mmu_unlocked(&mut mmu);
+        assert_eq!(mmu.dma_write_cycles_remaining, 0);
+
+        // Reset
+        mmu.write_dword(RAM_OFFSET as u32, 0);
+
+        // Test DMA read
+        assert_eq!(mmu.dma_read_cycles_remaining, 0);
+        mmu.write_byte(DMA_R_INIT_ADDR as u32, 0x00);
+
+        assert_eq!(mmu.dma_write_cycles_remaining, 0);
+        assert_eq!(mmu.dma_read_cycles_remaining, DMA_TRANSFER_CYCLES + 1);
+        assert!(mmu.is_locked());
+        for i in 0..DMA_TRANSFER_CYCLES {
+            mmu.cycle();
+            assert_mmu_locked(&mut mmu);
+            println!("MMU was locked properly for CPU cycle {}.", i + 1);
+        }
+        mmu.cycle();
+        assert_mmu_unlocked(&mut mmu);
+        assert_eq!(mmu.dma_read_cycles_remaining, 0);
+    }
 
     #[test]
     fn test_set_interrupt() {
