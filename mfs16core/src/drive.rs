@@ -5,6 +5,7 @@ use camino::Utf8Path;
 
 mod drive_header;
 
+pub use drive_header::{DriveFlag, DRIVE_FLAGS_ADDR};
 use drive_header::{DriveFlag::*, DriveHeader, HEADER_ADDR, HEADER_LEN};
 
 macro_rules! BAD_BUF_SIZE_MSG {
@@ -122,6 +123,16 @@ impl Drive {
             .unwrap();
 
         Ok(())
+    }
+
+    /// Set the flag of the drive header.
+    pub fn set_flag(&mut self, drive_flag: DriveFlag) -> io::Result<()> {
+        self.header.set_flag(&mut self.file, drive_flag)
+    }
+
+    /// Reset the flag of the drive header.
+    pub fn reset_flag(&mut self, drive_flag: DriveFlag) -> io::Result<()> {
+        self.header.reset_flag(&mut self.file, drive_flag)
     }
 
     // GETTERS

@@ -15,6 +15,7 @@ pub const BLOCK_SIZE_START: usize = DRIVE_NAME_START + DRIVE_NAME_LEN;
 pub const BLOCK_SIZE_LEN: usize = 0x02;
 pub const BLOCK_COUNT_START: usize = BLOCK_SIZE_START + BLOCK_SIZE_LEN;
 pub const BLOCK_COUNT_LEN: usize = 0x02;
+/// The address of the drive flags byte within the header.
 pub const DRIVE_FLAGS_ADDR: usize = BLOCK_COUNT_START + BLOCK_COUNT_LEN;
 
 pub const NAME_TOO_LONG_MSG: &str = "Drive name is too long.";

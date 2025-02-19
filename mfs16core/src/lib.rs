@@ -19,5 +19,6 @@ pub use cpu::{
     Addr, AsLargerType, Cpu, Flag, Flags, HasMax, Instruction, Msb, NMinus1Mask, NumBits, Oneable,
     Reg, Reg16, Reg32, Reg8, WrappingAdd, WrappingSub, Zeroable,
 };
+pub use drive::{DriveFlag, DRIVE_FLAGS_ADDR};
 pub use memory::{MemReadable, MemWritable, Memory};
 pub use mmu::{Interrupt, Mmu};

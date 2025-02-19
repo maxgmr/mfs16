@@ -4,10 +4,12 @@ use std::{default::Default, fmt::Display};
 
 use crate::{
     computer::{BLOCK_SIZE, DMA_BYTES_PER_CYCLE},
+    drive::Drive,
     gpu::Gpu,
     keyboard::{KbReg, KB_REG_SIZE},
     memory::Memory,
-    RAM_OFFSET, RAM_SIZE, ROM_OFFSET, ROM_SIZE, VRAM_OFFSET, VRAM_SIZE,
+    DriveFlag, DRIVE_FLAGS_ADDR, RAM_OFFSET, RAM_SIZE, ROM_OFFSET, ROM_SIZE, VRAM_OFFSET,
+    VRAM_SIZE,
 };
 
 /// This byte is returned when the memory can't be read for any reason.
@@ -130,8 +132,53 @@ impl Mmu {
     }
 
     /// Perform one clock cycle.
-    pub fn cycle(&mut self) {
+    pub fn cycle(&mut self, drives: &mut [Drive]) {
         if self.dma_read_cycles_remaining > 0 {
+            if self.dma_read_cycles_remaining == DMA_TRANSFER_CYCLES {
+                // Emulate DMA by simply reading the whole block into a temporary buffer on the
+                // first cycle of a new DMA read
+                if let Some(drive) = drives
+                    .iter_mut()
+                    .find(|drive| drive.drive_number() == self.dma_r_drive_num_reg)
+                {
+                    // Set drive as busy
+                    if drive.set_flag(DriveFlag::Busy).is_err() {
+                        self.illegal_write(DRIVE_FLAGS_ADDR as u32, "set busy header flag")
+                    }
+                    drive.read_block(self.dma_r_block_num_reg.into(), &mut self.current_dma_block);
+                }
+            } else if self.dma_read_cycles_remaining == 1
+                && (self.dma_r_ram_start_reg as usize) > RAM_OFFSET
+            {
+                // Emulate DMA by simply writing the whole block directly into memory
+
+                // Don't go out of bounds!
+                let relative_start = (self.dma_r_ram_start_reg as usize) - RAM_OFFSET;
+                let max_copy_len = RAM_SIZE.saturating_sub(relative_start);
+                let copy_len = BLOCK_SIZE.min(max_copy_len);
+                if copy_len > 0 {
+                    self.ram
+                        .direct_write(relative_start as u32, &self.current_dma_block[..copy_len]);
+                }
+
+                if (self.dma_r_ram_start_reg as usize) + BLOCK_SIZE > RAM_END {
+                    // Only write until the end of RAM
+                    self.ram.direct_write(
+                        self.dma_r_ram_start_reg - (RAM_OFFSET as u32),
+                        &self.current_dma_block[..],
+                    );
+                }
+                // Set drive as not busy
+                if let Some(drive) = drives
+                    .iter_mut()
+                    .find(|drive| drive.drive_number() == self.dma_r_drive_num_reg)
+                {
+                    // Set drive as busy
+                    if drive.reset_flag(DriveFlag::Busy).is_err() {
+                        self.illegal_write(DRIVE_FLAGS_ADDR as u32, "reset busy header flag")
+                    }
+                }
+            }
             self.dma_read_cycles_remaining -= 1;
         } else if self.dma_write_cycles_remaining > 0 {
             self.dma_write_cycles_remaining -= 1;
@@ -589,6 +636,7 @@ mod tests {
     #[test]
     fn test_dma() {
         let mut mmu = Mmu::default();
+        let mut empty_drives: Vec<Drive> = Vec::new();
 
         assert_dma_off(&mut mmu);
 
@@ -599,12 +647,12 @@ mod tests {
         assert_eq!(mmu.dma_read_cycles_remaining, 0);
         assert_eq!(mmu.dma_write_cycles_remaining, DMA_TRANSFER_CYCLES + 1);
         assert!(mmu.is_locked());
-        for i in 0..DMA_TRANSFER_CYCLES {
-            mmu.cycle();
+
+        for _ in 0..DMA_TRANSFER_CYCLES {
+            mmu.cycle(&mut empty_drives);
             assert_mmu_locked(&mut mmu);
-            println!("MMU was locked properly for CPU cycle {}.", i + 1);
         }
-        mmu.cycle();
+        mmu.cycle(&mut empty_drives);
         assert_mmu_unlocked(&mut mmu);
         assert_eq!(mmu.dma_write_cycles_remaining, 0);
 
@@ -619,11 +667,11 @@ mod tests {
         assert_eq!(mmu.dma_read_cycles_remaining, DMA_TRANSFER_CYCLES + 1);
         assert!(mmu.is_locked());
         for i in 0..DMA_TRANSFER_CYCLES {
-            mmu.cycle();
+            mmu.cycle(&mut empty_drives);
             assert_mmu_locked(&mut mmu);
             println!("MMU was locked properly for CPU cycle {}.", i + 1);
         }
-        mmu.cycle();
+        mmu.cycle(&mut empty_drives);
         assert_mmu_unlocked(&mut mmu);
         assert_eq!(mmu.dma_read_cycles_remaining, 0);
     }
